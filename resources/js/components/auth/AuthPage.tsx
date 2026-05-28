@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { clearAuthCache } from '../../hooks/useAuth';
 import { 
   User, 
   Mail, 
@@ -158,19 +159,9 @@ export function AuthPage() {
         return;
       }
 
-      const authPayload = JSON.stringify({
-        role: json.user.role,
-        name: json.user.name,
-        userId: json.user.id,
-        email: json.user.email,
-        linked_id: json.user.linked_id,
-      });
-      
-      if (rememberMe) {
-        localStorage.setItem('authUser', authPayload);
-      } else {
-        sessionStorage.setItem('authUser', authPayload);
-      }
+      // Clear the module-level cache so useAuth re-fetches /api/me
+      // with the newly issued session cookie before navigating.
+      clearAuthCache();
 
       navigate(roleDashboards[json.user.role as UserRole]);
     } catch (err) {
@@ -217,15 +208,8 @@ export function AuthPage() {
         return;
       }
 
-      sessionStorage.setItem('authUser', JSON.stringify({
-        role: json.user.role,
-        name: json.user.name,
-        userId: json.user.id,
-        email: json.user.email,
-        linked_id: json.user.linked_id,
-      }));
-
-      navigate(roleDashboards[json.user.role as UserRole]);
+      // Registration leaves user as 'pending' — go to role selection, not dashboard
+      navigate('/role-selection');
     } catch (err) {
       setError('Ralat sambungan rangkaian.');
     } finally {

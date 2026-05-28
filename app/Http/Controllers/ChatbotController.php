@@ -50,6 +50,19 @@ class ChatbotController extends Controller
                     'response' => "Rekod kehadiran anda terjaga dengan baik. Anda boleh melihat ringkasan kehadiran bulanan anda di bahagian profil pelajar."
                 ]);
             }
+
+            // 4. Check for Tajweed rules query (from Tarteel QUL resources)
+            if (str_contains($query, 'tajwid') || str_contains($query, 'hukum') || str_contains($query, 'ikhfa') || str_contains($query, 'qalqalah')) {
+                return response()->json([
+                    'response' => "Ustaz AI kini berintegrasi secara penuh dengan panduan tajwid **QUL (Quranic Universal Library)** daripada Tarteel AI untuk membantu bacaan anda! \n\n" .
+                                  "💡 **Hukum Tajwid Utama dalam Surah Pilihan:**\n" .
+                                  "1. **Ikhfa' Haqiqi** - Sebutan Nun Sakinah/Tanwin samar berserta dengung (Contoh: *شَيْءٍ قَدِيرٌ* - Surah Al-Mulk: 1)\n" .
+                                  "2. **Idgham Maal Ghunnah** - Huruf diidghamkan berserta dengung (Contoh: *طِبَاقًا مَّا* - Surah Al-Mulk: 3)\n" .
+                                  "3. **Qalqalah Sughra** - Lantunan suara sederhana pada huruf sukun di tengah kalimah (Contoh: *سَبْعَ* - Surah Al-Mulk: 3)\n" .
+                                  "4. **Izhar Halqi** - Sebutan jelas tanpa dengung (Contoh: *أَنْعَمْتَ* - Surah Al-Fatihah: 7)\n\n" .
+                                  "Semasa menggunakan panel **AI Menghafal**, anda boleh menekan butang **'PANDUAN TAJWID (QUL)'** pada ayat yang dikesan kesalahan untuk melihat huraian hukum tajwid Tarteel yang terperinci!"
+                ]);
+            }
         }
 
         // Fallback to General Knowledge

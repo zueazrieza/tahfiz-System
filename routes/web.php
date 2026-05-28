@@ -101,6 +101,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::get('/ai-predictions/class/{classId}',       [AIController::class, 'getClassPredictions']);
         Route::post('/ai/import-alumni',                    [AIController::class, 'importAlumni']);
         Route::get('/ai/benchmarks',                        [AIController::class, 'getAIBenchmarks']);
+        Route::get('/quran/verses/{chapter}',               [AIController::class, 'getQuranVerses']);
         Route::apiResource('ai-assessments', AIAssessmentController::class);
 
         // Achievements

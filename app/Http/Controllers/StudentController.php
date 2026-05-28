@@ -159,6 +159,45 @@ class StudentController extends Controller
         ]);
     }
 
+    public function show(string $id)
+    {
+        $s = Student::with(['classRoom.primaryTeacher', 'teacher'])->findOrFail($id);
+        return response()->json([
+            'id' => $s->id,
+            'name' => $s->name,
+            'phone' => $s->phone,
+            'icNo' => $s->ic_no,
+            'gender' => $s->gender,
+            'dob' => $s->dob,
+            'age' => $s->age,
+            'address' => $s->address,
+            'maritalStatus' => $s->marital_status,
+            'bloodType' => $s->blood_type,
+            'pob' => $s->pob,
+            'citizenship' => $s->citizenship,
+            'race' => $s->race,
+            'religion' => $s->religion,
+            'educationBackground' => $s->education_background,
+            'emergencyContactName' => $s->emergency_contact_name,
+            'emergencyContactPhone' => $s->emergency_contact_phone,
+            'familyIncome' => $s->family_income,
+            'classId' => $s->class_id,
+            'teacherId' => $s->teacher_id,
+            'parentId' => $s->parent_id,
+            'parentName' => $s->parent_name,
+            'parentPhone' => $s->parent_phone,
+            'enrolledDate' => $s->enrolled_date,
+            'juzukCompleted' => $s->juzuk_completed,
+            'intakeJuzuk' => $s->intake_juzuk,
+            'status' => $s->status,
+            'medicalHistory' => $s->medical_history,
+            'admissionType' => $s->admission_type,
+            'ranking' => $s->ranking,
+            'matricNo' => $s->matric_no,
+            'intake' => $s->intake,
+        ]);
+    }
+
     public function update(Request $request, string $id)
     {
         $student = Student::findOrFail($id);

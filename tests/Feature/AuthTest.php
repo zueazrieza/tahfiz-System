@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function makeUser(string $role, string $email = null): User
+function makeUser(string $role, ?string $email = null): User
 {
     return User::factory()->create([
         'email'    => $email ?? "{$role}@test.com",

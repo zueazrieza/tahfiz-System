@@ -34,7 +34,14 @@ class DemoDataSeeder extends Seeder
             ]);
             $teacherModels[] = Teacher::updateOrCreate(
                 ['user_id' => $user->id],
-                ['name' => $t['name'], 'user_id' => $user->id]
+                [
+                    'name'        => $t['name'],
+                    'email'       => $t['email'],
+                    'phone'       => '011-' . rand(10000000, 99999999),
+                    'joined_date' => '2024-01-01',
+                    'user_id'     => $user->id,
+                    'status'      => 'Aktif',
+                ]
             );
         }
 
@@ -81,12 +88,14 @@ class DemoDataSeeder extends Seeder
             ]);
 
             // ── Hafazan Records (last 30 days) ─────────────────────────────
+            $classTeacher = $teacherModels[array_search($class, $classes) % count($teacherModels)];
             for ($d = 30; $d >= 1; $d -= rand(1, 3)) {
                 $ayah = rand(5, 20);
                 $grades = ['Mumtaz', 'Jayyid', 'Maqbul'];
                 HafazanRecord::updateOrCreate(
                     ['student_id' => $student->id, 'date' => Carbon::now()->subDays($d)->format('Y-m-d')],
                     [
+                        'teacher_id'    => $classTeacher->id,
                         'ayah_count'    => $ayah,
                         'sabaq_grade'   => $grades[array_rand($grades)],
                         'sabaqi_grade'  => $grades[array_rand($grades)],
@@ -103,7 +112,7 @@ class DemoDataSeeder extends Seeder
                 $statuses = ['Hadir', 'Hadir', 'Hadir', 'Lewat', 'Tidak Hadir'];
                 Attendance::updateOrCreate(
                     ['student_id' => $student->id, 'date' => Carbon::now()->subDays($d)->format('Y-m-d')],
-                    ['status' => $statuses[array_rand($statuses)], 'class_room_id' => $class->id]
+                    ['status' => $statuses[array_rand($statuses)], 'class_id' => $class->id, 'teacher_id' => $classTeacher->id]
                 );
             }
 
@@ -112,12 +121,13 @@ class DemoDataSeeder extends Seeder
                 $paid    = rand(0, 1);
                 $monthDt = Carbon::now()->subMonths($m);
                 Payment::updateOrCreate(
-                    ['student_id' => $student->id, 'month' => $monthDt->month, 'year' => $monthDt->year],
+                    ['student_id' => $student->id, 'month_year' => $monthDt->format('Y-m')],
                     [
-                        'amount'    => 300,
-                        'status'    => $paid ? 'Dibayar' : 'Belum Dibayar',
-                        'paid_date' => $paid ? $monthDt->addDays(rand(1, 10))->format('Y-m-d') : null,
-                        'due_date'  => $monthDt->format('Y-m-10'),
+                        'amount'       => 300,
+                        'payment_type' => 'monthly',
+                        'payment_date' => $paid ? $monthDt->copy()->addDays(rand(1, 10))->format('Y-m-d') : $monthDt->format('Y-m-01'),
+                        'month_year'   => $monthDt->format('Y-m'),
+                        'status'       => $paid ? 'paid' : 'pending',
                     ]
                 );
             }

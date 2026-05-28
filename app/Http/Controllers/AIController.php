@@ -202,4 +202,51 @@ class AIController extends Controller
             default: return null;
         }
     }
+
+    /**
+     * Proxy to fetch Quran verses of a given surah/chapter with robust multi-API fallback.
+     */
+    public function getQuranVerses(string $chapter)
+    {
+        Log::info('Fetching Quran verses for chapter', ['chapter' => $chapter]);
+
+        try {
+            // 1. Primary: Quran.com API
+            $response = \Illuminate\Support\Facades\Http::timeout(10)->get("https://api.quran.com/api/v4/quran/verses/uthmani?chapter_number={$chapter}");
+            if ($response->successful()) {
+                Log::info('Successfully fetched verses from Quran.com', ['chapter' => $chapter]);
+                return response()->json($response->json());
+            }
+            throw new \Exception("Quran.com API returned status " . $response->status());
+        } catch (\Exception $e) {
+            Log::warning("Primary Quran.com API failed, attempting secondary Alquran.cloud API fallback: " . $e->getMessage());
+
+            try {
+                // 2. Secondary: Alquran.cloud API
+                $response = \Illuminate\Support\Facades\Http::timeout(10)->get("https://api.alquran.cloud/v1/surah/{$chapter}");
+                if ($response->successful()) {
+                    Log::info('Successfully fetched verses from Alquran.cloud fallback', ['chapter' => $chapter]);
+                    $data = $response->json();
+                    
+                    // Adapt Alquran.cloud JSON response to match Quran.com's format expected by frontend
+                    $verses = [];
+                    foreach ($data['data']['ayahs'] as $ayah) {
+                        $verses[] = [
+                            'id' => $ayah['number'],
+                            'verse_key' => "{$chapter}:{$ayah['numberInSurah']}",
+                            'text_uthmani' => $ayah['text']
+                        ];
+                    }
+                    return response()->json(['verses' => $verses]);
+                }
+                throw new \Exception("Alquran.cloud API returned status " . $response->status());
+            } catch (\Exception $eSec) {
+                Log::error("All Quran APIs failed for chapter {$chapter}: " . $eSec->getMessage());
+                return response()->json([
+                    'message' => 'Gagal memuatkan ayat Quran. Hubungan API terputus.',
+                    'error' => $eSec->getMessage()
+                ], 500);
+            }
+        }
+    }
 }
