@@ -7,6 +7,15 @@ use App\Models\HafazanRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
+/**
+ * Chatbot Controller
+ *
+ * @status stub / rule-based — no LLM API key required.
+ *
+ * Currently responds via keyword matching from a static knowledge dictionary.
+ * To upgrade to a real LLM: set OPENAI_API_KEY in .env and replace
+ * getGeneralKnowledge() with an OpenAI Chat Completion API call.
+ */
 class ChatbotController extends Controller
 {
     public function handle(Request $request)

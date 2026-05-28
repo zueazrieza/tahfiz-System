@@ -3,23 +3,37 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { AppProvider } from './store/AppContext.tsx';
 import '../css/styles/index.css';
+import axios from 'axios';
 
-// Prevent viewing cached authenticated pages after logout
-window.addEventListener('pageshow', (event) => {
-    if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-        window.location.reload();
+// ── Ensure Axios always sends the session cookie ───────────────────────────
+axios.defaults.withCredentials = true;
+
+// ── On tab-switch back: silently re-verify session (no hard reload) ────────
+// Replaces the destructive window.location.reload() on pageshow.
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible') {
+    try {
+      const r = await axios.get('/api/me');
+      if (!r.data.user) {
+        // Session expired — redirect cleanly without blowing away history
+        window.location.replace('/app/role-selection');
+      }
+    } catch {
+      // Network error or 401 — redirect
+      window.location.replace('/app/role-selection');
     }
+  }
 });
 
 const container = document.getElementById('root');
 
 if (container) {
-    const root = createRoot(container);
-    root.render(
-        <React.StrictMode>
-            <AppProvider>
-                <App />
-            </AppProvider>
-        </React.StrictMode>
-    );
+  const root = createRoot(container);
+  root.render(
+    <React.StrictMode>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </React.StrictMode>
+  );
 }

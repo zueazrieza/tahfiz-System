@@ -2,6 +2,30 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\ClassRoomController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\HafazanRecordController;
+use App\Http\Controllers\AIPredictionController;
+use App\Http\Controllers\AIController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ParentController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\StudentController as StudentCtrl;
+use App\Http\Controllers\AchievementController;
+use App\Http\Controllers\AIAssessmentController;
+use App\Http\Controllers\HostelController;
+use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\MudirEvaluationController;
+use App\Http\Controllers\WeeklyReportController;
+use App\Http\Controllers\AchievementController as AchCtrl;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\FinancialAnalyticsController;
+use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\StudentReportController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Landing page ─────────────────────────────────────────────────────────────
@@ -11,76 +35,132 @@ Route::get('/', function () {
 
 // ─── Legacy blade auth (kept for fallback) ────────────────────────────────────
 Route::get('/login',    [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login',   [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-Route::post('/register',[AuthController::class, 'register']);
 Route::post('/logout',  [AuthController::class, 'logout'])->name('logout');
 
-// ─── JSON API routes for React SPA ───────────────────────────────────────────
-Route::prefix('api')->group(function () {
-    // CSRF cookie (call this before any POST from React)
-    Route::get('/csrf-cookie', function () {
-        return response()->json(['token' => csrf_token()]);
-    });
-
-    Route::post('/login',    [AuthController::class, 'apiLogin']);
-    Route::post('/register', [AuthController::class, 'apiRegister']);
-    Route::post('/logout',   [AuthController::class, 'apiLogout']);
-    Route::get('/me',        [AuthController::class, 'me']);
-
-    // Public Enrollment Flow
-    Route::post('/public/register-enrollment', [\App\Http\Controllers\EnrollmentController::class, 'publicRegister']);
-    Route::get('/enrollment/applicants', [\App\Http\Controllers\EnrollmentController::class, 'index']);
-    Route::get('/enrollment/schedules', [\App\Http\Controllers\EnrollmentController::class, 'getInterviewSchedules']);
-    Route::patch('/enrollment/status/{id}', [\App\Http\Controllers\EnrollmentController::class, 'updateStatus']);
-    Route::post('/enrollment/schedule-interview/{id}', [\App\Http\Controllers\EnrollmentController::class, 'scheduleInterview']);
-    Route::post('/enrollment/update-interview/{id}', [\App\Http\Controllers\EnrollmentController::class, 'updateInterview']);
-    Route::post('/enrollment/parent-decide/{id}', [\App\Http\Controllers\EnrollmentController::class, 'parentDecide']);
-    Route::get('/enrollment/offer-letter/{id}', [\App\Http\Controllers\EnrollmentController::class, 'generateOfferLetter']);
-    Route::post('/enrollment/send-offer-email/{id}', [\App\Http\Controllers\EnrollmentController::class, 'sendOfferEmail']);
-
-    Route::apiResource('teachers', TeacherController::class);
-    Route::apiResource('classes', \App\Http\Controllers\ClassRoomController::class);
-    Route::apiResource('students', \App\Http\Controllers\StudentController::class);
-    Route::apiResource('payments', \App\Http\Controllers\PaymentController::class);
-    Route::post('/attendance/bulk', [\App\Http\Controllers\AttendanceController::class, 'bulkStore']);
-    Route::get('/attendance', [\App\Http\Controllers\AttendanceController::class, 'index']);
-    Route::apiResource('hafazan-records', \App\Http\Controllers\HafazanRecordController::class);
-    Route::get('/ai-predictions/class/{classId}', [\App\Http\Controllers\AIPredictionController::class, 'getByClass']);
-    Route::post('/ai-predictions/generate/class/{classId}', [\App\Http\Controllers\AIPredictionController::class, 'generateClass']);
-    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show']);
-    Route::post('/profile', [\App\Http\Controllers\ProfileController::class, 'update']);
-    Route::get('/parent/children', [\App\Http\Controllers\ParentController::class, 'getChildren']);
-    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index']);
-    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
-    Route::apiResource('notifications', \App\Http\Controllers\NotificationController::class)->only(['update', 'destroy']);
-    Route::get('/ai-predictions/student/{studentId}', [\App\Http\Controllers\AIPredictionController::class, 'getByStudent']);
-    
-    // User management
-    Route::get('/users/pending', [\App\Http\Controllers\UserController::class, 'pendingUsers']);
-    Route::post('/users/{id}/approve', [\App\Http\Controllers\UserController::class, 'approveUser']);
-    Route::post('/users/{id}/reject', [\App\Http\Controllers\UserController::class, 'rejectUser']);
-    Route::get('/users/students-no-account', [\App\Http\Controllers\UserController::class, 'studentsWithoutAccounts']);
-    Route::post('/users/student-account', [\App\Http\Controllers\UserController::class, 'createStudentAccount']);
-    Route::get('/students/leaderboard/{classId}', [\App\Http\Controllers\StudentController::class, 'leaderboard']);
-    Route::apiResource('achievements', \App\Http\Controllers\AchievementController::class);
-    Route::get('/achievements/student/{studentId}', [\App\Http\Controllers\AchievementController::class, 'index']);
-    Route::get('/students/dashboard/{id}', [\App\Http\Controllers\StudentController::class, 'dashboard']);
-    Route::get('/students/targets/{studentId}', [\App\Http\Controllers\StudentReportController::class, 'getHafazanTargets']);
-    Route::apiResource('ai-assessments', \App\Http\Controllers\AIAssessmentController::class);
-    Route::apiResource('hostels', \App\Http\Controllers\HostelController::class);
-    Route::post('/hostels/assign', [\App\Http\Controllers\HostelController::class, 'assignStudent']);
-});
+// ─── React SPA — handles all /app/** routes ───────────────────────────────────
+Route::get('/app/{any?}', function () {
+    return view('app');
+})->where('any', '.*')->name('spa');
 
 // ─── Authenticated dashboard (blade fallback redirect) ────────────────────────
 Route::get('/dashboard', function () {
     $user = auth()->user();
     if (!$user) return redirect('/');
-    // Redirect to React SPA at the correct role path
     return redirect('/app/' . $user->role . '/dashboard');
 })->middleware('auth')->name('dashboard');
 
-// ─── React SPA — handles all /app/** routes ──────────────────────────────────
-Route::get('/app/{any?}', function () {
-    return view('app');
-})->where('any', '.*')->name('spa');
+// ═══════════════════════════════════════════════════════════════════════════════
+// JSON API — used by React SPA
+// ═══════════════════════════════════════════════════════════════════════════════
+Route::prefix('api')->middleware(['web'])->group(function () {
+
+    // ── Public (no auth required) ─────────────────────────────────────────────
+    Route::get('/csrf-cookie', fn() => response()->json(['token' => csrf_token()]));
+
+    // Login: rate-limited to 5 attempts / minute per IP (P0 fix)
+    Route::post('/login',    [AuthController::class, 'apiLogin'])->middleware('throttle:5,1');
+    Route::post('/register', [AuthController::class, 'apiRegister']);
+    Route::post('/logout',   [AuthController::class, 'apiLogout']);
+    Route::get('/me',        [AuthController::class, 'me']);
+
+    // Public enrollment (no auth)
+    Route::post('/public/register-enrollment', [EnrollmentController::class, 'publicRegister']);
+
+    // ── Authenticated — session cookie required ───────────────────────────────
+    Route::middleware(['auth:sanctum'])->group(function () {
+
+        // Students
+        Route::post('/students/import',           [StudentController::class, 'importFromExcel']);
+        Route::post('/students/set-target',       [StudentController::class, 'setTarget']);
+        Route::get('/students/leaderboard/{classId}', [StudentController::class, 'leaderboard']);
+        Route::get('/students/dashboard/{id}',    [StudentController::class, 'studentDashboard']);
+        Route::get('/teacher/students',           [StudentController::class, 'getTeacherStudents']);
+        Route::apiResource('students', StudentController::class);
+
+        // Teachers
+        Route::apiResource('teachers', TeacherController::class);
+
+        // Classes
+        Route::apiResource('classes', ClassRoomController::class);
+
+        // Payments
+        Route::apiResource('payments', PaymentController::class);
+
+        // Attendance
+        Route::get('/attendance',          [AttendanceController::class, 'index']);
+        Route::post('/attendance/bulk',    [AttendanceController::class, 'bulkStore']);
+
+        // Hafazan Records
+        Route::get('/hafazan-records',     [HafazanRecordController::class, 'index']);
+        Route::post('/hafazan-records',    [HafazanRecordController::class, 'store']);
+
+        // AI
+        Route::post('/ai-predictions/generate',             [AIController::class, 'generateForStudent']);
+        Route::get('/ai-predictions/student/{studentId}',   [AIController::class, 'getPrediction']);
+        Route::get('/ai-predictions/class/{classId}',       [AIController::class, 'getClassPredictions']);
+        Route::post('/ai/import-alumni',                    [AIController::class, 'importAlumni']);
+        Route::get('/ai/benchmarks',                        [AIController::class, 'getAIBenchmarks']);
+        Route::apiResource('ai-assessments', AIAssessmentController::class);
+
+        // Achievements
+        Route::get('/achievements/student/{studentId}', [AchievementController::class, 'index']);
+        Route::post('/achievements',                    [AchievementController::class, 'store']);
+        Route::delete('/achievements/{id}',             [AchievementController::class, 'destroy']);
+
+        // Profile
+        Route::get('/profile',  [ProfileController::class, 'show']);
+        Route::post('/profile', [ProfileController::class, 'update']);
+
+        // Parent portal
+        Route::get('/parent/children', [ParentController::class, 'getChildren']);
+        Route::get('/parents',         [ParentController::class, 'index']);
+
+        // Notifications
+        Route::get('/notifications',                    [NotificationController::class, 'index']);
+        Route::post('/notifications/mark-all-read',     [NotificationController::class, 'markAllAsRead']);
+        Route::apiResource('notifications', NotificationController::class)->only(['update', 'destroy']);
+
+        // Announcements
+        Route::apiResource('announcements', AnnouncementController::class)->only(['index', 'store', 'destroy']);
+
+        // Enrollment management (staff)
+        Route::get('/enrollment/applicants',                [EnrollmentController::class, 'index']);
+        Route::get('/enrollment/schedules',                 [EnrollmentController::class, 'getInterviewSchedules']);
+        Route::patch('/enrollment/status/{id}',             [EnrollmentController::class, 'updateStatus']);
+        Route::post('/enrollment/schedule-interview/{id}',  [EnrollmentController::class, 'scheduleInterview']);
+        Route::post('/enrollment/update-interview/{id}',    [EnrollmentController::class, 'updateInterview']);
+        Route::post('/enrollment/parent-decide/{id}',       [EnrollmentController::class, 'parentDecide']);
+        Route::get('/enrollment/offer-letter/{id}',         [EnrollmentController::class, 'generateOfferLetter']);
+        Route::post('/enrollment/send-offer-email/{id}',    [EnrollmentController::class, 'sendOfferEmail']);
+
+        // Mudir & Reports
+        Route::apiResource('mudir-evaluations', MudirEvaluationController::class)->only(['index', 'store']);
+        Route::apiResource('reports/weekly',    WeeklyReportController::class)->only(['index', 'store']);
+        Route::get('/students/targets/{studentId}', [StudentReportController::class, 'getHafazanTargets']);
+
+        // Hostel
+        Route::apiResource('hostels', HostelController::class);
+        Route::post('/hostels/assign', [HostelController::class, 'assignStudent']);
+
+        // Analytics
+        Route::get('/analytics/financial', [FinancialAnalyticsController::class, 'index']);
+
+        // Chatbot
+        Route::post('/chatbot/handle', [ChatbotController::class, 'handle']);
+
+        // Export
+        Route::get('/export/students', [ExportController::class, 'exportStudents']);
+        Route::get('/export/teachers', [ExportController::class, 'exportTeachers']);
+        Route::get('/export/parents',  [ExportController::class, 'exportParents']);
+
+        // ── Admin-only ────────────────────────────────────────────────────────
+        Route::middleware('can:admin-only')->group(function () {
+            Route::get('/users/pending',              [UserController::class, 'pendingUsers']);
+            Route::post('/users/{id}/approve',        [UserController::class, 'approveUser']);
+            Route::post('/users/{id}/reject',         [UserController::class, 'rejectUser']);
+            Route::get('/users/students-no-account',  [UserController::class, 'studentsWithoutAccounts']);
+            Route::post('/users/student-account',     [UserController::class, 'createStudentAccount']);
+        });
+    });
+});

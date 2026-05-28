@@ -30,16 +30,13 @@ class AuthController extends Controller
     public function apiLogin(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'string'], // renamed to email but can be name
+            'email'    => ['required', 'string', 'email'],
             'password' => ['required'],
             'role'     => ['required', 'string', 'in:admin,teacher,parent,student'],
         ]);
 
-        // Attempt login but ALSO check for active status
-        $user = User::where(function($query) use ($credentials) {
-                $query->where('email', $credentials['email'])
-                      ->orWhere('name', $credentials['email']);
-            })
+        // Match by email only — no name fallback (prevents username enumeration)
+        $user = User::where('email', $credentials['email'])
             ->where('role', $credentials['role'])
             ->first();
 

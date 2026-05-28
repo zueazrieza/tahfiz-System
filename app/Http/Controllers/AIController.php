@@ -11,6 +11,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
+/**
+ * AI Analytics Controller
+ *
+ * @status deterministic — no LLM integration required.
+ *
+ * This controller computes hafazan completion predictions using rule-based
+ * algorithms (attendance rate, grade multipliers, historical alumni averages).
+ * It does NOT require an OPENAI_API_KEY or external API call.
+ *
+ * To add LLM-powered recommendations, inject a prompt via config('services.openai.key')
+ * and POST to the OpenAI Chat Completion API in the `recommendation` computation block.
+ */
 class AIController extends Controller
 {
     public function generateForStudent(Request $request)
