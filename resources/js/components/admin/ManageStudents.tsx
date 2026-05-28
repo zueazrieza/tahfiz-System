@@ -801,12 +801,22 @@ export function ManageStudents() {
             </div>
 
             {/* Column guide */}
-            <div className="mb-5 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
-              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">⚠ Format Lajur Excel Yang Diperlukan</p>
-              <div className="flex flex-wrap gap-1.5">
-                {['No','School','Name','Matric','M/F','Class 2025','IC No','Birth Date','Register','End','Name (Father)','IC No (Father)','Name (Mother)','IC No (Mother)','Status','Intake'].map(col => (
-                  <span key={col} className="px-2 py-0.5 bg-white border border-amber-200 text-amber-700 rounded-md text-[10px] font-bold">{col}</span>
-                ))}
+            <div className="mb-5 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl space-y-3">
+              <div>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">📋 Format Pendaftaran Pelajar Baharu</p>
+                <div className="flex flex-wrap gap-1">
+                  {['No','School','Name','Matric','M/F','Class','IC No','Birth Date','Register','Name (Father)','Status','Intake'].map(col => (
+                    <span key={col} className="px-1.5 py-0.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[9px] font-semibold">{col}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="pt-2 border-t border-slate-100">
+                <p className="text-[10px] font-black text-[#6FC7CB] uppercase tracking-widest mb-1.5">✨ Format Pencapaian & AI Analytics (Akmal Prima)</p>
+                <div className="flex flex-wrap gap-1">
+                  {['NO','NAMA PELAJAR','UMUR','BIL JUZUK','RANKING SEMASA','JUZUK SEMASA','PURATA SABAQ SEHARI','TARGET BIL JUZ (AKHIR JUN)','HALAQAH/KELAS'].map(col => (
+                    <span key={col} className="px-1.5 py-0.5 bg-[#EEF9FA] border border-[#d2f1f2] text-[#4E9397] rounded-md text-[9px] font-bold">{col}</span>
+                  ))}
+                </div>
               </div>
             </div>
 

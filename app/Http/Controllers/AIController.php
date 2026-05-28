@@ -58,7 +58,8 @@ class AIController extends Controller
             }
         }
 
-        $avgSabaqPerDay = count($records) ? $totalSabaqAyah / count($records) : 5;
+        $existingPrediction = AIPrediction::where('student_id', $studentId)->first();
+        $avgSabaqPerDay = count($records) ? $totalSabaqAyah / count($records) : (($existingPrediction && $existingPrediction->avg_ayah_per_day) ? $existingPrediction->avg_ayah_per_day : 5);
         $qualityMultiplier = $gradeCount > 0 ? $gradeScoreTotal / $gradeCount : 1.0;
 
         // Attendance Pattern
@@ -103,9 +104,13 @@ class AIController extends Controller
 
         // Recommendation
         $recommendation = 'Progres konsisten dikekalkan. Dijangka tamat lebih awal.';
-        if ($qualityMultiplier < 0.85) $recommendation = 'Tumpukan kepada ulang kaji Sabaqi/Manzil untuk meningkatkan kualiti ingatan.';
-        elseif ($attendanceRate < 0.85) $recommendation = 'Kehadiran yang lebih konsisten diperlukan untuk ramalan yang stabil.';
-        elseif ($paymentScore < 1.0) $recommendation = 'Yuran yang belum dijelaskan mungkin mempengaruhi trend kestabilan.';
+        if ($existingPrediction && count($records) === 0) {
+            $recommendation = $existingPrediction->recommendation;
+        } else {
+            if ($qualityMultiplier < 0.85) $recommendation = 'Tumpukan kepada ulang kaji Sabaqi/Manzil untuk meningkatkan kualiti ingatan.';
+            elseif ($attendanceRate < 0.85) $recommendation = 'Kehadiran yang lebih konsisten diperlukan untuk ramalan yang stabil.';
+            elseif ($paymentScore < 1.0) $recommendation = 'Yuran yang belum dijelaskan mungkin mempengaruhi trend kestabilan.';
+        }
 
         // Avg ayah per day
         $avgTotalAyahPerDay = count($records)
