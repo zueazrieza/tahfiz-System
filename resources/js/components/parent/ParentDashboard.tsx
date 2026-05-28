@@ -4,7 +4,7 @@ import { User, BookOpen, Calendar, DollarSign, Bell, Brain, LogOut, LayoutDashbo
 import { ViewProgress } from './ViewProgress';
 import { ViewAttendance } from './ViewAttendance';
 import { ViewPayments } from './ViewPayments';
-import { Notifications } from './Notifications';
+import { InfoCenter } from '../shared/InfoCenter';
 import { ParentAIPrediction } from './ParentAIPrediction';
 import { ProfileView } from '../profile/ProfileView';
 import { useAppStore, getStudentAttendanceRate } from '../../store/AppContext';
@@ -15,7 +15,7 @@ interface ParentDashboardProps {
   onLogout: () => void;
 }
 
-type ParentView = 'home' | 'enrollment' | 'progress' | 'attendance' | 'payment' | 'notifications' | 'ai' | 'profile';
+type ParentView = 'home' | 'enrollment' | 'progress' | 'attendance' | 'payment' | 'inbox' | 'ai' | 'profile';
 
 const navItems: { id: ParentView; label: string; icon: React.ReactNode; badge?: string }[] = [
   { id: 'home',          label: 'Profil Anak',          icon: <LayoutDashboard size={20} /> },
@@ -23,7 +23,7 @@ const navItems: { id: ParentView; label: string; icon: React.ReactNode; badge?: 
   { id: 'progress',      label: 'Kemajuan Hafazan',      icon: <BookOpen size={20} /> },
   { id: 'attendance',    label: 'Lihat Kehadiran',       icon: <Calendar size={20} /> },
   { id: 'payment',       label: 'Status Yuran',          icon: <DollarSign size={20} /> },
-  { id: 'notifications', label: 'Pemberitahuan',         icon: <Bell size={20} /> },
+  { id: 'inbox',         label: 'Pusat Maklumat',        icon: <Bell size={20} /> },
   { id: 'ai',            label: 'Ramalan AI',            icon: <Brain size={20} /> },
   { id: 'profile',       label: 'Profil Saya',           icon: <User size={20} /> },
 ];
@@ -82,7 +82,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
   const unreadCount = state.notifications.filter(n => n.studentId === String(child?.id) && !n.read).length;
 
   const navItemsWithBadge = navItems.map(n =>
-    n.id === 'notifications' ? { ...n, badge: notifCount > 0 ? String(notifCount) : undefined } : n
+    n.id === 'inbox' ? { ...n, badge: notifCount > 0 ? String(notifCount) : undefined } : n
   );
 
   const stats = [
@@ -105,7 +105,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
       case 'progress':      return <ViewProgress childId={String(child?.id || '')} />;
       case 'attendance':    return <ViewAttendance childId={String(child?.id || '')} />;
       case 'payment':       return <ViewPayments childId={String(child?.id || '')} />;
-      case 'notifications': return <Notifications />;
+      case 'inbox':         return <InfoCenter />;
       case 'ai':            return <ParentAIPrediction childId={String(child?.id || '')} />;
       case 'profile':       return <ProfileView userId={parentUser?.id || ''} />;
       default:

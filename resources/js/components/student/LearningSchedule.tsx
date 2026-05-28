@@ -7,12 +7,12 @@ export function LearningSchedule() {
   const { state } = useAppStore();
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   const studentUser = state.users.find(u => u.name === authUser.name && u.role === 'student') ?? state.users.find(u => u.role === 'student')!;
-  const student = state.students.find(s => s.id === studentUser?.linkedId) ?? state.students[0];
-  const classRoom = state.classes.find(c => c.id === student?.classId);
-  const teacher = state.teachers.find(t => t.id === classRoom?.teacherId);
+  const student = state.students.find(s => s.id === studentUser?.linkedId || s.id === (authUser as any).linked_id) ?? state.students[0];
+  const classRoom = state.classes.find(c => c.id === student?.classId || c.id === (student as any)?.class_id);
+  const teacher = state.teachers.find(t => t.id === classRoom?.teacherId || t.id === (classRoom as any)?.teacher_id);
 
   const todayName = DAYS[new Date().getDay()];
-  const todaySessions = classRoom?.schedule.filter(s => s.day === todayName) ?? [];
+  const todaySessions = (classRoom?.schedule ?? []).filter(s => s.day === todayName);
   const allSessions = classRoom?.schedule ?? [];
 
   return (
@@ -26,7 +26,7 @@ export function LearningSchedule() {
           <div>
             <h3 className="text-lg font-bold text-gray-900">Kelas {classRoom?.name ?? '—'}</h3>
             <p className="text-sm text-gray-600">Ustaz/Ustazah: <strong>{teacher?.name ?? '—'}</strong></p>
-            <p className="text-sm text-gray-600">Kapasiti: {classRoom?.studentIds.length ?? 0} / {classRoom?.capacity ?? 0} pelajar</p>
+            <p className="text-sm text-gray-600">Kapasiti: {classRoom?.studentIds?.length ?? 0} / {classRoom?.capacity ?? 0} pelajar</p>
           </div>
         </div>
       </div>

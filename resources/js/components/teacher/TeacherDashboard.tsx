@@ -7,6 +7,7 @@ import { StudentList } from './StudentList';
 import { TeacherAIPrediction } from './TeacherAIPrediction';
 import { TeacherAIAssessment } from './TeacherAIAssessment';
 import { ManageAchievements } from './ManageAchievements';
+import { Announcements } from '../shared/Announcements';
 import { StudyRoadmap } from '../shared/StudyRoadmap';
 import { ProfileView } from '../profile/ProfileView';
 import { useAppStore } from '../../store/AppContext';
@@ -16,12 +17,13 @@ interface TeacherDashboardProps {
   onLogout: () => void;
 }
 
-type TeacherView = 'home' | 'hafazan' | 'attendance' | 'report' | 'students' | 'ai' | 'semak-ai' | 'sukatan' | 'pencapaian' | 'profile';
+type TeacherView = 'home' | 'hafazan' | 'attendance' | 'report' | 'students' | 'ai' | 'semak-ai' | 'sukatan' | 'pencapaian' | 'profile' | 'announcements';
 
 const navItems: { id: TeacherView; label: string; icon: React.ReactNode }[] = [
   { id: 'home',       label: 'Papan Pemuka',         icon: <LayoutDashboard size={20} /> },
   { id: 'hafazan',    label: 'Rekod Hafazan',        icon: <BookOpen size={20} /> },
   { id: 'attendance', label: 'Urus Kehadiran',       icon: <Calendar size={20} /> },
+  { id: 'announcements', label: 'Pengumuman',        icon: <FileText size={20} /> },
   { id: 'report',     label: 'Muat Naik Laporan',     icon: <Upload size={20} /> },
   { id: 'sukatan',    label: 'Sukatan Pelajaran',    icon: <Layers size={20} /> },
   { id: 'semak-ai',   label: 'Semak Ujian AI',       icon: <Mic2 size={20} /> },
@@ -70,6 +72,7 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
 
   const renderContent = () => {
     switch (currentView) {
+      case 'announcements': return <Announcements />;
       case 'hafazan':    return <RecordHafazan />;
       case 'attendance': return <ManageAttendance />;
       case 'report':     return <UploadReport />;

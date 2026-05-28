@@ -13,7 +13,15 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\FinancialAnalyticsController;
 use App\Http\Controllers\ChatbotController;
 
+use App\Http\Controllers\MudirEvaluationController;
+use App\Http\Controllers\WeeklyReportController;
+
 Route::get('/achievements/student/{studentId}', [AchievementController::class, 'index']);
+Route::post('/achievements', [AchievementController::class, 'store']);
+Route::delete('/achievements/{id}', [AchievementController::class, 'destroy']);
+Route::apiResource('mudir-evaluations', MudirEvaluationController::class)->only(['index', 'store']);
+Route::apiResource('reports/weekly', WeeklyReportController::class)->only(['index', 'store']);
+Route::post('/students/set-target', [StudentController::class, 'setTarget']);
 Route::get('/analytics/financial', [FinancialAnalyticsController::class, 'index']);
 Route::post('/chatbot/handle', [ChatbotController::class, 'handle']);
 Route::post('/ai/import-alumni', [AIController::class, 'importAlumni']);
@@ -63,7 +71,10 @@ Route::post('/users/student-account', [\App\Http\Controllers\UserController::cla
 
 // Miscellaneous
 Route::get('/students/dashboard/{id}', [StudentController::class, 'studentDashboard']);
+use App\Http\Controllers\AnnouncementController;
+
 Route::get('/notifications', function() { return response()->json([]); }); // Placeholder for now
+Route::apiResource('announcements', AnnouncementController::class)->only(['index', 'store', 'destroy']);
 
 // Profile
 Route::middleware('auth:sanctum')->group(function () {

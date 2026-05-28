@@ -23,6 +23,8 @@ export function ManageAttendance() {
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [classImage, setClassImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     let scanner: any = null;
@@ -96,6 +98,11 @@ export function ManageAttendance() {
   };
 
   const handleSave = async () => {
+    if (!classImage) {
+      alert('Sila muat naik Wins Gambar (Gambar Kelas) terlebih dahulu sebelum menyimpan kehadiran.');
+      return;
+    }
+
     const records = studentsInClass.map(s => ({
       studentId: s.id,
       classId: selectedClassId,
@@ -105,13 +112,28 @@ export function ManageAttendance() {
     }));
 
     try {
+      // In real scenario, we would use FormData to upload image and records
       await axios.post('/api/attendance/bulk', { records });
       dispatch({ type: 'MARK_ATTENDANCE', payload: records });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      setClassImage(null);
+      setImagePreview(null);
     } catch (error: any) {
       console.error('Error saving attendance:', error);
       alert('Gagal menyimpan kehadiran: ' + (error.response?.data?.message || 'Ralat sambungan rangkaian.'));
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setClassImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -256,8 +278,39 @@ export function ManageAttendance() {
               ))}
               {studentsInClass.length === 0 && <p className="px-6 py-10 text-center text-gray-400 text-sm">Tiada pelajar dalam kelas ini.</p>}
             </div>
+            
+            <div className="p-6 bg-white border-t border-gray-200 space-y-4">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <Camera size={18} className="text-teal-600" />
+                Wins Gambar <span className="text-red-500 text-xs">(Wajib)</span>
+              </h3>
+              <p className="text-sm text-gray-500">Sila muat naik gambar aktiviti kelas sebagai bukti selesai sesi pembelajaran.</p>
+              
+              <div className="flex items-center gap-4">
+                <label className="flex flex-col items-center justify-center w-full max-w-xs h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-teal-400 transition-colors">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover rounded-xl" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-xs text-gray-500 font-medium">Klik untuk muat naik imej</p>
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                </label>
+                {imagePreview && (
+                  <button onClick={() => { setClassImage(null); setImagePreview(null); }} className="text-xs text-red-500 font-bold hover:underline">Buang Gambar</button>
+                )}
+              </div>
+            </div>
+
             <div className="p-4 bg-gray-50 border-t border-gray-200">
-              <button onClick={handleSave} className="w-full py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700">Simpan Kehadiran</button>
+              <button 
+                onClick={handleSave} 
+                className={`w-full py-3 text-white font-bold rounded-xl transition-all ${classImage ? 'bg-teal-600 hover:bg-teal-700 shadow-lg shadow-teal-900/20' : 'bg-gray-300 cursor-not-allowed'}`}
+              >
+                {classImage ? 'Simpan Kehadiran & Selesai Kelas' : 'Sila Muat Naik Wins Gambar Dahulu'}
+              </button>
             </div>
           </div>
         </>

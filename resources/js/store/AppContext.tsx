@@ -359,11 +359,13 @@ export function getStudentStreak(state: AppState, studentId: string): number {
   return streak;
 }
 
-export function getStudentRank(juzuk: number): { name: string; icon: string; level: number; nextRank: string; progressToNext: number } {
-  if (juzuk >= 30) return { name: 'Legend Al-Hafiz', icon: '🏆', level: 3, nextRank: 'Completed!', progressToNext: 100 };
-  if (juzuk >= 5)  return { name: 'Elite', icon: '🥈', level: 2, nextRank: 'Legend Al-Hafiz', progressToNext: Math.round((juzuk / 30) * 100) };
-  if (juzuk >= 1)  return { name: 'Warrior', icon: '🛡️', level: 1, nextRank: 'Elite', progressToNext: Math.round((juzuk / 5) * 100) };
-  return { name: 'Beginner', icon: '📖', level: 0, nextRank: 'Warrior', progressToNext: 0 };
+export function getStudentRank(juzuk: number): { name: string; icon: string; image: string; level: number; nextRank: string; progressToNext: number } {
+  if (juzuk >= 30) return { name: 'Legend Al-Hafiz', icon: '🏆', image: '/images/logo/level_1_hafiz.jpeg', level: 3, nextRank: 'Completed!', progressToNext: 100 };
+  if (juzuk >= 20) return { name: 'Master', icon: '💎', image: '/images/logo/master.jpeg', level: 2.5, nextRank: 'Legend Al-Hafiz', progressToNext: Math.round((juzuk / 30) * 100) };
+  if (juzuk >= 10) return { name: 'Elite', icon: '🥈', image: '/images/logo/elite.jpeg', level: 2, nextRank: 'Master', progressToNext: Math.round((juzuk / 20) * 100) };
+  if (juzuk >= 5)  return { name: 'Warrior', icon: '🛡️', image: '/images/logo/warrior.jpeg', level: 1, nextRank: 'Elite', progressToNext: Math.round((juzuk / 10) * 100) };
+  if (juzuk >= 1)  return { name: 'Beginner', icon: '📖', image: '/images/logo/level_1.jpeg', level: 0.5, nextRank: 'Warrior', progressToNext: Math.round((juzuk / 5) * 100) };
+  return { name: 'Peringkat Asas', icon: '🌱', image: '/images/logo/level_1.jpeg', level: 0, nextRank: 'Beginner', progressToNext: 0 };
 }
 
 export function computeAIPrediction(state: AppState, studentId: string) {

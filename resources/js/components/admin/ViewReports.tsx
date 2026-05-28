@@ -1,11 +1,12 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { FileText, Download, BarChart, Loader2 } from 'lucide-react';
 import {
   BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line,
 } from 'recharts';
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+import axios from 'axios';
 import { useAppStore, getStudentAttendanceRate } from '../../store/AppContext';
 
 /* ─── helper: render a hidden "print-ready" div, capture it as PDF ─────────── */
@@ -239,6 +240,20 @@ export function ViewReports() {
   const paymentPrintRef = useRef<HTMLDivElement>(null);
   const [generatingHafazan, setGeneratingHafazan] = useState(false);
   const [generatingPayment, setGeneratingPayment] = useState(false);
+  const [weeklyReports, setWeeklyReports] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchWeeklyReports();
+  }, []);
+
+  const fetchWeeklyReports = async () => {
+    try {
+      const resp = await axios.get('/api/reports/weekly');
+      setWeeklyReports(resp.data);
+    } catch (err) {
+      console.error('Failed to fetch weekly reports', err);
+    }
+  };
 
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const now = new Date();
@@ -357,26 +372,57 @@ export function ViewReports() {
         </ResponsiveContainer>
       </div>
 
-      {/* Recent class reports */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Laporan Kelas Terkini</h3>
-        <div className="space-y-3">
-          {[...state.reports].sort((a: any, b: any) => b.date.localeCompare(a.date)).slice(0, 5).map((r: any) => (
-            <div key={r.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-              <FileText className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between">
-                  <p className="font-medium text-sm text-gray-900">
-                    {state.classes.find((c: any) => c.id === r.classId)?.name} · {state.teachers.find((t: any) => t.id === r.teacherId)?.name}
-                  </p>
-                  <span className="text-xs text-gray-500">{r.date}</span>
+      {/* Recent class reports & Weekly Wins */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-purple-600" />
+            Laporan Mingguan Terkini
+          </h3>
+          <div className="space-y-3">
+            {weeklyReports.slice(0, 5).map((r: any) => (
+              <div key={r.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <FileText className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between">
+                    <p className="font-medium text-sm text-gray-900">
+                      {r.teacher?.name || 'Ustaz/Ustazah'}
+                    </p>
+                    <span className="text-xs text-gray-500">{r.date}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{r.content}</p>
+                  <p className="text-xs text-teal-600 font-bold mt-1">Markah: {r.weekly_score}%</p>
                 </div>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{r.content}</p>
-                {r.fileName && <p className="text-xs text-blue-500 mt-1">📎 {r.fileName}</p>}
               </div>
+            ))}
+            {weeklyReports.length === 0 && <p className="text-gray-400 text-sm">Tiada laporan mingguan diserahkan lagi.</p>}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-6 shadow-sm">
+          <h3 className="text-lg font-black text-amber-900 mb-4 flex items-center gap-2">
+            🏆 Weekly Wins (Minggu Ini)
+          </h3>
+          {weeklyReports.length > 0 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-amber-800 mb-4">Ustaz/Ustazah dengan laporan dan markah KPI tertinggi minggu ini.</p>
+              {weeklyReports
+                .sort((a, b) => b.weekly_score - a.weekly_score)
+                .slice(0, 3)
+                .map((r, i) => (
+                  <div key={r.id} className="bg-white p-4 rounded-xl border border-amber-100 flex items-center gap-4 shadow-sm">
+                    <div className="text-2xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-900">{r.teacher?.name || 'Ustaz/Ustazah'}</p>
+                      <p className="text-xs text-gray-500">{r.date}</p>
+                    </div>
+                    <div className="text-xl font-black text-amber-600">{r.weekly_score}%</div>
+                  </div>
+                ))}
             </div>
-          ))}
-          {state.reports.length === 0 && <p className="text-gray-400 text-sm">Tiada laporan diserahkan lagi.</p>}
+          ) : (
+            <p className="text-amber-700 text-sm">Belum ada pemenang minggu ini.</p>
+          )}
         </div>
       </div>
 

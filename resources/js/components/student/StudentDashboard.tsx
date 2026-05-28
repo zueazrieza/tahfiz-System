@@ -15,20 +15,20 @@ import {
   DollarSign,
   Bell,
   Loader2,
-  QrCode,
-  MessageSquare
+  MessageSquare,
+  Award
 } from 'lucide-react';
 import { LearningSchedule } from './LearningSchedule';
 import { HafazanTarget } from './HafazanTarget';
 import { Achievements } from './Achievements';
 import { StudentAIPrediction } from './StudentAIPrediction';
 import { HafazanAI } from '../hafazan/HafazanAI';
+import { HafazanLevelSelector } from '../hafazan/HafazanLevelSelector';
 import { AITajwidBuddy } from './AITajwidBuddy';
 import { StudyRoadmap } from '../shared/StudyRoadmap';
 import { ProfileView } from '../profile/ProfileView';
-import { ViewPayments } from '../parent/ViewPayments';
-import { Notifications } from '../parent/Notifications';
-import { StudentQRCode } from './StudentQRCode';
+import { InfoCenter } from '../shared/InfoCenter';
+import { ThemeToggle } from '../shared/ThemeToggle';
 import { useAppStore } from '../../store/AppContext';
 
 interface StudentDashboardProps {
@@ -36,20 +36,19 @@ interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-type StudentView = 'home' | 'schedule' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'payment' | 'notifications' | 'tajwid-buddy' | 'qrcode';
+type StudentView = 'home' | 'schedule' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'info-center' | 'tajwid-buddy' | 'level-selection';
 
 const navItems: { id: StudentView; label: string; icon: React.ReactNode }[] = [
   { id: 'home',         label: 'Papan Pemuka',      icon: <LayoutDashboard size={20} /> },
   { id: 'schedule',     label: 'Jadual Pelajaran',  icon: <Calendar size={20} /> },
   { id: 'target',       label: 'Sasaran Hafazan',   icon: <Target size={20} /> },
-  { id: 'payment',      label: 'Status Yuran',      icon: <DollarSign size={20} /> },
-  { id: 'notifications', label: 'Pemberitahuan',    icon: <Bell size={20} /> },
+  { id: 'info-center',  label: 'Pusat Maklumat',    icon: <Bell size={20} /> },
   { id: 'pembelajaran', label: 'Pelan Pengajian',   icon: <Layers size={20} /> },
   { id: 'penilaian-ai', label: 'Penilaian AI (Beta)',  icon: <Mic2 size={20} /> },
   { id: 'achievements', label: 'Pencapaian',         icon: <Trophy size={20} /> },
   { id: 'ai',           label: 'Ramalan AI',         icon: <Brain size={20} /> },
   { id: 'tajwid-buddy', label: 'AI Tajwid Buddy',   icon: <MessageSquare size={20} /> },
-  { id: 'qrcode',       label: 'Kod QR Kehadiran',  icon: <QrCode size={20} /> },
+  { id: 'level-selection', label: 'Peringkat Hafazan', icon: <Award size={20} /> },
   { id: 'profile',      label: 'Profil Saya',        icon: <Users size={20} /> },
 ];
 
@@ -126,10 +125,9 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
       case 'penilaian-ai': return <HafazanAI />;
       case 'pembelajaran': return <StudyRoadmap />;
       case 'profile':      return <ProfileView userId={authUser?.id || ''} />;
-      case 'payment':      return <ViewPayments childId={String(student?.id || '')} readOnly={true} />;
-      case 'notifications': return <Notifications />;
+      case 'info-center':  return <InfoCenter />;
       case 'tajwid-buddy': return <AITajwidBuddy />;
-      case 'qrcode':       return <StudentQRCode student={student} />;
+      case 'level-selection': return <HafazanLevelSelector currentRank={dashboardData?.rankName} />;
       default:
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -156,14 +154,15 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
                     <span style={{ background: '#dcfce7', color: '#16a34a', fontSize: '0.72rem', fontWeight: 700, borderRadius: '999px', padding: '2px 10px' }}>{dashboardData?.juzukCompleted ?? 0} Juzuk Dihafal</span>
                   </div>
                 </div>
+
                 <button 
-                  onClick={() => setCurrentView('qrcode')}
+                  onClick={() => setCurrentView('level-selection')}
                   style={{ 
                     padding: '0.75rem', 
                     borderRadius: '12px', 
                     background: '#fff', 
-                    border: '1px solid #16a34a', 
-                    color: '#16a34a',
+                    border: '1px solid #7c3aed', 
+                    color: '#7c3aed',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
@@ -171,11 +170,11 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
                     gap: '4px',
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf4'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#faf5ff'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
                 >
-                  <QrCode size={24} />
-                  <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>IMBAS HADIR</span>
+                  <Award size={24} />
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>LEVEL</span>
                 </button>
               </div>
             </div>
@@ -223,12 +222,12 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#f3f4f6', overflow: 'hidden' }}>
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-100 dark:bg-slate-950 transition-colors duration-500">
       {/* ─── SIDEBAR ─── */}
       {sidebarOpen && (
-        <aside style={{
+        <aside className="transition-colors duration-500 from-[#1A4D50] to-[#6FC7CB] dark:from-slate-900 dark:to-slate-800" style={{
           width: '200px', flexShrink: 0,
-          background: 'linear-gradient(180deg, #1A4D50 0%, #6FC7CB 100%)',
+          background: 'linear-gradient(180deg, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%)',
           display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',
           boxShadow: '8px 0 30px rgba(0,0,0,0.1)',
         }}>
@@ -260,7 +259,8 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
               );
             })}
           </nav>
-          <div style={{ padding: '0.75rem 0.6rem 1.25rem' }}>
+          <div style={{ padding: '0.75rem 0.6rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+            <ThemeToggle />
             <button onClick={onLogout}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.6rem',

@@ -81,12 +81,23 @@ export function Achievements() {
     <div className="space-y-6">
       <div><h2 className="text-2xl font-semibold text-gray-900">Achievements & Ranking</h2><p className="text-gray-600 mt-1">Your badges, awards, and class ranking</p></div>
 
-      {/* Current Rank */}
-      <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 border-2 border-purple-200">
-        <div className="flex items-start gap-4">
-          <div className="text-6xl">{rank.icon}</div>
-          <div className="flex-1">
-            <h3 className="text-2xl font-semibold text-gray-900">{rank.name}</h3>
+      <div className="bg-gradient-to-br from-[#1A4D50]/5 to-teal-50 rounded-[40px] p-10 border border-teal-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+        <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-teal-500 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+            <img 
+              src={rank.image} 
+              alt={rank.name} 
+              className="w-40 h-40 object-cover rounded-[32px] shadow-2xl relative z-10 border-4 border-white" 
+            />
+            <div className="absolute -bottom-4 -right-4 bg-white p-3 rounded-2xl shadow-xl z-20">
+              <span className="text-3xl">{rank.icon}</span>
+            </div>
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <p className="text-teal-600 font-black text-xs uppercase tracking-[0.3em] mb-2">PANGKAT SEMASA ANDA</p>
+            <h3 className="text-4xl font-black text-slate-800 uppercase tracking-tight">{rank.name}</h3>
             <p className="text-gray-700 mt-1">{student?.juzukCompleted ?? 0} Juzuk Diselesaikan · 🔥 {streak} hari berturutan</p>
             <div className="mt-4">
               <div className="flex items-center justify-between text-sm text-gray-700 mb-2">

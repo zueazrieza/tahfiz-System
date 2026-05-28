@@ -127,4 +127,37 @@ class AchievementController extends Controller
             );
         }
     }
+
+    /**
+     * Store a manually awarded achievement.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'name' => 'required|string',
+            'type' => 'required|string',
+            'earned_at' => 'nullable|date',
+        ]);
+
+        $achievement = Achievement::create([
+            'student_id' => $validated['student_id'],
+            'name' => $validated['name'],
+            'type' => $validated['type'],
+            'earned_at' => $validated['earned_at'] ?? now(),
+        ]);
+
+        return response()->json($achievement, 201);
+    }
+
+    /**
+     * Remove an achievement.
+     */
+    public function destroy($id)
+    {
+        $achievement = Achievement::findOrFail($id);
+        $achievement->delete();
+
+        return response()->json(['message' => 'Achievement removed successfully']);
+    }
 }
