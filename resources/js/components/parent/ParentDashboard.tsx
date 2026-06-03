@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, BookOpen, Calendar, DollarSign, Bell, Brain, LogOut, LayoutDashboard, X } from 'lucide-react';
+import { User, BookOpen, Calendar, DollarSign, Bell, Brain, LogOut, LayoutDashboard, X, Menu } from 'lucide-react';
 import { ViewProgress } from './ViewProgress';
 import { ViewAttendance } from './ViewAttendance';
 import { ViewPayments } from './ViewPayments';
@@ -249,7 +249,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
       <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem' }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', padding: '0.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-          <X size={22} />
+          {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
         {renderContent()}
       </main>

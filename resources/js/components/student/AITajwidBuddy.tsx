@@ -84,7 +84,7 @@ export function AITajwidBuddy() {
       <div className="w-64 bg-slate-50 border-r border-slate-200 hidden lg:flex flex-col p-6">
          <div className="flex items-center gap-2 mb-8 text-[#1A4D50]">
             <History className="w-5 h-5" />
-            <h4 className="font-black text-xs uppercase tracking-widest">History</h4>
+            <h4 className="font-black text-xs uppercase tracking-widest">Sejarah</h4>
          </div>
          <div className="flex-1 space-y-3">
              <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm text-[11px] font-bold text-slate-500 cursor-pointer hover:bg-[#1A4D50] hover:text-white transition-all">
@@ -98,7 +98,7 @@ export function AITajwidBuddy() {
              </div>
          </div>
          <button className="flex items-center gap-2 justify-center py-3 text-slate-400 text-[10px] font-bold hover:text-slate-600">
-            <RotateCcw className="w-3 h-3" /> CLEAR HISTORY
+            <RotateCcw className="w-3 h-3" /> PADAM SEJARAH
          </button>
       </div>
 
@@ -113,7 +113,7 @@ export function AITajwidBuddy() {
               <h3 className="font-black text-lg tracking-tight uppercase">Ustaz AI Assistant</h3>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-[10px] font-black text-teal-200 uppercase tracking-widest">Integrated with TMS Database</span>
+                <span className="text-[10px] font-black text-teal-200 uppercase tracking-widest">Bersepadu dengan Pangkalan Data TMS</span>
               </div>
             </div>
           </div>

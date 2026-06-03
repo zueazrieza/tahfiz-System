@@ -12,6 +12,7 @@ import {
   Users, 
   Layers, 
   X,
+  Menu,
   DollarSign,
   Bell,
   Loader2,
@@ -99,7 +100,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
   const student = dashboardData?.student;
   const stats = [
     { label: 'Kemajuan Semasa',  value: `${dashboardData?.juzukCompleted ?? 0} Juzuk`, icon: <BookOpen size={28} />, color: '#10b981', bg: '#f0fdf4' },
-    { label: 'Pangkat Semasa',   value: dashboardData?.rankName ?? 'Beginner',         icon: <Trophy size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
+    { label: 'Pangkat Semasa',   value: dashboardData?.rankName ?? 'Pemula',         icon: <Trophy size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
     { label: 'Hari Berturutan',  value: `${dashboardData?.streak ?? 0} hari`,          icon: <Target size={28} />,   color: '#f59e0b', bg: '#fffbeb' },
   ];
 
@@ -150,7 +151,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '1.2rem', color: '#111' }}>{dashboardData?.student?.name || userName}</p>
                   <p style={{ margin: '0.15rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>Kelas: <strong>{dashboardData?.student?.className || 'Tiada Kelas'}</strong> · Ustaz: <strong>{dashboardData?.student?.teacherName || 'Tiada Murabbi'}</strong></p>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
-                    <span style={{ background: '#ede9fe', color: '#7c3aed', fontSize: '0.72rem', fontWeight: 700, borderRadius: '999px', padding: '2px 10px' }}>🏆 {dashboardData?.rankName || 'Beginner'}</span>
+                    <span style={{ background: '#ede9fe', color: '#7c3aed', fontSize: '0.72rem', fontWeight: 700, borderRadius: '999px', padding: '2px 10px' }}>🏆 {dashboardData?.rankName || 'Pemula'}</span>
                     <span style={{ background: '#dcfce7', color: '#16a34a', fontSize: '0.72rem', fontWeight: 700, borderRadius: '999px', padding: '2px 10px' }}>{dashboardData?.juzukCompleted ?? 0} Juzuk Dihafal</span>
                   </div>
                 </div>
@@ -174,7 +175,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
                   onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
                 >
                   <Award size={24} />
-                  <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>LEVEL</span>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>TAHAP</span>
                 </button>
               </div>
             </div>
@@ -280,7 +281,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
       <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem' }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', padding: '0.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-          <X size={22} />
+          {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
         {renderContent()}
       </main>
