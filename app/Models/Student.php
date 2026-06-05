@@ -12,7 +12,9 @@ class Student extends Model
         'education_background', 'emergency_contact_name', 'emergency_contact_phone',
         'family_income', 'class_id', 'teacher_id', 'parent_id', 'parent_name', 
         'parent_phone', 'parent_ic', 'enrolled_date', 'juzuk_completed', 'intake_juzuk', 
-        'status', 'medical_history', 'admission_type', 'ranking',
+        'status', 'status_khatam', 'medical_history', 'admission_type', 'ranking',
+        'juzuk_semasa', 'purata_sabaq_sehari', 'jenis_bacaan', 'target_bil_juzuk', 'target_ranking',
+        'tarikh_tamat', 'batch',
         'interview_date', 'interview_type', 'interview_time', 'interview_location', 'hafazan_mark', 'tajwid_mark', 'akhlaq_mark', 'notes'
     ];
 
@@ -45,5 +47,20 @@ class Student extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function aiPrediction()
+    {
+        return $this->hasOne(\App\Models\AIPrediction::class, 'student_id');
+    }
+
+    public function hafazanRecords()
+    {
+        return $this->hasMany(\App\Models\HafazanRecord::class, 'student_id');
+    }
+
+    public function attendanceRecords()
+    {
+        return $this->hasMany(\App\Models\Attendance::class, 'student_id');
     }
 }

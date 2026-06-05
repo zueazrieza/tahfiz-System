@@ -22,6 +22,9 @@ class AIPredictionController extends Controller
     public function getByStudent($studentId)
     {
         $prediction = AIPrediction::where('student_id', $studentId)->first();
+        if (!$prediction) {
+            return response()->json(['message' => 'No prediction found'], 404);
+        }
         return response()->json($prediction);
     }
 
@@ -35,13 +38,20 @@ class AIPredictionController extends Controller
             'student_id' => 'required|exists:students,id',
         ]);
 
-        $student = Student::with(['hafazanRecords', 'attendanceRecords', 'payments'])->find($request->student_id);
+        $student = Student::with(['hafazanRecords', 'attendanceRecords'])->find($request->student_id);
         
         // 1. Progress & Speed
         $juzuk = $student->juzuk_completed ?? 0;
         $records = $student->hafazanRecords;
         $totalAyah = $records->sum('ayah_count');
-        $avgAyah = $records->count() > 0 ? round($totalAyah / $records->count(), 1) : 5;
+
+        if ($records->count() > 0) {
+            $avgAyah = round($totalAyah / $records->count(), 1);
+        } elseif (!is_null($student->purata_sabaq_sehari) && $student->purata_sabaq_sehari > 0) {
+            $avgAyah = (float) $student->purata_sabaq_sehari;
+        } else {
+            $avgAyah = null; // genuinely no data
+        }
 
         // 2. Attendance
         $attendance = $student->attendanceRecords;
@@ -52,18 +62,26 @@ class AIPredictionController extends Controller
         }
 
         // 3. Trends & Confidence
-        $trend = ($juzuk >= 15 || $avgAyah >= 10) ? 'Cemerlang' : (($juzuk >= 5 || $avgAyah >= 5) ? 'Baik' : 'Perlu Perhatian');
-        $confidence = min(98, 70 + ($records->count() * 2)) . '%';
+        $trend = ($juzuk >= 15 || ($avgAyah !== null && $avgAyah >= 10))
+            ? 'Cemerlang'
+            : (($juzuk >= 5 || ($avgAyah !== null && $avgAyah >= 5)) ? 'Baik' : 'Perlu Perhatian');
+        $juzukScore  = min(30, round(($juzuk / 30) * 30));
+        $recordScore = min(18, $records->count() * 2);
+        $confidence  = min(98, 50 + $juzukScore + $recordScore) . '%';
 
         // 4. Estimation
-        // 30 juzuk approx 6236 ayah
-        $remainingAyat = (30 - $juzuk) * 208; // approx 208 ayah per juzuk
-        $daysNeeded = $avgAyah > 0 ? ceil($remainingAyat / $avgAyah) : 1000;
-        $completionDate = now()->addDays($daysNeeded)->format('Y-m-d');
+        $remainingAyat = (30 - $juzuk) * 208;
+        if ($avgAyah !== null && $avgAyah > 0) {
+            $daysNeeded = ceil($remainingAyat / $avgAyah);
+            $completionDate = now()->addDays($daysNeeded)->format('Y-m-d');
+        } else {
+            $completionDate = null;
+        }
 
         $rec = 'Teruskan momentum anda.';
         if ($juzuk < 10) $rec = 'Tumpukan pada memantapkan bacaan juzuk awal.';
-        if (intval($attendanceRate) < 80) $rec = 'Kehadiran yang lebih baik akan mempercepatkan hafazan anda.';
+        if ($avgAyah === null) $rec = 'Mula rekodkan hafazan harian anda supaya AI dapat membuat analisis yang lebih tepat.';
+        if ($attendanceRate !== 'N/A' && intval($attendanceRate) < 80) $rec = 'Kehadiran yang lebih baik akan mempercepatkan hafazan anda.';
 
         $prediction = AIPrediction::updateOrCreate(
             ['student_id' => $student->id],
@@ -73,7 +91,7 @@ class AIPredictionController extends Controller
                 'performance_trend' => $trend,
                 'confidence' => $confidence,
                 'recommendation' => $rec,
-                'attendance_rate' => $attendanceRate === 'N/A' ? '90%' : $attendanceRate,
+                'attendance_rate' => ($attendanceRate === 'N/A') ? null : $attendanceRate,
                 'avg_ayah_per_day' => $avgAyah,
             ]
         );

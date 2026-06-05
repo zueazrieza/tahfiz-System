@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\HafazanRecord;
 use App\Models\Attendance;
-use App\Models\Payment;
 use App\Models\AIPrediction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -48,7 +47,6 @@ class AIController extends Controller
         // 1. Fetch data
         $records = HafazanRecord::where('student_id', $studentId)->get();
         $attendances = Attendance::where('student_id', $studentId)->get();
-        $payments = Payment::where('student_id', $studentId)->get();
 
         // 2. Logic Ported from Frontend
         
@@ -71,25 +69,25 @@ class AIController extends Controller
         }
 
         $existingPrediction = AIPrediction::where('student_id', $studentId)->first();
-        $avgSabaqPerDay = count($records) ? $totalSabaqAyah / count($records) : (($existingPrediction && $existingPrediction->avg_ayah_per_day) ? $existingPrediction->avg_ayah_per_day : 5);
+        if (count($records) > 0) {
+            $avgSabaqPerDay = $totalSabaqAyah / count($records);
+        } elseif (!is_null($student->purata_sabaq_sehari) && $student->purata_sabaq_sehari > 0) {
+            $avgSabaqPerDay = (float) $student->purata_sabaq_sehari;
+        } elseif ($existingPrediction && $existingPrediction->avg_ayah_per_day) {
+            $avgSabaqPerDay = $existingPrediction->avg_ayah_per_day;
+        } else {
+            $avgSabaqPerDay = null;
+        }
         $qualityMultiplier = $gradeCount > 0 ? $gradeScoreTotal / $gradeCount : 1.0;
 
-        // Attendance Pattern
-        $attendanceRate = 0.8; // Default
-        if (count($attendances)) {
-            $present = $attendances->whereIn('status', ['Hadir', 'Lewat'])->count();
-            $attendanceRate = $present / count($attendances);
-        }
-
-        // Payment Consistency
-        $paymentScore = 0.8; // Default
-        if (count($payments)) {
-            $paid = $payments->where('status', 'Dibayar')->count();
-            $paymentScore = $paid / count($payments);
-        }
+        // Attendance Pattern — only use real data, no default inflation
+        $hasAttendance = count($attendances) > 0;
+        $attendanceRate = $hasAttendance
+            ? $attendances->whereIn('status', ['Hadir', 'Lewat'])->count() / count($attendances)
+            : 0;
 
         // AI Engine Computation
-        $effectiveRate = $avgSabaqPerDay * $qualityMultiplier * (0.6 + ($attendanceRate * 0.3) + ($paymentScore * 0.1));
+        $effectiveRate = ($avgSabaqPerDay ?? 0) * $qualityMultiplier * (0.7 + ($attendanceRate * 0.3));
         
         // ── AI Optimization with Historical Data ──
         $alumniAvgDays = \App\Models\AlumniRecord::avg('duration_days') ?: 1095;
@@ -106,9 +104,16 @@ class AIController extends Controller
 
         $completionDate = Carbon::now()->addDays($daysLeft);
 
-        // Confidence Level
+        // Confidence Level — base 50% if no data, else 60%
+        $hasAnyData = count($records) > 0 || $avgSabaqPerDay !== null;
+        $confidenceBase = $hasAnyData ? 60 : 50;
         $dataVolumeScore = min(1, count($records) / 30);
-        $confidence = min(99, round(60 + ($dataVolumeScore * 15) + ($attendanceRate * 15) + ($paymentScore * 5) + (($qualityMultiplier - 1) * 10)));
+        $confidence = min(99, round(
+            $confidenceBase
+            + ($dataVolumeScore * 20)
+            + ($hasAttendance ? $attendanceRate * 20 : 0)
+            + (($qualityMultiplier - 1) * 9)
+        ));
 
         // Trend
         $trend = ($attendanceRate >= 0.9 && $qualityMultiplier >= 1.0) ? 'Cemerlang' :
@@ -184,19 +189,19 @@ class AIController extends Controller
                          "• Aplikasi Praktikal: {$varkTechniques}";
 
         // Avg ayah per day
-        $avgTotalAyahPerDay = count($records)
-            ? $records->avg('ayah_count')
-            : $avgSabaqPerDay;
+        $avgTotalAyahPerDay = count($records) ? $records->avg('ayah_count') : $avgSabaqPerDay;
 
         $predictionData = [
             'student_id' => $student->id,
-            'current_progress' => "{$student->juzuk_completed} Juzuk (" . round(($student->juzuk_completed / 30) * 100) . "%)",
+            'current_progress' => $student->juzuk_completed > 0
+                ? "{$student->juzuk_completed} Juzuk (" . round(($student->juzuk_completed / 30) * 100) . "%)"
+                : "Belum Bermula",
             'estimated_completion' => $completionDate->format('Y-m-d'),
             'performance_trend' => $trend,
             'confidence' => "{$confidence}%",
             'recommendation' => $recommendation,
             'attendance_rate' => round($attendanceRate * 100) . "%",
-            'avg_ayah_per_day' => round($avgTotalAyahPerDay),
+            'avg_ayah_per_day' => $avgTotalAyahPerDay !== null ? round($avgTotalAyahPerDay) : 0,
         ];
 
         // 3. Store in DB (Cache)

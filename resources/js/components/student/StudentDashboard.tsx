@@ -37,7 +37,7 @@ interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-type StudentView = 'home' | 'schedule' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'info-center' | 'tajwid-buddy' | 'level-selection';
+export type StudentView = 'home' | 'schedule' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'info-center' | 'tajwid-buddy' | 'level-selection';
 
 const navItems: { id: StudentView; label: string; icon: React.ReactNode }[] = [
   { id: 'home',         label: 'Papan Pemuka',      icon: <LayoutDashboard size={20} /> },
@@ -122,7 +122,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
       case 'schedule':     return <LearningSchedule />;
       case 'target':       return <HafazanTarget />;
       case 'achievements': return <Achievements />;
-      case 'ai':           return <StudentAIPrediction />;
+      case 'ai':           return <StudentAIPrediction onNavigate={setCurrentView} />;
       case 'penilaian-ai': return <HafazanAI />;
       case 'pembelajaran': return <StudyRoadmap />;
       case 'profile':      return <ProfileView userId={authUser?.id || ''} />;

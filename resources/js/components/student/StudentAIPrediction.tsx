@@ -16,19 +16,20 @@ interface AIPredictionData {
   recommendation?: string;
 }
 
-export function StudentAIPrediction() {
+import type { StudentView } from './StudentDashboard';
+
+interface Props {
+  onNavigate?: (view: StudentView) => void;
+}
+
+export function StudentAIPrediction({ onNavigate }: Props) {
   const { state } = useAppStore();
   const [prediction, setPrediction] = useState<AIPredictionData | null>(null);
   const [loading, setLoading] = useState(true);
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const studentUser = state.users?.find(u => u.name === authUser.name && u.role === 'student') 
-    || state.users?.find(u => u.role === 'student');
-  
-  const student = state.students?.find(s => s.id === studentUser?.linkedId) 
-    || state.students?.[0];
-    
-  console.log('AI Debug:', { studentUser, student, authUser });
+  const studentId = authUser.linked_id;
+  const student = state.students?.find(s => String(s.id) === String(studentId));
 
   const streak = student ? getStudentStreak(state, String(student.id)) : 0;
 
@@ -45,8 +46,18 @@ export function StudentAIPrediction() {
       setLoading(true);
       const resp = await axios.get(`/api/ai-predictions/student/${id}`);
       setPrediction(resp.data);
-    } catch (err) {
-      console.error('Failed to fetch AI prediction', err);
+    } catch (err: any) {
+      // No prediction exists yet — auto-generate one
+      if (err.response?.status === 404) {
+        try {
+          const genResp = await axios.post('/api/ai-predictions/generate', { student_id: id });
+          setPrediction(genResp.data);
+        } catch (genErr) {
+          console.error('Failed to auto-generate AI prediction', genErr);
+        }
+      } else {
+        console.error('Failed to fetch AI prediction', err);
+      }
     } finally {
       setLoading(false);
     }
@@ -85,6 +96,47 @@ export function StudentAIPrediction() {
 
   if (loading) return <div className="p-8 text-slate-500 text-center">Menjana analisis AI anda...</div>;
   if (!student) return <div className="p-8 text-slate-500 text-center">Maklumat profil pelajar tidak dijumpai.</div>;
+
+  if (!prediction && (!student.juzukCompleted || student.juzukCompleted < 1)) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-black text-slate-800">Ramalan AI Saya</h2>
+          <p className="text-slate-500 font-medium mt-1">Analisis pintar berdasarkan rekod hafazan dan disiplin anda</p>
+        </div>
+        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-10 text-center gap-4">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center">
+            <BookOpen className="w-10 h-10 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-slate-800 mb-1">Belum Ada Rekod Hafazan</h3>
+            <p className="text-slate-500 text-sm max-w-xs mx-auto">
+              Ramalan AI memerlukan sekurang-kurangnya <strong>1 juzuk</strong> yang telah dihafal.
+              Mulakan perjalanan hafazan anda sekarang!
+            </p>
+          </div>
+          <div className="bg-white rounded-xl border border-emerald-200 p-4 text-sm text-slate-600 text-left w-full max-w-sm">
+            <p className="font-bold text-slate-700 mb-2">📋 Langkah untuk bermula:</p>
+            <ol className="space-y-1 list-decimal list-inside">
+              <li>Pergi ke <strong>Sasaran Hafazan</strong></li>
+              <li>Tetapkan sasaran juzuk anda</li>
+              <li>Rekodkan hafazan harian anda</li>
+              <li>Kembali ke sini untuk lihat ramalan AI!</li>
+            </ol>
+          </div>
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('target')}
+              className="flex items-center gap-2 px-6 py-3 bg-[#1A4D50] text-white rounded-2xl font-black hover:bg-slate-900 shadow-xl transition-all active:scale-95"
+            >
+              <Target className="w-5 h-5" />
+              Mulakan Hafazan Sekarang
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -164,11 +216,37 @@ export function StudentAIPrediction() {
 
           {/* AI Recommendation */}
           <div className={`rounded-xl border-2 p-6 ${trendBg(prediction.performance_trend)}`}>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-3 mb-3">
               <Star className="w-6 h-6" />
               <h3 className="font-bold text-lg">Cadangan AI Untuk Anda</h3>
             </div>
-            <p className="text-sm leading-relaxed">{prediction.recommendation || prediction.recommendations}</p>
+            <div className="space-y-3 text-sm leading-relaxed">
+              {(prediction.recommendation || prediction.recommendations || '')
+                .split('\n\n')
+                .filter(Boolean)
+                .map((section, i) => {
+                  const lines = section.split('\n');
+                  const header = lines[0];
+                  const bullets = lines.slice(1).filter(l => l.trim().startsWith('•'));
+                  const body = lines.slice(1).filter(l => !l.trim().startsWith('•')).join(' ').trim();
+                  return (
+                    <div key={i} className="space-y-1">
+                      <p className="font-semibold">{header}</p>
+                      {body && <p className="opacity-90">{body}</p>}
+                      {bullets.length > 0 && (
+                        <ul className="space-y-0.5 pl-1">
+                          {bullets.map((b, j) => (
+                            <li key={j} className="flex gap-2">
+                              <span className="shrink-0">•</span>
+                              <span className="opacity-90">{b.replace(/^•\s*/, '')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
           </div>
 
           {/* Motivational tip */}

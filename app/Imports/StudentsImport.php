@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\ClassRoom;
+use App\Models\Teacher;
 use App\Models\ParentProfile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
@@ -144,11 +145,11 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 }
 
                 // ── IC No ──
-                $icRaw = $this->pick($row, ['ic_no', 'ic', 'no_ic', 'ic_number', 'no_mykad', 4, 18]);
+                $icRaw = $this->pick($row, ['no_ic_pelajar', 'ic_no', 'ic', 'no_ic', 'ic_number', 'no_mykad', 4, 18]);
                 $icNo  = preg_replace('/[^0-9]/', '', $icRaw);
 
                 // ── Matric No ──
-                $matricNo = $this->pick($row, ['matric', 'no_matrik', 'matric_no', 11]);
+                $matricNo = $this->pick($row, ['no_matrik', 'matric', 'matric_no', 11]);
 
                 // ── Gender ──
                 $genderRaw = strtoupper($this->pick($row, ['m_f', 'gender', 'jantina', 'sex', 13], ''));
@@ -166,24 +167,55 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 }
 
                 // ── DOB & Age ──
-                $dobRaw = $this->pick($row, ['birth_date', 'dob', 'tarikh_lahir', 'date_of_birth', 20]);
+                $dobRaw = $this->pick($row, ['tarikh_lahir', 'birth_date', 'dob', 'date_of_birth', 20]);
                 $dob = $this->parseDate($dobRaw);
                 if (!$dob && $icNo) {
                     $dob = $this->parseIcDob($icNo);
                 }
-                $ageRaw = $this->pick($row, ['age', 'umur', 'age_semasa']);
+                $ageRaw = $this->pick($row, ['umur', 'age', 'age_semasa']);
                 $age = (is_numeric($ageRaw) && (int)$ageRaw > 0) ? (int)$ageRaw : ($dob ? \Carbon\Carbon::parse($dob)->age : 10);
 
-                // ── Class ──
-                $className = $this->pick($row, ['class_2026', 'class_2025', 'class', 'kelas', 'halaqah_kelas', 'halaqahkelas', 15]);
+                // ── Class & Teacher (auto-create) ──
+                // HALAQAH KELAS is primary, fallback to KELAS 2026
+                $className = $this->pick($row, ['halaqah_kelas', 'halaqahkelas', 'kelas_2026', 'class_2026', 'class_2025', 'class', 'kelas', 15]);
                 $classId = null;
                 if ($className && $className !== '- None -') {
-                    $classRoom = ClassRoom::firstOrCreate(['name' => $className]);
+                    // Extract teacher name from "HALAQAH <nama>" pattern
+                    $teacher = null;
+                    if (str_starts_with(strtoupper($className), 'HALAQAH ')) {
+                        $teacherName = trim(substr($className, strlen('HALAQAH ')));
+                        if ($teacherName) {
+                            $teacher = Teacher::firstOrCreate(
+                                ['name' => $teacherName],
+                                ['status' => 'Aktif']
+                            );
+                        }
+                    }
+
+                    // If NAMA MURABBI column is present, use it to create/find teacher too
+                    $murabbName = $this->pick($row, ['nama_murabbi', 'murabbi', 'nama_guru']);
+                    if (!$teacher && $murabbName) {
+                        $teacher = Teacher::firstOrCreate(
+                            ['name' => $murabbName],
+                            ['status' => 'Aktif']
+                        );
+                    }
+
+                    $classRoom = ClassRoom::firstOrCreate(
+                        ['name' => $className],
+                        ['teacher_id' => $teacher?->id]
+                    );
+
+                    // Assign teacher to existing class if not yet set
+                    if ($teacher && !$classRoom->teacher_id) {
+                        $classRoom->update(['teacher_id' => $teacher->id]);
+                    }
+
                     $classId = $classRoom->id;
                 }
 
                 // ── Dates ──
-                $enrolledRaw  = $this->pick($row, ['register', 'enrolled_date', 'tarikh_daftar', 'tarikh_masuk', 'registration_date', 22]);
+                $enrolledRaw  = $this->pick($row, ['tarikh_daftar', 'register', 'enrolled_date', 'tarikh_masuk', 'registration_date', 22]);
                 $enrolledDate = $this->parseDate($enrolledRaw) ?? now()->format('Y-m-d');
 
                 // ── Status ──
@@ -203,27 +235,57 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                 $intake = $this->pick($row, ['intake', 'session', 'sesi', 13, 46]);
 
                 // ── Intake Juzuk & Juzuk Completed ──
-                $intakeJuzukRaw = $this->pick($row, ['intake_juzuk', 'juzuk_awal', 'juzuk']);
+                $intakeJuzukRaw = $this->pick($row, ['intake_juzuk', 'juzuk_awal']);
                 $intakeJuzuk = (is_numeric($intakeJuzukRaw) && (int)$intakeJuzukRaw <= 30) ? (int)$intakeJuzukRaw : 0;
-                
-                if ($intakeJuzuk === 0 && is_numeric($intake) && (int)$intake <= 30) {
-                    $intakeJuzuk = (int)$intake;
-                }
 
                 $juzukCompletedRaw = $this->pick($row, ['bil_juzuk', 'bilangan_juzuk', 'juzuk_completed', 'juzuk_tamat']);
                 $juzukCompleted = (is_numeric($juzukCompletedRaw) && (int)$juzukCompletedRaw <= 30) ? (int)$juzukCompletedRaw : $intakeJuzuk;
 
                 // ── Ranking ──
                 $rankingRaw = $this->pick($row, ['ranking', 'ranking_semasa', 'no_ranking']);
-                $ranking = (is_numeric($rankingRaw)) ? (int)$rankingRaw : null;
+                if (is_numeric($rankingRaw)) {
+                    $ranking = (int)$rankingRaw;
+                } else {
+                    $rankingMap = [
+                        'elite'       => 1,
+                        'warrior'     => 2,
+                        'challenger'  => 3,
+                        'apprentice'  => 4,
+                        'beginner'    => 5,
+                    ];
+                    $ranking = $rankingMap[strtolower($rankingRaw)] ?? null;
+                }
+
+                // ── Hafazan fields ──
+                $juzukSemasaRaw = $this->pick($row, ['juzuk_semasa']);
+                $juzukSemasa = (is_numeric($juzukSemasaRaw) && (int)$juzukSemasaRaw <= 30) ? (int)$juzukSemasaRaw : null;
+
+                $purataSabaqRaw = $this->pick($row, ['purata_sabaq_hari', 'purata_sabaq_sehari', 'purata_sabaq']);
+                $purataSabaq = is_numeric($purataSabaqRaw) ? (float)$purataSabaqRaw : null;
+
+                $jenisBacaan = $this->pick($row, ['jenis_bacaan']) ?: null;
+
+                $targetBilJuzRaw = $this->pick($row, ['target_juzuk', 'target_bil_juzuk']);
+                $targetBilJuzuk = (is_numeric($targetBilJuzRaw) && (int)$targetBilJuzRaw <= 30) ? (int)$targetBilJuzRaw : null;
+
+                $targetRankingRaw = $this->pick($row, ['target_ranking']);
+                $targetRanking = is_numeric($targetRankingRaw) ? (int)$targetRankingRaw : null;
+
+                // ── New fields ──
+                $tarikhTamatRaw = $this->pick($row, ['tarikh_tamat', 'tarikh_tamat_2']);
+                $tarikhTamat = $this->parseDate($tarikhTamatRaw);
+
+                $batch = $this->pick($row, ['batch']) ?: null;
+
+                $statusKhatam = $this->pick($row, ['status_khatam', 'status khatam']) ?: null;
 
                 // ── Parent info ──
-                $fatherName = $this->pick($row, ['name__father_', 'name_father', 'nama_bapa', 'father_name', 26]);
-                $fatherIcRaw = $this->pick($row, ['ic_no__father_', 'ic_no_father', 'ic_bapa', 'father_ic', 27]);
+                $fatherName = $this->pick($row, ['nama_bapa', 'name__father_', 'name_father', 'father_name', 26]);
+                $fatherIcRaw = $this->pick($row, ['no_ic_bapa', 'ic_no__father_', 'ic_no_father', 'ic_bapa', 'father_ic', 27]);
                 $fatherIc = preg_replace('/[^0-9]/', '', $fatherIcRaw);
 
-                $motherName = $this->pick($row, ['name__mother_', 'name_mother', 'nama_ibu', 'mother_name', 35]);
-                $motherIcRaw = $this->pick($row, ['ic_no__mother_', 'ic_no_mother', 'ic_ibu', 'mother_ic', 36]);
+                $motherName = $this->pick($row, ['nama_ibu', 'name__mother_', 'name_mother', 'mother_name', 35]);
+                $motherIcRaw = $this->pick($row, ['no_ic_ibu', 'ic_no__mother_', 'ic_no_mother', 'ic_ibu', 'mother_ic', 36]);
                 $motherIc = preg_replace('/[^0-9]/', '', $motherIcRaw);
 
                 // Phone numbers (if available in excel, using common indices)
@@ -309,8 +371,16 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     'parent_name'      => $primaryParentName ?: null,
                     'parent_ic'        => $primaryParentIc ?: null,
                     'parent_phone'     => $primaryParentPhone ?: null,
-                    'admission_type'   => 'tetap',
-                    'ranking'          => $ranking,
+                    'admission_type'      => 'tetap',
+                    'ranking'             => $ranking,
+                    'juzuk_semasa'        => $juzukSemasa,
+                    'purata_sabaq_sehari' => $purataSabaq,
+                    'jenis_bacaan'        => $jenisBacaan,
+                    'target_bil_juzuk'    => $targetBilJuzuk,
+                    'target_ranking'      => $targetRanking,
+                    'tarikh_tamat'        => $tarikhTamat,
+                    'batch'               => $batch,
+                    'status_khatam'       => $statusKhatam,
                 ];
 
                 $existingStudent = null;
@@ -348,35 +418,22 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
                 $student->parents()->sync($parentIds);
 
-                // ── Update AI Prediction directly from imported data ──
-                $purataSabaqRaw = $this->pick($row, ['purata_sabaq_sehari', 'purata_sabaq', 'sabaq_sehari', 'purata']);
-                $targetBilJuzRaw = $this->pick($row, ['target_bil_juz__akhir_jun_', 'target_bil_juz', 'target_juzuk', 'target_bil_juz_akhir_jun_']);
-                $juzukSemasaRaw = $this->pick($row, ['juzuk_semasa', 'juzuk_semasa_']);
-
-                if ($purataSabaqRaw || $targetBilJuzRaw || $juzukSemasaRaw) {
-                    $avgAyahPerDay = 5; // Default
-                    if (!empty($purataSabaqRaw)) {
-                        if (preg_match('/([0-9\.]+)/', $purataSabaqRaw, $matches)) {
-                            $val = (float)$matches[1];
-                            if ($val > 0) {
-                                if ($val < 3) {
-                                    $avgAyahPerDay = round($val * 15); // assume pages to ayat
-                                } else {
-                                    $avgAyahPerDay = round($val);
-                                }
-                            }
-                        }
+                // ── Update AI Prediction from imported hafazan data ──
+                if ($purataSabaq || $targetBilJuzuk || $juzukSemasa) {
+                    $avgAyahPerDay = 5;
+                    if ($purataSabaq !== null && $purataSabaq > 0) {
+                        $avgAyahPerDay = $purataSabaq < 3
+                            ? round($purataSabaq * 15)  // pages → ayat
+                            : round($purataSabaq);
                     }
 
                     $remainingJuzuk = 30 - $student->juzuk_completed;
-                    $remainingAyat = $remainingJuzuk * 208;
-                    $effectiveRate = max($avgAyahPerDay, 0.5);
-                    $daysLeft = ceil($remainingAyat / $effectiveRate);
+                    $daysLeft = ceil(($remainingJuzuk * 208) / max($avgAyahPerDay, 0.5));
                     $completionDate = \Carbon\Carbon::now()->addDays($daysLeft);
 
-                    $recommendation = "Sasaran akhir Jun: " . ($targetBilJuzRaw ?: '—') . " Juzuk. Purata sabaq sehari: " . ($purataSabaqRaw ?: '—') . ".";
-                    if ($juzukSemasaRaw) {
-                        $recommendation .= " Sedang menghafal: " . $juzukSemasaRaw . ".";
+                    $recommendation = "Sasaran: " . ($targetBilJuzuk ?? '—') . " Juzuk. Purata sabaq sehari: " . ($purataSabaq ?? '—') . ".";
+                    if ($juzukSemasa) {
+                        $recommendation .= " Sedang menghafal: Juzuk {$juzukSemasa}.";
                     }
                     $recommendation .= " Kekalkan momentum untuk mencapai sasaran!";
 
