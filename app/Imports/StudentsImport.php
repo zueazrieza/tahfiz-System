@@ -265,7 +265,7 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
                 $jenisBacaan = $this->pick($row, ['jenis_bacaan']) ?: null;
 
-                $targetBilJuzRaw = $this->pick($row, ['target_juzuk', 'target_bil_juzuk']);
+                $targetBilJuzRaw = $this->pick($row, ['target_juzuk', 'target_bil_juzuk', 'target_bil_juz__akhir_jun_', 'target_bil_juz_akhir_jun_']);
                 $targetBilJuzuk = (is_numeric($targetBilJuzRaw) && (int)$targetBilJuzRaw <= 30) ? (int)$targetBilJuzRaw : null;
 
                 $targetRankingRaw = $this->pick($row, ['target_ranking']);
@@ -431,7 +431,7 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     $daysLeft = ceil(($remainingJuzuk * 208) / max($avgAyahPerDay, 0.5));
                     $completionDate = \Carbon\Carbon::now()->addDays($daysLeft);
 
-                    $recommendation = "Sasaran: " . ($targetBilJuzuk ?? '—') . " Juzuk. Purata sabaq sehari: " . ($purataSabaq ?? '—') . ".";
+                    $recommendation = "Sasaran akhir Jun: " . ($targetBilJuzuk ?? '—') . " Juzuk. Purata sabaq sehari: " . ($purataSabaq ?? '—') . ".";
                     if ($juzukSemasa) {
                         $recommendation .= " Sedang menghafal: Juzuk {$juzukSemasa}.";
                     }

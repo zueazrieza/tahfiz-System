@@ -29,4 +29,19 @@ class ClassRoom extends Model
     {
         return $this->hasMany(Student::class, 'class_id');
     }
+
+    protected static function booted()
+    {
+        static::created(function ($class) {
+            \App\Models\ActivityLog::log('Halaqah Baharu Ditambah', $class->name);
+        });
+
+        static::updated(function ($class) {
+            \App\Models\ActivityLog::log('Maklumat Halaqah Dikemas Kini', $class->name);
+        });
+
+        static::deleted(function ($class) {
+            \App\Models\ActivityLog::log('Halaqah Dipadam', $class->name);
+        });
+    }
 }

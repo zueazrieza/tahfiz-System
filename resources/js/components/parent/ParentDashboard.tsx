@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { usePolling } from '../../hooks/usePolling';
 import { User, BookOpen, Calendar, DollarSign, Bell, Brain, LogOut, LayoutDashboard, X, Menu } from 'lucide-react';
 import { ViewProgress } from './ViewProgress';
 import { ViewAttendance } from './ViewAttendance';
@@ -43,6 +44,13 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
     fetchChildren();
     fetchUnreadCount();
   }, []);
+
+  // ── Live polling: refresh children data & notif count every 30 s ────────
+  usePolling(() => {
+    fetchChildren();
+    fetchUnreadCount();
+  }, 30_000);
+
 
   const fetchUnreadCount = async () => {
     try {

@@ -63,4 +63,20 @@ class Student extends Model
     {
         return $this->hasMany(\App\Models\Attendance::class, 'student_id');
     }
+
+    protected static function booted()
+    {
+        static::created(function ($student) {
+            \App\Models\ActivityLog::log('Pelajar Baharu Didaftarkan', $student->name);
+        });
+
+        static::updated(function ($student) {
+            // Avoid logging target updates as a generic profile edit if they are specific, but a generic profile update is fine.
+            \App\Models\ActivityLog::log('Profil Pelajar Dikemas Kini', $student->name);
+        });
+
+        static::deleted(function ($student) {
+            \App\Models\ActivityLog::log('Pelajar Dipadam', $student->name);
+        });
+    }
 }

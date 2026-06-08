@@ -29,4 +29,19 @@ class Teacher extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    protected static function booted()
+    {
+        static::created(function ($teacher) {
+            \App\Models\ActivityLog::log('Murabbi Baharu Didafatar', $teacher->name);
+        });
+
+        static::updated(function ($teacher) {
+            \App\Models\ActivityLog::log('Profil Murabbi Dikemas Kini', $teacher->name);
+        });
+
+        static::deleted(function ($teacher) {
+            \App\Models\ActivityLog::log('Murabbi Dipadam', $teacher->name);
+        });
+    }
 }

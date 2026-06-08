@@ -33,4 +33,12 @@ class MudirEvaluation extends Model
     {
         return $this->belongsTo(User::class, 'evaluator_id');
     }
+
+    protected static function booted()
+    {
+        static::created(function ($eval) {
+            $studentName = $eval->student?->name ?? 'Pelajar';
+            \App\Models\ActivityLog::log('Penilaian Mudir Selesai', "{$studentName} (Juzuk {$eval->juzuk} - {$eval->surah})");
+        });
+    }
 }

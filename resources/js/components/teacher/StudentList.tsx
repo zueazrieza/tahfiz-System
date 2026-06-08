@@ -6,11 +6,11 @@ import axios from 'axios';
 export function StudentList() {
   const { state } = useAppStore();
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => 
-    t.email === authUser.email || 
+  const teacher = state.teachers.find(t =>
+    t.email === authUser.email ||
     (authUser.name && t.name.toLowerCase().includes(authUser.name.toLowerCase().split(' ').slice(-1)[0]))
   ) ?? state.teachers[0];
-  
+
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
@@ -50,7 +50,7 @@ export function StudentList() {
       const resp = await axios.get(`/api/students`, { params: { classId: selectedClassId } });
       const data = resp.data;
       setStudents(data);
-      
+
       // Fetch last records for each student
       data.forEach((student: any) => fetchLastRecord(student.id));
     } catch (err) {
@@ -83,9 +83,9 @@ export function StudentList() {
           <h2 className="text-2xl font-semibold text-gray-900">My Students</h2>
           <p className="text-gray-600 mt-1">View all students in your classes</p>
         </div>
-        <select 
-          value={selectedClassId} 
-          onChange={e => setSelectedClassId(e.target.value)} 
+        <select
+          value={selectedClassId}
+          onChange={e => setSelectedClassId(e.target.value)}
           className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         >
           {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -135,14 +135,14 @@ export function StudentList() {
                 </div>
                 <div className="mt-3">
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-green-500 rounded-full transition-all duration-500" 
-                      style={{ width: `${Math.round(((student.juzukCompleted ?? 0) / 30) * 100)}%` }} 
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.round(((student.juzukCompleted ?? 0) / 30) * 100)}%` }}
                     />
                   </div>
                 </div>
-                <button 
-                  onClick={() => setSelectedStudent(student)} 
+                <button
+                  onClick={() => setSelectedStudent(student)}
                   className="w-full mt-4 flex items-center justify-center gap-2 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <Eye className="w-4 h-4" /> View Profile

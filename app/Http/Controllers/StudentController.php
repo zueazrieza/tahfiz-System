@@ -426,4 +426,66 @@ class StudentController extends Controller
         // For now, let's just return success for the mock frontend.
         return response()->json(['message' => 'Target set successfully']);
     }
+
+    /**
+     * Live admin dashboard stats — read-only aggregate counts from DB.
+     * Does NOT modify any data.
+     */
+    public function adminStats()
+    {
+        $totalStudents  = \App\Models\Student::count();
+        $activeStudents = \App\Models\Student::where('status', 'Aktif')->count();
+        $totalTeachers  = \App\Models\Teacher::count();
+        $totalClasses   = \App\Models\ClassRoom::count();
+
+        // Monthly revenue: sum of paid payments for current month
+        $monthlyRevenue = \App\Models\Payment::where('status', 'paid')
+            ->whereYear('payment_date', now()->year)
+            ->whereMonth('payment_date', now()->month)
+            ->sum('amount');
+
+        // Pending payments this month
+        $pendingPayments = \App\Models\Payment::where('status', 'pending')
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+
+        // Today's attendance
+        $todayPresent = \App\Models\Attendance::where('date', now()->format('Y-m-d'))
+            ->whereIn('status', ['Hadir', 'Lewat'])
+            ->count();
+
+        $todayAbsent = \App\Models\Attendance::where('date', now()->format('Y-m-d'))
+            ->where('status', 'Tidak Hadir')
+            ->count();
+
+        // New this week (students enrolled in last 7 days)
+        $newThisWeek = \App\Models\Student::where('enrolled_date', '>=', now()->subDays(7)->format('Y-m-d'))->count();
+
+        // Average juzuk completed
+        $avgJuzuk = round(\App\Models\Student::avg('juzuk_completed') ?? 0, 1);
+
+        return response()->json([
+            'totalStudents'   => $totalStudents,
+            'activeStudents'  => $activeStudents,
+            'totalTeachers'   => $totalTeachers,
+            'totalClasses'    => $totalClasses,
+            'monthlyRevenue'  => $monthlyRevenue,
+            'pendingPayments' => $pendingPayments,
+            'todayPresent'    => $todayPresent,
+            'todayAbsent'     => $todayAbsent,
+            'newThisWeek'     => $newThisWeek,
+            'avgJuzuk'        => $avgJuzuk,
+            'lastUpdated'     => now()->toISOString(),
+        ]);
+    }
+
+    /**
+     * Get recent activities across the whole system.
+     */
+    public function adminActivities()
+    {
+        $activities = \App\Models\ActivityLog::orderBy('created_at', 'desc')->limit(20)->get();
+        return response()->json($activities);
+    }
 }

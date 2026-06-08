@@ -95,7 +95,12 @@ export function ManageStudents() {
   };
 
   const filtered = state.students.filter(s => {
-    const matchesSearch = (s.name.toLowerCase().includes(searchTerm.toLowerCase()) || getClassName(s.classId).toString().toLowerCase().includes(searchTerm.toLowerCase()));
+    const studentName = s.name || '';
+    const classNameVal = String(getClassName(s.classId) || '');
+    const matchesSearch = (
+      studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      classNameVal.toLowerCase().includes(searchTerm.toLowerCase())
+    );
     const matchesClass = (!classFilter || String(s.classId) === String(classFilter));
     
     // Logic: If status is 'Aktif', they belong in 'tetap'. 
@@ -740,7 +745,7 @@ export function ManageStudents() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-slate-400 font-medium">Baki Yuran</span>
-                      <span className="text-sm font-bold text-slate-700">RM {state.payments.filter(p => String(p.studentId) === String(selectedStudent.id) && p.status !== 'Dibayar').reduce((acc, curr) => acc + curr.amount, 0)}</span>
+                      <span className="text-sm font-bold text-slate-700">RM {state.payments.filter(p => String(p.studentId) === String(selectedStudent.id) && p.status !== 'Dibayar').reduce((acc, curr) => acc + Number(curr.amount || 0), 0)}</span>
                     </div>
                   </div>
                 </div>

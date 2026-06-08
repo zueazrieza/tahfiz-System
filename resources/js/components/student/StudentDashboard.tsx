@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { usePolling } from '../../hooks/usePolling';
 import { 
   Calendar, 
   Target, 
@@ -62,26 +63,20 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        setLoading(true);
-        const id = authUser.linked_id;
-        if (id) {
-          const res = await axios.get(`/api/students/dashboard/${id}`);
-          setDashboardData(res.data);
-        } else {
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('Error fetching dashboard data', err);
-        setLoading(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboard();
-  }, [authUser.linked_id]);
+  // ── Live polling: refetch student dashboard every 30 s ──────────────────
+  usePolling(async () => {
+    try {
+      const id = authUser.linked_id;
+      if (!id) return;
+      setLoading(true);
+      const res = await axios.get(`/api/students/dashboard/${id}`);
+      setDashboardData(res.data);
+    } catch (err) {
+      console.error('Error fetching dashboard data', err);
+    } finally {
+      setLoading(false);
+    }
+  }, 30_000);
 
   if (!authUser.linked_id) {
     return (

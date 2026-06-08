@@ -76,6 +76,8 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::get('/students/leaderboard/{classId}', [StudentController::class, 'leaderboard']);
         Route::get('/students/dashboard/{id}',    [StudentController::class, 'studentDashboard']);
         Route::get('/teacher/students',           [StudentController::class, 'getTeacherStudents']);
+        Route::get('/admin/stats',                [StudentController::class, 'adminStats']);
+        Route::get('/admin/activities',           [StudentController::class, 'adminActivities']);
         Route::apiResource('students', StudentController::class);
 
         // Teachers

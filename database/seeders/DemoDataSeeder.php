@@ -152,6 +152,39 @@ class DemoDataSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ DemoDataSeeder: 20 students, classes, hafazan, attendance, payments, AI predictions seeded.');
+        // ── Seed Applicants / Prospects for Admission Management ──────────────
+        $applicantNames = [
+            ['Muhammad Daniel', 'Lelaki', 'PROSPECT', null],
+            ['Ahmad Faiq Naufal', 'Lelaki', 'SCHEDULED', '2026-06-10'],
+            ['Aisha Humaira', 'Perempuan', 'INTERVIEW', '2026-06-05'],
+            ['Adam Haris', 'Lelaki', 'ACCEPTED', null],
+            ['Nurul Izzah', 'Perempuan', 'OFFERED', null],
+        ];
+
+        $parentRoslan = User::where('email', 'waris@example.com')->first();
+
+        foreach ($applicantNames as $applicant) {
+            $dob = Carbon::now()->subYears(12)->subMonths(rand(1, 10));
+            Student::create([
+                'name' => $applicant[0],
+                'gender' => $applicant[1],
+                'dob' => $dob->format('Y-m-d'),
+                'age' => $dob->age,
+                'parent_id' => $parentRoslan->id ?? 1,
+                'parent_name' => $parentRoslan->name ?? 'En. Roslan',
+                'parent_phone' => '0123456789',
+                'admission_type' => 'interview',
+                'status' => $applicant[2],
+                'enrolled_date' => Carbon::now()->format('Y-m-d'),
+                'intake_juzuk' => 0,
+                'interview_date' => $applicant[3],
+                'interview_time' => $applicant[3] ? '10:00:00' : null,
+                'interview_type' => $applicant[3] ? 'Fizikal' : null,
+                'interview_location' => $applicant[3] ? 'Bilik Temuduga AKMAL' : null,
+                'notes' => 'Permohonan kemasukan baharu.'
+            ]);
+        }
+
+        $this->command->info('✅ DemoDataSeeder: 20 students, classes, hafazan, attendance, payments, AI predictions + 5 applicants seeded.');
     }
 }

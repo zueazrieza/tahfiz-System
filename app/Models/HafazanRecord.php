@@ -28,4 +28,12 @@ class HafazanRecord extends Model
     {
         return $this->belongsTo(ClassRoom::class);
     }
+
+    protected static function booted()
+    {
+        static::created(function ($record) {
+            $studentName = $record->student?->name ?? 'Pelajar';
+            \App\Models\ActivityLog::log('Tasmik Hafazan Direkodkan', "{$studentName} ({$record->sabaq_surah})");
+        });
+    }
 }

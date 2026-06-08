@@ -1,16 +1,135 @@
 import { useState, useRef } from 'react';
-import { Brain, TrendingUp, Calendar, Download, RefreshCw, Upload, X, CheckCircle, FileSpreadsheet } from 'lucide-react';
+import { Brain, TrendingUp, Calendar, Download, RefreshCw } from 'lucide-react';
 import { useAppStore, computeAIPrediction } from '../../store/AppContext';
-import axios from 'axios';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
+
+/* ─── helper: render a hidden "print-ready" div, capture it as PDF ─────────── */
+async function captureElementAsPDF(
+  element: HTMLElement,
+  filename: string,
+): Promise<void> {
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    backgroundColor: '#ffffff',
+  });
+  if (!canvas || canvas.width === 0 || canvas.height === 0) {
+    throw new Error('Dimensi elemen laporan adalah 0. Pastikan elemen tidak disembunyikan menggunakan display: none.');
+  }
+  const imgData = canvas.toDataURL('image/png');
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pdfW = pdf.internal.pageSize.getWidth();
+  const pdfH = pdf.internal.pageSize.getHeight();
+  
+  const margin = 12; // 12mm margins on all sides for balanced spacing
+  const imgW = pdfW - (margin * 2);
+  const imgH = (canvas.height / canvas.width) * imgW;
+  
+  let heightLeft = imgH;
+  let position = margin;
+  
+  pdf.addImage(imgData, 'PNG', margin, position, imgW, imgH);
+  heightLeft -= (pdfH - (margin * 2));
+  
+  while (heightLeft > 0) {
+    pdf.addPage();
+    position = position - pdfH + (margin * 2);
+    pdf.addImage(imgData, 'PNG', margin, position, imgW, imgH);
+    heightLeft -= (pdfH - (margin * 2));
+  }
+  pdf.save(filename);
+}
+
+/* ─── Printable AI Prediction Report ───────────────────────────────────────── */
+function AIPredictionPrintView({ state, predictions }: { state: any; predictions: any[] }) {
+  const now = new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+  const avgConfidence = predictions.length
+    ? Math.round(predictions.reduce((sum, p) => sum + parseInt(p.confidence), 0) / predictions.length)
+    : 0;
+  const totalAyahAnalyzed = state.hafazanRecords.reduce((sum: number, r: any) => sum + (r.ayahCount ?? 0), 0);
+
+  return (
+    <div style={{ fontFamily: 'Arial, sans-serif', padding: '24px', background: '#fff', color: '#111', width: '780px' }}>
+      {/* Header */}
+      <div style={{ borderBottom: '3px solid #7c3aed', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '56px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+          <div>
+            <h1 style={{ margin: 0, fontSize: '20px', color: '#7c3aed', fontWeight: 900 }}>AKMAL — Laporan Ramalan AI</h1>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555', fontWeight: 'bold' }}>Akademi Al-Quran Amalillah Terengganu</p>
+            <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#777' }}>Lot 2123, Kampung Tebakang Bukit Payung, 21400 Marang, Terengganu</p>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', fontSize: '11px', color: '#555' }}>
+          <div>Dijana: {now}</div>
+          <div>Pelajar Dipantau: {predictions.length}</div>
+        </div>
+      </div>
+
+      {/* Summary Row */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+        {[
+          { label: 'Titik Data Ayat', value: totalAyahAnalyzed.toLocaleString(), color: '#7c3aed' },
+          { label: 'Purata Ketepatan', value: `${avgConfidence}%`, color: '#2563eb' },
+          { label: 'Pelajar Dipantau', value: predictions.length, color: '#16a34a' },
+        ].map(item => (
+          <div key={item.label} style={{ flex: 1, border: '2px solid #e5e7eb', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: item.color }}>{item.value}</div>
+            <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>{item.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div>
+        <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '8px', borderLeft: '4px solid #7c3aed', paddingLeft: '8px' }}>Analisis & Ramalan Individu</h3>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+          <thead>
+            <tr style={{ background: '#f5f3ff' }}>
+              {['Nama Pelajar', 'Kemajuan', 'Anggaran Khatam', 'Kadar Hadir', 'Prestasi', 'Cadangan AI'].map(h => (
+                <th key={h} style={{ border: '1px solid #ddd6fe', padding: '7px 8px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {predictions.map((p, i) => {
+              const trendBg = p.performanceTrend === 'Cemerlang' ? '#dcfce7' : p.performanceTrend === 'Baik' ? '#dbeafe' : '#fee2e2';
+              const trendColor = p.performanceTrend === 'Cemerlang' ? '#15803d' : p.performanceTrend === 'Baik' ? '#1d4ed8' : '#b91c1c';
+              return (
+                <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px', fontWeight: 600 }}>{p.studentName}</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.currentProgress}</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px', fontWeight: 700 }}>{p.estimatedCompletion}</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.attendanceRate} (Purata {p.avgAyahPerDay} ayat/hari)</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>
+                    <span style={{ padding: '2px 8px', borderRadius: '9999px', background: trendBg, color: trendColor, fontSize: '9px', fontWeight: 700 }}>
+                      {p.performanceTrend}
+                    </span>
+                  </td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px', color: '#444' }}>{p.recommendation}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer */}
+      <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '20px', paddingTop: '10px', fontSize: '10px', color: '#aaa', textAlign: 'center' }}>
+        AKMAL Sistem Pengurusan Tahfiz — Laporan AI Rasmi — {now}
+      </div>
+    </div>
+  );
+}
 
 export function AIPrediction() {
   const { state } = useAppStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [importResult, setImportResult] = useState<any>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
 
   const predictions = state.students.map(s => computeAIPrediction(state, s.id)).filter(Boolean) as NonNullable<ReturnType<typeof computeAIPrediction>>[];
 
@@ -25,35 +144,24 @@ export function AIPrediction() {
     setTimeout(() => { setIsGenerating(false); setGenerated(true); }, 1500);
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    setIsImporting(true);
-    setImportResult(null);
-
+  const downloadPDF = async () => {
+    if (!printRef.current) return;
+    setGeneratingPDF(true);
     try {
-      const response = await axios.post('/api/ai/import-alumni', formData);
-      setImportResult({ success: true, message: response.data.message });
-      // Reset after success
-      setTimeout(() => {
-        setShowImportModal(false);
-        setImportResult(null);
-      }, 2000);
-    } catch (error: any) {
-      setImportResult({ 
-        success: false, 
-        message: error.response?.data?.message || 'Gagal mengimport data.' 
-      });
+      await captureElementAsPDF(printRef.current, `AKMAL_AI_Predictions_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+    } catch (err: any) {
+      console.error('AI PDF Error:', err);
+      alert('Gagal menjana PDF Laporan AI: ' + (err.message || err));
     } finally {
-      setIsImporting(false);
+      setGeneratingPDF(false);
     }
   };
 
-  const trendColor = (t: string) => t === 'Mumtaz' ? 'bg-green-100 text-green-700' : t === 'Jayyid' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700';
+  const trendColor = (t: string) => {
+    if (t === 'Cemerlang') return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+    if (t === 'Baik') return 'bg-blue-100 text-blue-800 border border-blue-200';
+    return 'bg-rose-100 text-rose-800 border border-rose-200';
+  };
 
   return (
     <div className="space-y-6">
@@ -63,20 +171,22 @@ export function AIPrediction() {
           <p className="text-gray-600 mt-1">Anggaran khatam dan trend prestasi berkuasa AI</p>
         </div>
         <div className="flex gap-3">
-          <button 
-            onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-bold text-sm"
-          >
-            <Upload className="w-4 h-4" /> DATA SEJARAH
-          </button>
           <button onClick={handleGenerate} disabled={isGenerating}
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
             {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Brain className="w-5 h-5" />}
             {isGenerating ? 'Menganalisis...' : 'Jana Semula'}
           </button>
-          <button onClick={() => { const data = JSON.stringify(predictions, null, 2); const b = new Blob([data], { type: 'application/json' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'ai_predictions.json'; a.click(); }}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            <Download className="w-5 h-5" /> Muat Turun Laporan
+          <button 
+            onClick={downloadPDF} 
+            disabled={generatingPDF}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {generatingPDF ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              <Download className="w-5 h-5" />
+            )}
+            {generatingPDF ? 'Menjana PDF...' : 'Muat Turun Laporan'}
           </button>
         </div>
       </div>
@@ -141,68 +251,12 @@ export function AIPrediction() {
         ))}
       </div>
 
-      {/* ── IMPORT MODAL ── */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[32px] max-w-xl w-full p-8 shadow-2xl animate-in zoom-in duration-300">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center">
-                  <FileSpreadsheet className="w-6 h-6 text-indigo-500" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">Latih Ramalan AI</h3>
-                  <p className="text-slate-400 text-xs">Muat naik data khatam alumni</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowImportModal(false)}
-                className="w-9 h-9 flex items-center justify-center bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-all"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {!importResult ? (
-              <div 
-                className="relative border-2 border-dashed border-slate-100 rounded-3xl p-10 text-center hover:border-indigo-200 transition-all cursor-pointer bg-slate-50/50"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  className="hidden" 
-                  accept=".xlsx,.xls,.csv"
-                />
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
-                  {isImporting ? <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" /> : <Upload className="w-8 h-8 text-indigo-500" />}
-                </div>
-                <p className="font-bold text-slate-700">Klik untuk muat naik fail</p>
-                <p className="text-slate-400 text-xs mt-1">Excel (.xlsx) atau CSV sahaja</p>
-              </div>
-            ) : (
-              <div className={`p-8 rounded-3xl text-center ${importResult.success ? 'bg-emerald-50' : 'bg-red-50'}`}>
-                {importResult.success ? (
-                   <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                ) : (
-                   <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                )}
-                <p className={`font-bold ${importResult.success ? 'text-emerald-700' : 'text-red-700'}`}>
-                  {importResult.message}
-                </p>
-              </div>
-            )}
-
-            <div className="mt-8 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
-               <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2">Format Header Excel:</p>
-               <p className="text-[10px] text-blue-700 leading-relaxed font-mono">
-                 NAME, TARIKH MULA, TARIKH KHATAM, MURABBI, NO MATRIK, NO MYKAD
-               </p>
-            </div>
-          </div>
+      {/* ── Off-screen print containers (invisible, used only for PDF capture) ── */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '780px', opacity: 0, pointerEvents: 'none', zIndex: -9999, overflow: 'hidden', height: '1px' }}>
+        <div ref={printRef} style={{ width: '780px', background: '#ffffff', padding: '24px' }}>
+          <AIPredictionPrintView state={state} predictions={predictions} />
         </div>
-      )}
+      </div>
     </div>
   );
 }

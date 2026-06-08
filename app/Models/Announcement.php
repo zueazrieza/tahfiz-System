@@ -19,4 +19,15 @@ class Announcement extends Model
     {
         return $this->belongsTo(User::class, 'author_id');
     }
+
+    protected static function booted()
+    {
+        static::created(function ($announcement) {
+            \App\Models\ActivityLog::log('Pengumuman Baharu Dibuat', $announcement->title);
+        });
+
+        static::deleted(function ($announcement) {
+            \App\Models\ActivityLog::log('Pengumuman Dipadam', $announcement->title);
+        });
+    }
 }

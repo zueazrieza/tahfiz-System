@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { DollarSign, FileText, CheckCircle, Clock, AlertCircle, Printer, X } from 'lucide-react';
 import { useAppStore, getMonthlyRevenue, getTotalRevenue, getPendingRevenue } from '../../store/AppContext';
 import axios from 'axios';
 
@@ -9,6 +9,7 @@ export function ManagePayments() {
   const { state, dispatch } = useAppStore();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceForm, setInvoiceForm] = useState({ studentId: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), amount: 1300 });
+  const [viewingInvoice, setViewingInvoice] = useState<any>(null);
   const inputCls = 'w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500';
 
   useEffect(() => {
@@ -32,6 +33,10 @@ export function ManagePayments() {
   const pending = getPendingRevenue(state);
 
   const getStudentName = (id: string | number) => state.students.find(s => String(s.id) === String(id))?.name ?? id;
+  const getClassName = (classId: string | number | undefined) => {
+    if (!classId) return '—';
+    return state.classes.find(c => String(c.id) === String(classId))?.name ?? '—';
+  };
 
   const sortedPayments = [...state.payments].sort((a, b) => {
     if (a.year !== b.year) return b.year - a.year;
@@ -50,6 +55,7 @@ export function ManagePayments() {
       });
       dispatch({ type: 'ADD_PAYMENT', payload: res.data });
       setShowInvoiceModal(false);
+      setViewingInvoice(res.data);
     } catch (err) {
       console.error('Error creating invoice:', err);
       alert('Gagal menjana invois.');
@@ -127,10 +133,22 @@ export function ManagePayments() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.dueDate}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.paidDate ?? '—'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button onClick={() => handleToggle(p)}
-                      className={`px-3 py-1 text-xs rounded font-medium ${p.status === 'Dibayar' ? 'bg-orange-100 text-orange-700 hover:bg-orange-200' : 'bg-green-600 text-white hover:bg-green-700'}`}>
-                      {p.status === 'Dibayar' ? 'Tandakan Belum Bayar' : 'Tandakan Dibayar'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {p.status === 'Dibayar' ? (
+                        <span className="text-gray-400 text-xs mr-2">—</span>
+                      ) : (
+                        <button onClick={() => handleToggle(p)}
+                          className="px-3 py-1 text-xs rounded font-medium bg-green-600 text-white hover:bg-green-700 transition-colors">
+                          Tandakan Dibayar
+                        </button>
+                      )}
+                      <button onClick={() => setViewingInvoice(p)}
+                        className="p-1.5 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all"
+                        title="Lihat Invois"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -173,6 +191,259 @@ export function ManagePayments() {
           </div>
         </div>
       )}
+
+      {/* Invoice View Modal */}
+      {viewingInvoice && (
+        <InvoiceViewModal
+          payment={viewingInvoice}
+          onClose={() => setViewingInvoice(null)}
+          getClassName={getClassName}
+        />
+      )}
+    </div>
+  );
+}
+
+function InvoiceViewModal({ payment, onClose, getClassName }: { payment: any; onClose: () => void; getClassName: (id: any) => string }) {
+  const { state } = useAppStore();
+  const student = state.students.find(s => String(s.id) === String(payment.studentId));
+
+  const invoiceNo = `INV-${payment.year}-${String(payment.month).padStart(2, '0')}-${String(payment.id).padStart(4, '0')}`;
+  const invoiceDate = payment.paidDate || payment.dueDate || new Date().toISOString().split('T')[0];
+
+  const getPaymentDescription = (amount: number) => {
+    const amt = Number(amount);
+    if (amt === 1350) return 'Yuran Bulanan Pengajian (RM1000) & Asrama (RM350)';
+    if (amt === 1300) return 'Yuran Bulanan Pengajian (RM950) & Asrama (RM350)';
+    if (amt === 1000) return 'Yuran Pendaftaran Masuk';
+    if (amt === 350) return 'Yuran Pengurusan Asrama';
+    return 'Yuran Pembelajaran';
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-invoice, #printable-invoice * {
+            visibility: visible !important;
+          }
+          #printable-invoice {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            color: black !important;
+            padding: 24px !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden no-print">
+        <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-green-600" /> Paparan Invois
+          </h3>
+          <div className="flex gap-2">
+            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 text-sm font-bold transition-all shadow-sm">
+              <Printer className="w-4 h-4" /> Cetak
+            </button>
+            <button onClick={onClose} className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-slate-600 rounded-xl transition-all">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-8 max-h-[70vh] overflow-y-auto">
+          {/* Invoice Page Container */}
+          <div id="printable-invoice" className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm text-slate-800">
+            {/* Invoice Header */}
+            <div className="flex justify-between items-start gap-4 border-b border-slate-100 pb-6 mb-6">
+              <div className="flex items-center gap-3">
+                <img src="/images/logo.png" alt="AKMAL Logo" className="h-16 w-auto object-contain" onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }} />
+                <div>
+                  <h1 className="text-lg font-black text-emerald-800 tracking-tight">AKMAL HQ</h1>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Akademi Al-Quran Amalillah Terengganu</p>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    Lot 2123, Kampung Tebakang Bukit Payung,<br />
+                    21400 Marang, Terengganu<br />
+                    Tel: 011-1987 4963 | E-mel: info@akmal.edu.my
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className={`inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full mb-3 ${
+                  payment.status === 'Dibayar' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                }`}>
+                  {payment.status}
+                </span>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">No. Invois</p>
+                <p className="text-sm font-bold text-slate-800 mb-2">{invoiceNo}</p>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tarikh</p>
+                <p className="text-xs font-bold text-slate-800">{invoiceDate}</p>
+              </div>
+            </div>
+
+            {/* Bill To Info */}
+            <div className="grid grid-cols-2 gap-8 mb-8">
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Dibilkan Kepada</h3>
+                <p className="text-sm font-black text-slate-800">{student?.name || 'Pelajar'}</p>
+                <p className="text-xs text-slate-500 mt-1">Kelas: {getClassName(student?.classId)}</p>
+                {student?.icNo && <p className="text-xs text-slate-500">No. IC: {student.icNo}</p>}
+              </div>
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Maklumat Penjaga</h3>
+                <p className="text-xs font-bold text-slate-700">{student?.parentName || '—'}</p>
+                {student?.parentPhone && <p className="text-xs text-slate-500 mt-1">Tel: {student.parentPhone}</p>}
+                {student?.address && <p className="text-xs text-slate-500 mt-1">{student.address}</p>}
+              </div>
+            </div>
+
+            {/* Invoice Table */}
+            <table className="w-full text-left border-collapse mb-8">
+              <thead>
+                <tr className="border-b-2 border-slate-100 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-2.5 px-3">Butiran Caj</th>
+                  <th className="py-2.5 px-3 text-center w-20">Kuantiti</th>
+                  <th className="py-2.5 px-3 text-right w-32">Jumlah</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                <tr>
+                  <td className="py-4 px-3 font-semibold">
+                    {getPaymentDescription(payment.amount)}
+                    <span className="block text-[10px] text-slate-400 font-normal mt-0.5">Yuran bagi sesi {MONTHS[payment.month]} {payment.year}</span>
+                  </td>
+                  <td className="py-4 px-3 text-center font-mono">1</td>
+                  <td className="py-4 px-3 text-right font-bold text-slate-900">RM {Number(payment.amount).toFixed(2)}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-100 text-sm font-bold">
+                  <td colSpan={2} className="py-4 px-3 text-right text-xs text-slate-400 uppercase tracking-wider">Jumlah Kasar</td>
+                  <td className="py-4 px-3 text-right text-slate-900">RM {Number(payment.amount).toFixed(2)}</td>
+                </tr>
+                <tr className="border-t border-slate-100 text-base font-bold bg-slate-50/50">
+                  <td colSpan={2} className="py-4 px-3 text-right text-xs uppercase tracking-wider text-emerald-800">Jumlah Bersih (RM)</td>
+                  <td className="py-4 px-3 text-right text-emerald-800">RM {Number(payment.amount).toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            {/* Terms and notes */}
+            <div className="border-t border-slate-100 pt-6 text-[10px] text-slate-400 leading-relaxed">
+              <p className="font-bold text-slate-500 mb-1">Nota Khas:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Resit ini dijanakan secara berkomputer dan sah tanpa tandatangan fizikal.</li>
+                <li>Sila simpan invois/resit ini untuk rujukan masa hadapan.</li>
+                <li>Sebarang pertanyaan mengenai yuran, sila hubungi pejabat pentadbiran AKMAL.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Off-screen duplicate strictly for clean system-level printing */}
+      <div className="hidden print:block" style={{ width: '100%' }}>
+        <div id="printable-invoice" className="bg-white p-8 text-slate-800" style={{ width: '100%', fontFamily: 'sans-serif' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #e2e8f0', paddingBottom: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '64px', objectFit: 'contain' }} />
+              <div>
+                <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#065f46' }}>AKMAL HQ</h1>
+                <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#0f766e', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Akademi Al-Quran Amalillah Terengganu</p>
+                <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>
+                  Lot 2123, Kampung Tebakang Bukit Payung,<br />
+                  21400 Marang, Terengganu<br />
+                  Tel: 011-1987 4963 | E-mel: info@akmal.edu.my
+                </p>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ display: 'inline-block', padding: '4px 12px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '9999px', background: payment.status === 'Dibayar' ? '#dcfce7' : '#fee2e2', color: payment.status === 'Dibayar' ? '#15803d' : '#b91c1c', marginBottom: '8px' }}>
+                {payment.status}
+              </span>
+              <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>No. Invois</p>
+              <p style={{ margin: '2px 0 8px', fontSize: '14px', fontWeight: 'bold', color: '#1e293b' }}>{invoiceNo}</p>
+              <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Tarikh</p>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', fontWeight: 'bold', color: '#1e293b' }}>{invoiceDate}</p>
+            </div>
+          </div>
+
+          {/* Bill to */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dibilkan Kepada</h3>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 900, color: '#1e293b' }}>{student?.name || 'Pelajar'}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>Kelas: {getClassName(student?.classId)}</p>
+              {student?.icNo && <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>No. IC: {student.icNo}</p>}
+            </div>
+            <div>
+              <h3 style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Maklumat Penjaga</h3>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 'bold', color: '#334155' }}>{student?.parentName || '—'}</p>
+              {student?.parentPhone && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>Tel: {student.parentPhone}</p>}
+              {student?.address && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b', lineHeight: 1.4 }}>{student.address}</p>}
+            </div>
+          </div>
+
+          {/* Table */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '32px', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #e2e8f0', background: '#f8fafc', fontSize: '10px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase' }}>
+                <th style={{ padding: '10px' }}>Butiran Caj</th>
+                <th style={{ padding: '10px', textAlign: 'center', width: '80px' }}>Kuantiti</th>
+                <th style={{ padding: '10px', textAlign: 'right', width: '120px' }}>Jumlah</th>
+              </tr>
+            </thead>
+            <tbody style={{ fontSize: '12px', color: '#334155' }}>
+              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '16px 10px' }}>
+                  <strong style={{ display: 'block', color: '#1e293b' }}>{getPaymentDescription(payment.amount)}</strong>
+                  <span style={{ fontSize: '10px', color: '#94a3b8' }}>Yuran bagi sesi {MONTHS[payment.month]} {payment.year}</span>
+                </td>
+                <td style={{ padding: '16px 10px', textAlign: 'center' }}>1</td>
+                <td style={{ padding: '16px 10px', textAlign: 'right', fontWeight: 'bold', color: '#0f172a' }}>RM {Number(payment.amount).toFixed(2)}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style={{ fontWeight: 'bold', fontSize: '12px' }}>
+                <td colSpan={2} style={{ padding: '16px 10px', textAlign: 'right', color: '#94a3b8', textTransform: 'uppercase' }}>Jumlah Kasar</td>
+                <td style={{ padding: '16px 10px', textAlign: 'right', color: '#0f172a' }}>RM {Number(payment.amount).toFixed(2)}</td>
+              </tr>
+              <tr style={{ fontWeight: 'bold', fontSize: '14px', background: '#f8fafc' }}>
+                <td colSpan={2} style={{ padding: '16px 10px', textAlign: 'right', color: '#065f46', textTransform: 'uppercase' }}>Jumlah Bersih (RM)</td>
+                <td style={{ padding: '16px 10px', textAlign: 'right', color: '#065f46' }}>RM {Number(payment.amount).toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          {/* Notes */}
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '24px', fontSize: '10px', color: '#94a3b8', lineHeight: 1.6 }}>
+            <p style={{ margin: '0 0 4px', fontWeight: 'bold', color: '#64748b' }}>Nota Khas:</p>
+            <ul style={{ margin: 0, paddingLeft: '16px' }}>
+              <li>Resit ini dijanakan secara berkomputer dan sah tanpa tandatangan fizikal.</li>
+              <li>Sila simpan invois/resit ini untuk rujukan masa hadapan.</li>
+              <li>Sebarang pertanyaan mengenai yuran, sila hubungi pejabat pentadbiran AKMAL.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

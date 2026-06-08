@@ -25,14 +25,17 @@ type Action =
   | { type: 'SET_CLASSES'; payload: ClassRoom[] }
   | { type: 'ADD_CLASS'; payload: ClassRoom }
   // Hafazan
+  | { type: 'SET_HAFAZAN_RECORDS'; payload: HafazanRecord[] }
   | { type: 'RECORD_HAFAZAN'; payload: Omit<HafazanRecord, 'id'> }
   // Attendance
+  | { type: 'SET_ATTENDANCE'; payload: AttendanceRecord[] }
   | { type: 'MARK_ATTENDANCE'; payload: Omit<AttendanceRecord, 'id'>[] }
   // Payments
   | { type: 'SET_PAYMENTS'; payload: Payment[] }
   | { type: 'ADD_PAYMENT'; payload: Payment }
   | { type: 'TOGGLE_PAYMENT'; payload: { id: string | number; status: 'Dibayar' | 'Belum Bayar' } }
   // Reports
+  | { type: 'SET_REPORTS'; payload: Report[] }
   | { type: 'SUBMIT_REPORT'; payload: Omit<Report, 'id'> }
   // Activity Log
   | { type: 'LOG_ACTIVITY'; payload: Omit<ActivityLog, 'id' | 'timestamp'> }
@@ -165,6 +168,9 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     // ── Hafazan ──
+    case 'SET_HAFAZAN_RECORDS': {
+      return { ...state, hafazanRecords: action.payload };
+    }
     case 'RECORD_HAFAZAN': {
       const record: HafazanRecord = { ...action.payload, id: genId('h') };
       const student = state.students.find(s => s.id === record.studentId);
@@ -187,6 +193,9 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     // ── Attendance ──
+    case 'SET_ATTENDANCE': {
+      return { ...state, attendance: action.payload };
+    }
     case 'MARK_ATTENDANCE': {
       const newIds = new Set(action.payload.map(r => `${r.studentId}_${r.date}`));
       const filtered = state.attendance.filter(r => !newIds.has(`${r.studentId}_${r.date}`));
@@ -240,6 +249,9 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     // ── Reports ──
+    case 'SET_REPORTS': {
+      return { ...state, reports: action.payload };
+    }
     case 'SUBMIT_REPORT': {
       const report: Report = { ...action.payload, id: genId('r') };
       return {
@@ -454,16 +466,16 @@ export function computeAIPrediction(state: AppState, studentId: string) {
 export function getMonthlyRevenue(state: AppState): number {
   const now = new Date();
   return state.payments
-    .filter(p => p.month === now.getMonth() + 1 && p.year === now.getFullYear() && p.status === 'Dibayar')
-    .reduce((sum, p) => sum + p.amount, 0);
+    .filter(p => Number(p.month) === now.getMonth() + 1 && Number(p.year) === now.getFullYear() && p.status === 'Dibayar')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 }
 
 export function getTotalRevenue(state: AppState): number {
-  return state.payments.filter(p => p.status === 'Dibayar').reduce((sum, p) => sum + p.amount, 0);
+  return state.payments.filter(p => p.status === 'Dibayar').reduce((sum, p) => sum + Number(p.amount || 0), 0);
 }
 
 export function getPendingRevenue(state: AppState): number {
-  return state.payments.filter(p => p.status !== 'Dibayar').reduce((sum, p) => sum + p.amount, 0);
+  return state.payments.filter(p => p.status !== 'Dibayar').reduce((sum, p) => sum + Number(p.amount || 0), 0);
 }
 
 export function getClassLeaderboard(state: AppState, classId: string) {

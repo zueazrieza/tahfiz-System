@@ -4,7 +4,7 @@ import {
   BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, LineChart, Line,
 } from 'recharts';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 import axios from 'axios';
 import { useAppStore, getStudentAttendanceRate } from '../../store/AppContext';
@@ -20,21 +20,29 @@ async function captureElementAsPDF(
     logging: false,
     backgroundColor: '#ffffff',
   });
+  if (!canvas || canvas.width === 0 || canvas.height === 0) {
+    throw new Error('Dimensi elemen laporan adalah 0. Pastikan elemen tidak disembunyikan menggunakan display: none.');
+  }
   const imgData = canvas.toDataURL('image/png');
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pdfW = pdf.internal.pageSize.getWidth();
   const pdfH = pdf.internal.pageSize.getHeight();
-  const imgW = pdfW;
+  
+  const margin = 12; // 12mm margins on all sides for balanced spacing
+  const imgW = pdfW - (margin * 2);
   const imgH = (canvas.height / canvas.width) * imgW;
+  
   let heightLeft = imgH;
-  let position = 0;
-  pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
-  heightLeft -= pdfH;
+  let position = margin;
+  
+  pdf.addImage(imgData, 'PNG', margin, position, imgW, imgH);
+  heightLeft -= (pdfH - (margin * 2));
+  
   while (heightLeft > 0) {
-    position -= pdfH;
     pdf.addPage();
-    pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
-    heightLeft -= pdfH;
+    position = position - pdfH + (margin * 2);
+    pdf.addImage(imgData, 'PNG', margin, position, imgW, imgH);
+    heightLeft -= (pdfH - (margin * 2));
   }
   pdf.save(filename);
 }
@@ -45,14 +53,18 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '24px', background: '#fff', color: '#111', width: '780px' }}>
       {/* Header */}
-      <div style={{ borderBottom: '3px solid #16a34a', paddingBottom: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '22px', color: '#16a34a', fontWeight: 900 }}>AKMAL — Hafazan Report</h1>
-          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>Akademi Al-Quran Amalillah</p>
+      <div style={{ borderBottom: '3px solid #16a34a', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '56px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+          <div>
+            <h1 style={{ margin: 0, fontSize: '20px', color: '#16a34a', fontWeight: 900 }}>AKMAL — Laporan Hafazan</h1>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555', fontWeight: 'bold' }}>Akademi Al-Quran Amalillah Terengganu</p>
+            <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#777' }}>Lot 2123, Kampung Tebakang Bukit Payung, 21400 Marang, Terengganu</p>
+          </div>
         </div>
         <div style={{ textAlign: 'right', fontSize: '11px', color: '#555' }}>
-          <div>Generated: {now}</div>
-          <div>Total Records: {state.hafazanRecords.length}</div>
+          <div>Dijana: {now}</div>
+          <div>Jumlah Rekod: {state.hafazanRecords.length}</div>
         </div>
       </div>
 
@@ -150,16 +162,20 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
 /* ─── Printable Payment Report ─────────────────────────────────────────────── */
 function PaymentPrintView({ state }: { state: any }) {
   const now = new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' });
-  const total = state.payments.reduce((s: number, p: any) => s + p.amount, 0);
-  const paid = state.payments.filter((p: any) => p.status === 'Paid').reduce((s: number, p: any) => s + p.amount, 0);
+  const total = state.payments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+  const paid = state.payments.filter((p: any) => p.status === 'Dibayar').reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   const pending = total - paid;
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '24px', background: '#fff', color: '#111', width: '780px' }}>
       {/* Header */}
-      <div style={{ borderBottom: '3px solid #2563eb', paddingBottom: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '22px', color: '#2563eb', fontWeight: 900 }}>AKMAL — Laporan Pembayaran</h1>
-          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#555' }}>Akademi Al-Quran Amalillah</p>
+      <div style={{ borderBottom: '3px solid #2563eb', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '56px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+          <div>
+            <h1 style={{ margin: 0, fontSize: '20px', color: '#2563eb', fontWeight: 900 }}>AKMAL — Laporan Pembayaran</h1>
+            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555', fontWeight: 'bold' }}>Akademi Al-Quran Amalillah Terengganu</p>
+            <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#777' }}>Lot 2123, Kampung Tebakang Bukit Payung, 21400 Marang, Terengganu</p>
+          </div>
         </div>
         <div style={{ textAlign: 'right', fontSize: '11px', color: '#555' }}>
           <div>Dijana: {now}</div>
@@ -235,7 +251,7 @@ function PaymentPrintView({ state }: { state: any }) {
 
 /* ─── Main ViewReports component ────────────────────────────────────────────── */
 export function ViewReports() {
-  const { state } = useAppStore();
+  const { state, dispatch } = useAppStore();
   const hafazanPrintRef = useRef<HTMLDivElement>(null);
   const paymentPrintRef = useRef<HTMLDivElement>(null);
   const [generatingHafazan, setGeneratingHafazan] = useState(false);
@@ -243,17 +259,28 @@ export function ViewReports() {
   const [weeklyReports, setWeeklyReports] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchWeeklyReports();
-  }, []);
-
-  const fetchWeeklyReports = async () => {
-    try {
-      const resp = await axios.get('/api/reports/weekly');
-      setWeeklyReports(resp.data);
-    } catch (err) {
-      console.error('Failed to fetch weekly reports', err);
-    }
-  };
+    const fetchData = async () => {
+      try {
+        const [reportsRes, studentsRes, paymentsRes, classesRes, hafazanRes, attendanceRes] = await Promise.all([
+          axios.get('/api/reports/weekly'),
+          axios.get('/api/students'),
+          axios.get('/api/payments'),
+          axios.get('/api/classes'),
+          axios.get('/api/hafazan-records'),
+          axios.get('/api/attendance')
+        ]);
+        setWeeklyReports(reportsRes.data);
+        dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
+        dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
+        dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
+        dispatch({ type: 'SET_HAFAZAN_RECORDS', payload: hafazanRes.data });
+        dispatch({ type: 'SET_ATTENDANCE', payload: attendanceRes.data });
+      } catch (err) {
+        console.error('Failed to fetch reports data', err);
+      }
+    };
+    fetchData();
+  }, [dispatch]);
 
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const now = new Date();
@@ -280,6 +307,9 @@ export function ViewReports() {
     setGeneratingHafazan(true);
     try {
       await captureElementAsPDF(hafazanPrintRef.current, `AKMAL_Hafazan_Report_${now.toISOString().slice(0,10)}.pdf`);
+    } catch (err: any) {
+      console.error('Hafazan PDF Error:', err);
+      alert('Gagal menjana PDF Hafazan: ' + (err.message || err));
     } finally {
       setGeneratingHafazan(false);
     }
@@ -290,6 +320,9 @@ export function ViewReports() {
     setGeneratingPayment(true);
     try {
       await captureElementAsPDF(paymentPrintRef.current, `AKMAL_Payment_Report_${now.toISOString().slice(0,10)}.pdf`);
+    } catch (err: any) {
+      console.error('Payment PDF Error:', err);
+      alert('Gagal menjana PDF Pembayaran: ' + (err.message || err));
     } finally {
       setGeneratingPayment(false);
     }
@@ -427,11 +460,11 @@ export function ViewReports() {
       </div>
 
       {/* ── Off-screen print containers (invisible, used only for PDF capture) ── */}
-      <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', zIndex: -1 }}>
-        <div ref={hafazanPrintRef}>
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '780px', opacity: 0, pointerEvents: 'none', zIndex: -9999, overflow: 'hidden', height: '1px' }}>
+        <div ref={hafazanPrintRef} style={{ width: '780px', background: '#ffffff', padding: '24px' }}>
           <HafazanPrintView state={state} hafazanData={hafazanData} />
         </div>
-        <div ref={paymentPrintRef}>
+        <div ref={paymentPrintRef} style={{ width: '780px', background: '#ffffff', padding: '24px' }}>
           <PaymentPrintView state={state} />
         </div>
       </div>

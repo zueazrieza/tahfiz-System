@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Users, GraduationCap, DollarSign, FileText, Brain, LogOut, LayoutDashboard, X, UserPlus, Shield, Home } from 'lucide-react';
+import axios from 'axios';
+import { Users, GraduationCap, DollarSign, FileText, Brain, LogOut, LayoutDashboard, X, UserPlus, Shield, Home, RefreshCw } from 'lucide-react';
+import { usePolling } from '../../hooks/usePolling';
 import { ManageStudents } from './ManageStudents';
 import { ManageTeachers } from './ManageTeachers';
 import { ManagePayments } from './ManagePayments';
-import { ManageHostels } from './ManageHostels';
 import { ViewReports } from './ViewReports';
 import { AIPrediction } from './AIPrediction';
 import { EnrollmentHub } from './EnrollmentHub';
@@ -12,14 +13,14 @@ import { ManageParents } from './ManageParents';
 import { FinancialAnalytics } from './FinancialAnalytics';
 import { MudirEvaluation } from './MudirEvaluation';
 import { Announcements } from '../shared/Announcements';
-import { useAppStore, getMonthlyRevenue, timeAgo } from '../../store/AppContext';
+
 
 interface AdminDashboardProps {
   userName: string;
   onLogout: () => void;
 }
 
-type AdminView = 'home' | 'students' | 'enrollment' | 'teachers' | 'parents' | 'payments' | 'reports' | 'ai' | 'users' | 'hostels' | 'analytics' | 'announcements' | 'mudir-eval';
+type AdminView = 'home' | 'students' | 'enrollment' | 'teachers' | 'parents' | 'payments' | 'reports' | 'ai' | 'users' | 'analytics' | 'announcements' | 'mudir-eval';
 
 const navItems: { id: AdminView; label: string; icon: React.ReactNode }[] = [
   { id: 'home',       label: 'Papan Pemuka',        icon: <LayoutDashboard size={20} /> },
@@ -28,7 +29,6 @@ const navItems: { id: AdminView; label: string; icon: React.ReactNode }[] = [
   { id: 'students',   label: 'Urus Pelajar',         icon: <Users size={20} /> },
   { id: 'teachers',   label: 'Urus Murabbi',         icon: <GraduationCap size={20} /> },
   { id: 'parents',    label: 'Urus Penjaga',         icon: <Users size={20} /> },
-  { id: 'hostels',    label: 'Pengurusan Asrama',    icon: <Home size={20} /> },
   { id: 'users',      label: 'Pengurusan Akses',     icon: <Shield size={20} /> },
   { id: 'payments',   label: 'Bayaran & Invois',     icon: <DollarSign size={20} /> },
   { id: 'reports',    label: 'Lihat Laporan',        icon: <FileText size={20} /> },
@@ -37,24 +37,80 @@ const navItems: { id: AdminView; label: string; icon: React.ReactNode }[] = [
   { id: 'analytics',  label: 'Analitik Kewangan',    icon: <DollarSign size={20} /> },
 ];
 
+interface LiveStats {
+  totalStudents: number;
+  activeStudents: number;
+  totalTeachers: number;
+  totalClasses: number;
+  monthlyRevenue: number;
+  pendingPayments: number;
+  todayPresent: number;
+  todayAbsent: number;
+  newThisWeek: number;
+  avgJuzuk: number;
+  lastUpdated: string | null;
+}
+
 export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
   const [currentView, setCurrentView] = useState<AdminView>('home');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { state } = useAppStore();
+  const [liveStats, setLiveStats] = useState<LiveStats>({
+    totalStudents: 0, activeStudents: 0, totalTeachers: 0, totalClasses: 0,
+    monthlyRevenue: 0, pendingPayments: 0, todayPresent: 0, todayAbsent: 0,
+    newThisWeek: 0, avgJuzuk: 0, lastUpdated: null,
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
 
-  const monthlyRev = getMonthlyRevenue(state);
+  // Helper to format activity time relatively
+  const timeAgo = (dateString: string) => {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Baru sahaja';
+    if (diffMins < 60) return `${diffMins} minit lalu`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} jam lalu`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} hari lalu`;
+  };
+
+  // ── Live polling: refetch admin stats & activities from DB every 30 s ─────────────────
+  usePolling(async () => {
+    try {
+      const { data } = await axios.get('/api/admin/stats');
+      setLiveStats(data);
+    } catch { /* silent – keep stale data */ }
+    finally { setStatsLoading(false); }
+
+    try {
+      const { data } = await axios.get('/api/admin/activities');
+      setActivities(data);
+    } catch { /* silent – keep stale data */ }
+    finally { setActivitiesLoading(false); }
+  }, 30_000);
+
   const stats = [
-    { label: 'Jumlah Pelajar',   value: String(state.students.length),              icon: <Users size={28} />,        color: '#3b82f6', bg: '#eff6ff' },
-    { label: 'Jumlah Murabbi',   value: String(state.teachers.length),              icon: <GraduationCap size={28} />, color: '#10b981', bg: '#f0fdf4' },
-    { label: 'Pendapatan Bulanan', value: `RM ${monthlyRev.toLocaleString()}`,      icon: <DollarSign size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
-    { label: 'Kelas Aktif',      value: String(state.classes.length),               icon: <FileText size={28} />,     color: '#f59e0b', bg: '#fffbeb' },
+    { label: 'Jumlah Pelajar',    value: statsLoading ? '…' : String(liveStats.totalStudents),                    icon: <Users size={28} />,        color: '#3b82f6', bg: '#eff6ff' },
+    { label: 'Jumlah Murabbi',    value: statsLoading ? '…' : String(liveStats.totalTeachers),                    icon: <GraduationCap size={28} />, color: '#10b981', bg: '#f0fdf4' },
+    { label: 'Pendapatan Bulanan', value: statsLoading ? '…' : `RM ${liveStats.monthlyRevenue.toLocaleString()}`, icon: <DollarSign size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
+    { label: 'Kelas Aktif',       value: statsLoading ? '…' : String(liveStats.totalClasses),                     icon: <FileText size={28} />,     color: '#f59e0b', bg: '#fffbeb' },
   ];
 
-  const recentActivities = state.activityLog.slice(0, 6).map(a => ({
-    action: a.description,
-    name: a.subDescription,
-    time: timeAgo(a.timestamp),
-  }));
+  const extraStats = [
+    { label: 'Pelajar Aktif',         value: statsLoading ? '…' : String(liveStats.activeStudents),  color: '#10b981' },
+    { label: 'Hadir Hari Ini',        value: statsLoading ? '…' : String(liveStats.todayPresent),    color: '#3b82f6' },
+    { label: 'Tidak Hadir',           value: statsLoading ? '…' : String(liveStats.todayAbsent),     color: '#ef4444' },
+    { label: 'Bayaran Tertunggak',    value: statsLoading ? '…' : String(liveStats.pendingPayments), color: '#f59e0b' },
+    { label: 'Pelajar Baru (7 hari)', value: statsLoading ? '…' : String(liveStats.newThisWeek),     color: '#8b5cf6' },
+    { label: 'Purata Juzuk',          value: statsLoading ? '…' : String(liveStats.avgJuzuk),         color: '#06b6d4' },
+  ];
+
+  const lastUpdatedStr = liveStats.lastUpdated
+    ? new Date(liveStats.lastUpdated).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : null;
 
   const renderContent = () => {
     switch (currentView) {
@@ -64,7 +120,6 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
       case 'teachers':   return <ManageTeachers />;
       case 'parents':    return <ManageParents />;
       case 'payments':   return <ManagePayments />;
-      case 'hostels':    return <ManageHostels />;
       case 'reports':    return <ViewReports />;
       case 'mudir-eval': return <MudirEvaluation />;
       case 'ai':         return <AIPrediction />;
@@ -73,31 +128,32 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
       default:
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* Header */}
-            <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#111', margin: 0 }}>
-                Selamat Kembali, {userName} !
-              </h2>
-              <p style={{ color: '#6b7280', marginTop: '0.25rem', fontSize: '0.9rem' }}>
-                Berikut adalah ringkasan sistem pengurusan Tahfiz anda.
-              </p>
+            {/* Header with LIVE badge */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#111', margin: 0 }}>
+                  Selamat Kembali, {userName} !
+                </h2>
+                <p style={{ color: '#6b7280', marginTop: '0.25rem', fontSize: '0.9rem' }}>
+                  Berikut adalah ringkasan sistem pengurusan Tahfiz anda.
+                </p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '999px', padding: '4px 12px' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a' }}>LANGSUNG</span>
+                  <RefreshCw size={12} style={{ color: '#16a34a' }} />
+                </div>
+                {lastUpdatedStr && (
+                  <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>Kemas kini: {lastUpdatedStr}</span>
+                )}
+              </div>
             </div>
 
-            {/* Stats Grid */}
+            {/* Primary Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
               {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  style={{
-                    background: stat.bg,
-                    borderRadius: '16px',
-                    padding: '1.25rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.5rem',
-                    border: '1px solid rgba(0,0,0,0.05)',
-                  }}
-                >
+                <div key={stat.label} style={{ background: stat.bg, borderRadius: '16px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(0,0,0,0.05)', transition: 'transform 0.2s' }}>
                   <span style={{ color: stat.color }}>{stat.icon}</span>
                   <p style={{ fontSize: '1.6rem', fontWeight: 800, color: '#111', margin: 0 }}>{stat.value}</p>
                   <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: 0 }}>{stat.label}</p>
@@ -105,44 +161,69 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
               ))}
             </div>
 
-            {/* Recent Activities */}
-            <div style={{
-              background: '#fff',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              border: '1px solid #e5e7eb',
-            }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111', margin: '0 0 1rem' }}>
-                Aktiviti Terkini
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                {recentActivities.map((a, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem',
-                      padding: '0.75rem 0',
-                      borderBottom: i < recentActivities.length - 1 ? '1px solid #f3f4f6' : 'none',
-                    }}
-                  >
-                    <span style={{
-                      marginTop: '5px',
-                      flexShrink: 0,
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      background: '#22c55e',
-                      display: 'inline-block',
-                    }} />
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '0.88rem', color: '#111' }}>{a.action}</p>
-                      <p style={{ margin: 0, fontSize: '0.82rem', color: '#6b7280' }}>{a.name}</p>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af', marginTop: '2px' }}>{a.time}</p>
-                    </div>
+            {/* Extra Live Stats Row */}
+            <div style={{ background: '#fff', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e5e7eb' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111', margin: 0 }}>Statistik Hari Ini</h3>
+                <span style={{ fontSize: '0.7rem', background: '#eff6ff', color: '#3b82f6', borderRadius: '999px', padding: '2px 8px', fontWeight: 600 }}>Dikemas kini setiap 30 saat</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.75rem' }}>
+                {extraStats.map((s) => (
+                  <div key={s.label} style={{ textAlign: 'center', padding: '0.75rem', background: '#f9fafb', borderRadius: '12px', border: '1px solid #f3f4f6' }}>
+                    <p style={{ fontSize: '1.4rem', fontWeight: 800, color: s.color, margin: 0 }}>{s.value}</p>
+                    <p style={{ fontSize: '0.7rem', color: '#6b7280', margin: '4px 0 0', lineHeight: 1.3 }}>{s.label}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Recent Live Activities */}
+            <div style={{ background: '#fff', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111', margin: 0 }}>
+                  Aktiviti Terkini (Semua Pengguna)
+                </h3>
+                <span style={{ fontSize: '0.7rem', background: '#f3f4f6', color: '#6b7280', borderRadius: '999px', padding: '2px 8px' }}>Log Langsung</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {activitiesLoading ? (
+                  <div style={{ padding: '1rem 0', color: '#9ca3af', fontSize: '0.9rem', textAlign: 'center' }}>Memuatkan aktiviti...</div>
+                ) : activities.length === 0 ? (
+                  <div style={{ padding: '1.5rem 0', color: '#9ca3af', fontSize: '0.9rem', textAlign: 'center' }}>Tiada aktiviti dikesan lagi.</div>
+                ) : (
+                  activities.slice(0, 8).map((a, i) => (
+                    <div
+                      key={a.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.75rem',
+                        padding: '0.75rem 0',
+                        borderBottom: i < Math.min(activities.length, 8) - 1 ? '1px solid #f3f4f6' : 'none',
+                      }}
+                    >
+                      <span style={{
+                        marginTop: '5px',
+                        flexShrink: 0,
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#22c55e',
+                        display: 'inline-block',
+                      }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '0.88rem', color: '#111' }}>{a.description}</p>
+                          <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{timeAgo(a.created_at)}</span>
+                        </div>
+                        {a.sub_description && (
+                          <p style={{ margin: '0.1rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>{a.sub_description}</p>
+                        )}
+                        <p style={{ margin: '0.1rem 0 0', fontSize: '0.72rem', color: '#9ca3af', fontWeight: 500 }}>Oleh: {a.operator_name || 'Sistem'}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

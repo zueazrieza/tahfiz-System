@@ -35,7 +35,7 @@ export function ViewPayments({ childId, readOnly = false }: ViewPaymentsProps) {
   };
 
   const pending = payments.filter(p => p.status !== 'Dibayar');
-  const totalPaid = payments.filter(p => p.status === 'Dibayar').reduce((s, p) => s + p.amount, 0);
+  const totalPaid = payments.filter(p => p.status === 'Dibayar').reduce((s, p) => s + Number(p.amount || 0), 0);
 
   const handlePay = async (paymentId: string) => {
     if (confirm('Sahkan pembayaran? Invois akan ditandakan sebagai Dibayar.')) {

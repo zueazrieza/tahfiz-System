@@ -73,7 +73,7 @@ export function EnrollmentHub() {
         phone: s.parent_phone,
         icNo: s.ic_no,
         dateApplied: s.created_at.split('T')[0],
-        status: s.status,
+        status: s.status === 'Aktif' ? 'ENROLLED' : s.status,
         interviewDate: s.interview_date,
         interviewTime: s.interview_time,
         interviewLocation: s.interview_location,
@@ -115,7 +115,7 @@ export function EnrollmentHub() {
 
   const stats = [
     { label: 'Calon Baharu', count: applicants.filter(a => a.status === 'PROSPECT').length, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Sesi Temuduga', count: applicants.filter(a => a.status === 'INTERVIEW').length, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Sesi Temuduga', count: applicants.filter(a => a.status === 'SCHEDULED' || a.status === 'INTERVIEW').length, color: 'text-amber-600', bg: 'bg-amber-50' },
     { label: 'Menunggu Tawaran', count: applicants.filter(a => a.status === 'ACCEPTED').length, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   ];
 

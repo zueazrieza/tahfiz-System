@@ -19,4 +19,12 @@ class WeeklyReport extends Model
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
+
+    protected static function booted()
+    {
+        static::created(function ($report) {
+            $teacherName = $report->teacher?->name ?? 'Murabbi';
+            \App\Models\ActivityLog::log('Laporan Mingguan Dihantar', "Oleh: {$teacherName}");
+        });
+    }
 }

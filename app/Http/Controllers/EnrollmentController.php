@@ -30,7 +30,7 @@ class EnrollmentController extends Controller
     public function index()
     {
         $applicants = Student::whereIn('status', [
-            'PROSPECT', 'INTERVIEW', 'ACCEPTED', 'REJECTED', 'OFFERED', 'ENROLLED', 'Pending'
+            'PROSPECT', 'SCHEDULED', 'INTERVIEW', 'ACCEPTED', 'REJECTED', 'OFFERED', 'WAITING_PAYMENT', 'ENROLLED', 'Pending'
         ])
         ->orderBy('created_at', 'desc')
         ->get();
