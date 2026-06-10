@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAppStore } from '../../store/AppContext';
-import { BookOpen, TrendingUp, Star } from 'lucide-react';
+import { BookOpen, TrendingUp, Star, Award, Trophy } from 'lucide-react';
 import { HafazanRecord } from '../../store/mockData';
 
 interface ViewProgressProps {

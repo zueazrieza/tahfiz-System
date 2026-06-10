@@ -55,7 +55,7 @@ class OfferLetterMail extends Mailable implements ShouldQueue
     public function attachments(): array
     {
         return [
-            Attachment::fromData(fn () => $this->pdfData, 'Surat_Tawaran_' . str_replace(' ', '_', $this->student->name) . '.pdf')
+            Attachment::fromData(fn () => base64_decode($this->pdfData), 'Surat_Tawaran_' . str_replace(' ', '_', $this->student->name) . '.pdf')
                 ->withMime('application/pdf'),
         ];
     }

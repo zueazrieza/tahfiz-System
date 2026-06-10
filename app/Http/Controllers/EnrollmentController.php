@@ -221,10 +221,10 @@ class EnrollmentController extends Controller
 
         try {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.offer_letter', $data);
-            $pdfData = $pdf->output();
+            $pdfDataBase64 = base64_encode($pdf->output());
 
             // 3. Send Email
-            Mail::to($parent->email)->queue(new \App\Mail\OfferLetterMail($applicant, $pdfData));
+            Mail::to($parent->email)->queue(new \App\Mail\OfferLetterMail($applicant, $pdfDataBase64));
 
             // 4. Update status to OFFERED
             $applicant->update(['status' => 'OFFERED']);
