@@ -16,7 +16,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\StudentController as StudentCtrl;
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AIAssessmentController;
-use App\Http\Controllers\HostelController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\MudirEvaluationController;
 use App\Http\Controllers\WeeklyReportController;
@@ -24,7 +23,6 @@ use App\Http\Controllers\AchievementController as AchCtrl;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FinancialAnalyticsController;
-use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\StudentReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -142,15 +140,8 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::apiResource('reports/weekly',    WeeklyReportController::class)->only(['index', 'store']);
         Route::get('/students/targets/{studentId}', [StudentReportController::class, 'getHafazanTargets']);
 
-        // Hostel
-        Route::apiResource('hostels', HostelController::class);
-        Route::post('/hostels/assign', [HostelController::class, 'assignStudent']);
-
         // Analytics
         Route::get('/analytics/financial', [FinancialAnalyticsController::class, 'index']);
-
-        // Chatbot
-        Route::post('/chatbot/handle', [ChatbotController::class, 'handle']);
 
         // Export
         Route::get('/export/students', [ExportController::class, 'exportStudents']);

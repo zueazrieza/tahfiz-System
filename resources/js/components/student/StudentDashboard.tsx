@@ -26,7 +26,6 @@ import { Achievements } from './Achievements';
 import { StudentAIPrediction } from './StudentAIPrediction';
 import { HafazanAI } from '../hafazan/HafazanAI';
 import { HafazanLevelSelector } from '../hafazan/HafazanLevelSelector';
-import { AITajwidBuddy } from './AITajwidBuddy';
 import { StudyRoadmap } from '../shared/StudyRoadmap';
 import { ProfileView } from '../profile/ProfileView';
 import { InfoCenter } from '../shared/InfoCenter';
@@ -38,7 +37,7 @@ interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-export type StudentView = 'home' | 'schedule' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'info-center' | 'tajwid-buddy' | 'level-selection';
+export type StudentView = 'home' | 'schedule' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'info-center' | 'level-selection';
 
 const navItems: { id: StudentView; label: string; icon: React.ReactNode }[] = [
   { id: 'home',         label: 'Papan Pemuka',      icon: <LayoutDashboard size={20} /> },
@@ -49,7 +48,6 @@ const navItems: { id: StudentView; label: string; icon: React.ReactNode }[] = [
   { id: 'penilaian-ai', label: 'Penilaian AI (Beta)',  icon: <Mic2 size={20} /> },
   { id: 'achievements', label: 'Pencapaian',         icon: <Trophy size={20} /> },
   { id: 'ai',           label: 'Ramalan AI',         icon: <Brain size={20} /> },
-  { id: 'tajwid-buddy', label: 'AI Tajwid Buddy',   icon: <MessageSquare size={20} /> },
   { id: 'level-selection', label: 'Peringkat Hafazan', icon: <Award size={20} /> },
   { id: 'profile',      label: 'Profil Saya',        icon: <Users size={20} /> },
 ];
@@ -122,7 +120,6 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
       case 'pembelajaran': return <StudyRoadmap />;
       case 'profile':      return <ProfileView userId={authUser?.id || ''} />;
       case 'info-center':  return <InfoCenter />;
-      case 'tajwid-buddy': return <AITajwidBuddy />;
       case 'level-selection': return <HafazanLevelSelector currentRank={dashboardData?.rankName} />;
       default:
         return (

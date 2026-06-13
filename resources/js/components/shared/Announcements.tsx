@@ -62,7 +62,6 @@ export function Announcements() {
     switch(type) {
       case 'Academic': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'Event': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'Hostel': return 'bg-orange-100 text-orange-700 border-orange-200';
       default: return 'bg-teal-100 text-teal-700 border-teal-200';
     }
   };
@@ -115,7 +114,6 @@ export function Announcements() {
                 <option value="General">Umum</option>
                 <option value="Academic">Akademik & Hafazan</option>
                 <option value="Event">Aktiviti & Program</option>
-                <option value="Hostel">Asrama</option>
               </select>
             </div>
           </div>
