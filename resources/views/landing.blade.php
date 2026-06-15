@@ -63,6 +63,57 @@
             height: 72px;
         }
 
+        /* Mobile Menu Toggle Button */
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 40;
+            outline: none;
+        }
+
+        .nav-toggle-icon,
+        .nav-toggle-icon::before,
+        .nav-toggle-icon::after {
+            display: block;
+            width: 24px;
+            height: 2.5px;
+            background: var(--slate-700);
+            transition: transform 0.25s ease, opacity 0.25s ease, background-color 0.25s ease;
+            position: relative;
+            border-radius: 99px;
+        }
+
+        .nav-toggle-icon::before,
+        .nav-toggle-icon::after {
+            content: "";
+            position: absolute;
+            left: 0;
+        }
+
+        .nav-toggle-icon::before {
+            top: -7px;
+        }
+
+        .nav-toggle-icon::after {
+            bottom: -7px;
+        }
+
+        /* Toggle Open State Styling */
+        .nav-toggle.active .nav-toggle-icon {
+            background: transparent;
+        }
+
+        .nav-toggle.active .nav-toggle-icon::before {
+            transform: translateY(7px) rotate(45deg);
+        }
+
+        .nav-toggle.active .nav-toggle-icon::after {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
         .nav-logo {
             display: flex;
             align-items: center;
@@ -820,12 +871,46 @@
         @media (max-width: 960px) {
             .navbar-inner {
                 height: 64px;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .nav-toggle {
+                display: block;
             }
             .nav-links {
                 display: none;
+                flex-direction: column;
+                width: 100%;
+                gap: 1.25rem;
+                padding: 1.25rem 0;
+                border-top: 1px solid #e2e8f0;
+                margin-top: 0.5rem;
             }
             .nav-actions {
                 display: none;
+                flex-direction: column;
+                width: 100%;
+                gap: 0.75rem;
+                padding-bottom: 1.25rem;
+            }
+            .btn-login,
+            .btn-signup {
+                width: 100%;
+                text-align: center;
+                padding: 0.75rem;
+            }
+            
+            /* Show when navbar is active */
+            .navbar.active .navbar-inner {
+                height: auto;
+            }
+            .navbar.active .nav-links {
+                display: flex;
+            }
+            .navbar.active .nav-actions {
+                display: flex;
             }
             .hero-inner {
                 grid-template-columns: minmax(0, 1fr);
@@ -953,6 +1038,11 @@
             <div class="nav-logo">
                 <img src="/images/logo.png" alt="AKMAL Logo" style="height: 52px; filter: drop-shadow(0 4px 8px rgba(111,199,203,0.3));">
             </div>
+
+            <!-- Mobile Menu Toggle Button -->
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span class="nav-toggle-icon"></span>
+            </button>
 
             <nav class="nav-links">
                 <a href="#home">Home</a>
@@ -1531,6 +1621,26 @@
             &copy; 2024 Akademi Al-Quran Amalillah (AKMAL) — Kerjasama Universiti Sains Islam Malaysia.
         </div>
     </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navToggle = document.getElementById('navToggle');
+            const navbar = document.querySelector('.navbar');
+            
+            navToggle.addEventListener('click', () => {
+                navbar.classList.toggle('active');
+                navToggle.classList.toggle('active');
+            });
+            
+            // Close menu when a link is clicked
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    navbar.classList.remove('active');
+                    navToggle.classList.remove('active');
+                });
+            });
+        });
+    </script>
 </body>
 </html>
 
