@@ -253,19 +253,46 @@ class EnrollmentController extends Controller
             'parentEmail' => 'required|email|unique:users,email',
             'parentPhone' => 'required|string|max:20',
             'parentJob' => 'required|string',
-            'parentIncome' => 'required|numeric',
+            'parentIncome' => 'required|string',
+            'parentIc' => 'required|string',
+            'parentSpousePhone' => 'nullable|string',
             'password' => 'required|string|min:8',
             // Student Data
             'studentName' => 'required|string|max:255',
-            'studentGender' => 'required|in:M,F',
+            'studentIc' => 'required|string',
+            'studentGender' => 'required|string',
             'studentDob' => 'required|date',
             'studentAge' => 'required|integer',
-            'tajwidLevel' => 'nullable|string',
-            'hafazanLevel' => 'nullable|string',
+            'studentAddress' => 'required|string',
+            
+            // Extra fields stored in notes
+            'referrer' => 'nullable|string',
+            'state' => 'nullable|string',
+            'applyYear' => 'nullable|string',
+            'applyLocation' => 'nullable|string',
+            'agreeOtherBranch' => 'nullable|string',
+            'interviewDate' => 'nullable|string',
+            'quranLevel' => 'nullable|string',
+            'infoSource' => 'nullable|string',
+            'successReason' => 'nullable|string',
         ]);
 
         try {
             return DB::transaction(function () use ($validated, $request) {
+                // Map parentIncome to a decimal wage
+                $incomeText = $validated['parentIncome'];
+                $numericWage = 2000.00;
+                if (str_contains($incomeText, '2,001') || str_contains($incomeText, '4,000')) {
+                    $numericWage = 3000.00;
+                } elseif (str_contains($incomeText, '4,001') || str_contains($incomeText, '8,000')) {
+                    $numericWage = 6000.00;
+                } elseif (str_contains($incomeText, '8,001') || str_contains($incomeText, 'atas')) {
+                    $numericWage = 10000.00;
+                }
+
+                // Map studentGender to Lelaki / Perempuan
+                $gender = (in_array(strtolower($validated['studentGender']), ['m', 'lelaki'])) ? 'Lelaki' : 'Perempuan';
+
                 // 1. Create Parent User
                 $parent = User::create([
                     'name' => $validated['parentName'],
@@ -275,28 +302,42 @@ class EnrollmentController extends Controller
                     'status' => 'pending', // Requires Mudir approval
                     'phone' => $validated['parentPhone'],
                     'job' => $validated['parentJob'],
-                    'wage' => $validated['parentIncome'],
+                    'wage' => $numericWage,
                 ]);
+
+                // Prepare notes
+                $notes = "Referrer: " . ($request->referrer ?? 'N/A') . "\n"
+                       . "Negeri: " . ($request->state ?? 'N/A') . "\n"
+                       . "No Tel Pasangan: " . ($request->parentSpousePhone ?? 'Tiada') . "\n"
+                       . "Lokasi Memohon: " . ($request->applyLocation ?? 'N/A') . "\n"
+                       . "Setuju Cawangan Lain: " . ($request->agreeOtherBranch ?? 'N/A') . "\n"
+                       . "Pilihan Tarikh Temuduga: " . ($request->interviewDate ?? 'N/A') . "\n"
+                       . "Tahap Bacaan Al-Quran: " . ($request->quranLevel ?? 'N/A') . "\n"
+                       . "Sumber Maklumat: " . ($request->infoSource ?? 'N/A') . "\n"
+                       . "Kenapa Ingin Berjaya: " . ($request->successReason ?? 'N/A');
 
                 // 2. Create Student Record (Interview Phase)
                 $student = Student::create([
                     'name' => $validated['studentName'],
-                    'gender' => $request->studentGender == 'M' ? 'Lelaki' : 'Perempuan',
-                    'dob' => $request->studentDob,
-                    'age' => $request->studentAge,
-                    'address' => $request->studentAddress,
-                    'medical_history' => $request->medicalHistory,
+                    'gender' => $gender,
+                    'dob' => $validated['studentDob'],
+                    'age' => $validated['studentAge'],
+                    'address' => $validated['studentAddress'],
+                    'ic_no' => $validated['studentIc'],
                     'parent_id' => $parent->id, // Link to User.id
                     'parent_name' => $validated['parentName'],
                     'parent_phone' => $validated['parentPhone'],
+                    'parent_ic' => $validated['parentIc'],
+                    'family_income' => $incomeText,
+                    'batch' => $request->applyYear ?? '2026',
                     'admission_type' => 'interview',
                     'status' => 'PROSPECT', // Start as Prospect
                     'enrolled_date' => now()->format('Y-m-d'),
-                    'intake_juzuk' => 0, // Guest students usually start at 0
-                    'notes' => "[Registration] Level: " . ($request->hafazanLevel ?? '0 Juzuk') . " | Tajwid: " . ($request->tajwidLevel ?? 'Asas')
+                    'intake_juzuk' => 0,
+                    'notes' => $notes
                 ]);
 
-                // 3. Send Email berjaya didaftar, menunggu kelulusan mudir
+                // 3. Send Email
                 Mail::to($parent->email)->queue(new EnrollmentSuccessMail($parent, $student));
 
                 return response()->json([

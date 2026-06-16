@@ -57,6 +57,56 @@ export function EnrollmentHub() {
     location: ''
   });
 
+  const [showEvaluationModal, setShowEvaluationModal] = useState(false);
+  const [aspectScores, setAspectScores] = useState<{ [key: number]: number }>({
+    1: 3,
+    2: 3,
+    3: 3,
+    4: 3,
+    5: 3,
+    6: 3,
+    7: 3,
+    8: 3,
+  });
+  const [evaluationComments, setEvaluationComments] = useState('');
+  const [panelName, setPanelName] = useState('');
+  const [panelDesignation, setPanelDesignation] = useState('Mudir');
+  const [rejectionReasons, setRejectionReasons] = useState<string[]>([]);
+  const [overrideDecision, setOverrideDecision] = useState<'LULUS' | 'GAGAL' | null>(null);
+
+  const aspectsList = [
+    { id: 1, label: 'Semangat' },
+    { id: 2, label: 'Minat dalam menghafal Al-Quran' },
+    { id: 3, label: 'Keinginan menghafal dalam tempoh setahun' },
+    { id: 4, label: 'Kemahuan sendiri atau individu lain' },
+    { id: 5, label: 'Kesanggupan mengikuti sistem yang ditetapkan' },
+    { id: 6, label: 'Kemahiran membaca Al-Quran' },
+    { id: 7, label: 'Kelancaran hafalan' },
+    { id: 8, label: 'Daya ingatan hafalan' },
+  ];
+
+  const scales = [
+    { value: 1, label: 'Sangat Lemah' },
+    { value: 2, label: 'Lemah' },
+    { value: 3, label: 'Sederhana' },
+    { value: 4, label: 'Baik' },
+    { value: 5, label: 'Sangat Baik' },
+  ];
+
+  const rejectionOptions = [
+    'Semangat kurang',
+    'Tiada keinginan untuk menghafal',
+    'Tidak sanggup mengikuti sistem',
+    'Kemahuan individu lain',
+    'Kurang kemahiran membaca Al-Quran (Asas Tajwid)',
+    'Daya ingatan lemah',
+  ];
+
+  const totalScore = Object.values(aspectScores).reduce((a, b) => a + b, 0);
+  const calculatedPercentage = Math.round((totalScore / 40) * 100);
+  const autoDecision = calculatedPercentage >= 50 ? 'LULUS' : 'GAGAL';
+  const finalDecision = overrideDecision || autoDecision;
+
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -173,6 +223,45 @@ export function EnrollmentHub() {
       if (selectedApplicant?.id === id) setSelectedApplicant(prev => prev ? { ...prev, marks: interviewMarks, status: 'ACCEPTED' } : null);
     } catch (err) {
       alert('Gagal menyimpan markah temuduga');
+    }
+  };
+
+  const submitEvaluation = async () => {
+    if (!selectedApplicant) return;
+    const dbId = selectedApplicant.dbId;
+    if (!dbId) return;
+
+    const breakdown = aspectsList.map(a => `- ${a.label}: ${aspectScores[a.id]} (${scales.find(s => s.value === aspectScores[a.id])?.label})`).join('\n');
+    const reasonsStr = finalDecision === 'GAGAL' ? `\nSebab Penolakan:\n${rejectionReasons.map(r => `- ${r}`).join('\n')}` : '';
+    
+    const formattedNotes = `=== PENILAIAN TEMUDUGA ===\n`
+      + `Tarikh: ${new Date().toLocaleDateString('ms-MY')}\n`
+      + `Panel Penilai: ${panelName} (${panelDesignation})\n`
+      + `Jumlah Markah: ${totalScore}/40 (${calculatedPercentage}%)\n`
+      + `Keputusan: ${finalDecision}\n\n`
+      + `Pecahan Markah:\n${breakdown}\n`
+      + reasonsStr + `\n\n`
+      + `Ulasan:\n${evaluationComments}\n`
+      + (selectedApplicant.notes ? `\n---\n${selectedApplicant.notes}` : '');
+
+    try {
+      setLoading(true);
+      await axios.post(`/api/enrollment/update-interview/${dbId}`, {
+        hafazan_mark: calculatedPercentage,
+        tajwid_mark: calculatedPercentage,
+        akhlaq_mark: calculatedPercentage,
+        status: finalDecision === 'LULUS' ? 'ACCEPTED' : 'REJECTED',
+        notes: formattedNotes
+      });
+
+      alert('Penilaian temuduga berjaya disimpan!');
+      setShowEvaluationModal(false);
+      fetchApplicants();
+      setSelectedApplicant(null);
+    } catch (err) {
+      alert('Gagal menyimpan penilaian temuduga.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -326,37 +415,20 @@ export function EnrollmentHub() {
                   )}
 
                   {selectedApplicant.status === 'INTERVIEW' && (
-                    <div className="space-y-4 p-6 bg-amber-50 rounded-[32px] border border-amber-100">
-                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">BORANG PENILAIAN</p>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Platform Temuduga</label>
-                          <select
-                            value={selectedApplicant.interviewType || 'Fizikal'}
-                            onChange={e => setSelectedApplicant({ ...selectedApplicant, interviewType: e.target.value as any })}
-                            className="w-full bg-white border-2 border-amber-100 rounded-xl px-4 py-2 mt-1 font-bold text-slate-700"
-                          >
-                            <option value="Fizikal">Fizikal</option>
-                            <option value="Online">Online</option>
-                          </select>
-                        </div>
-                        {['hafazan', 'tajwid', 'akhlaq'].map(field => (
-                          <div key={field}>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{field} (0-100)</label>
-                            <input
-                              type="number"
-                              value={(interviewMarks as any)[field]}
-                              onChange={e => setInterviewMarks({ ...interviewMarks, [field]: parseInt(e.target.value) })}
-                              className="w-full bg-white border-2 border-amber-100 rounded-xl px-4 py-2 mt-1 font-bold text-slate-700 focus:border-[#6FC7CB] outline-none"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <button onClick={() => saveInterview(selectedApplicant.id)} className="flex-1 py-4 bg-emerald-500 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-emerald-600 shadow-lg shadow-emerald-50 transition-all">LULUS</button>
-                        <button onClick={() => updateStatus(selectedApplicant.id, 'REJECTED')} className="flex-1 py-4 bg-red-500 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase hover:bg-red-600 transition-all">GAGAL</button>
-                      </div>
-                    </div>
+                    <button 
+                      onClick={() => {
+                        setAspectScores({ 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3 });
+                        setEvaluationComments('');
+                        setPanelName('');
+                        setPanelDesignation('Mudir');
+                        setRejectionReasons([]);
+                        setOverrideDecision(null);
+                        setShowEvaluationModal(true);
+                      }}
+                      className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-lg shadow-amber-100 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Zap className="size-4" /> BUKA BORANG PENILAIAN
+                    </button>
                   )}
                   {selectedApplicant.status === 'ACCEPTED' && (
                     <button onClick={() => setShowOfferModal(true)} className="w-full py-4 bg-[#1A4D50] text-[#6FC7CB] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 shadow-xl transition-all flex items-center justify-center gap-2">
@@ -577,6 +649,215 @@ export function EnrollmentHub() {
                 <button onClick={() => setShowAllSchedules(false)} className="w-full py-5 bg-slate-900 text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all">TUTUP KALENDAR</button>
               </div>
            </div>
+        </div>
+      )}
+      {/* Digitized Hardcopy Interview Evaluation Modal */}
+      {showEvaluationModal && selectedApplicant && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4 z-[80] overflow-y-auto">
+          <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col my-8 border border-slate-100">
+            {/* Hardcopy-like Header */}
+            <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50">
+              <div className="flex items-center gap-4">
+                <img src="/images/logo.png" alt="Logo" className="h-14 object-contain" />
+                <div>
+                  <p className="text-[10px] font-black tracking-widest text-[#1A4D50] uppercase">AKADEMI AL-QURAN AMALILLAH</p>
+                  <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">BORANG PEMARKAHAN TEMUDUGA PELAJAR</h3>
+                </div>
+              </div>
+              
+              {/* Max/Pass Box */}
+              <div className="flex items-center gap-6 border-2 border-slate-200/80 rounded-2xl p-4 bg-white shrink-0">
+                <div className="text-xs font-bold text-slate-500 uppercase space-y-1">
+                  <div>Maksimum : <span className="text-slate-800 font-extrabold">40</span></div>
+                  <div>Markah lulus : <span className="text-slate-800 font-extrabold">50 %</span></div>
+                </div>
+                <div className="h-10 w-px bg-slate-200" />
+                <div className="text-center">
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pencapaian</div>
+                  <div className="text-2xl font-black text-[#1A4D50]">{totalScore} / 40 = {calculatedPercentage}%</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Candidate Info */}
+            <div className="px-8 py-6 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6 bg-white">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">NAMA CALON</p>
+                <p className="text-base font-black text-slate-700 uppercase mt-1">{selectedApplicant.name}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UMUR CALON</p>
+                <p className="text-base font-black text-slate-700 uppercase mt-1">{selectedApplicant.studentAge || 9} Tahun</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TARIKH TEMUDUGA</p>
+                <p className="text-base font-black text-slate-700 uppercase mt-1">{new Date().toLocaleDateString('ms-MY')}</p>
+              </div>
+            </div>
+
+            {/* Scoring Table */}
+            <div className="p-8 overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-slate-200 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    <th className="pb-3 w-12 text-center">BIL</th>
+                    <th className="pb-3">ASPEK PENILAIAN</th>
+                    {scales.map(s => (
+                      <th key={s.value} className="pb-3 text-center w-24">
+                        <div className="text-[9px] font-black text-slate-400 uppercase leading-none">{s.value}</div>
+                        <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">{s.label}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {aspectsList.map((asp, idx) => (
+                    <tr key={asp.id} className="hover:bg-slate-50/50">
+                      <td className="py-4 text-center font-bold text-slate-400">{idx + 1}</td>
+                      <td className="py-4 font-bold text-slate-700">{asp.label}</td>
+                      {scales.map(scale => (
+                        <td key={scale.value} className="py-4 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setAspectScores({ ...aspectScores, [asp.id]: scale.value })}
+                            className={`size-8 rounded-full font-black text-xs transition-all ${
+                              aspectScores[asp.id] === scale.value
+                                ? 'bg-[#6FC7CB] text-white shadow-lg shadow-cyan-100'
+                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                            }`}
+                          >
+                            {scale.value}
+                          </button>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr className="bg-slate-50/80 font-black border-t-2 border-slate-200">
+                    <td colSpan={2} className="py-5 text-right pr-6 uppercase tracking-wider text-xs text-slate-500">Jumlah Skor Dinilai</td>
+                    <td colSpan={5} className="py-5 text-center text-xl text-[#1A4D50]">
+                      {totalScore} / 40 &times; 100 = <span className="underline decoration-[#6FC7CB] decoration-4">{calculatedPercentage}%</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Decision, Rejection Reasons & Comments */}
+            <div className="p-8 border-t border-slate-100 bg-slate-50/30 grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Left Side: Decision & Rejection Reasons */}
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-[10px] font-black tracking-widest uppercase text-slate-400 mb-3">KEPUTUSAN PENILAIAN</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setOverrideDecision('LULUS')}
+                      className={`py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all flex items-center justify-center gap-2 ${
+                        finalDecision === 'LULUS'
+                          ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-100'
+                          : 'border-slate-200 text-slate-400 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <CheckCircle2 className="size-4" /> LULUS {autoDecision === 'LULUS' && <span className="text-[9px] bg-emerald-700/50 px-1.5 py-0.5 rounded text-white font-bold ml-1">AUTO</span>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOverrideDecision('GAGAL')}
+                      className={`py-4 rounded-2xl font-black text-xs uppercase tracking-widest border-2 transition-all flex items-center justify-center gap-2 ${
+                        finalDecision === 'GAGAL'
+                          ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-100'
+                          : 'border-slate-200 text-slate-400 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <XCircle className="size-4" /> GAGAL {autoDecision === 'GAGAL' && <span className="text-[9px] bg-red-700/50 px-1.5 py-0.5 rounded text-white font-bold ml-1">AUTO</span>}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sebab Penolakan Checklist */}
+                <div>
+                  <h4 className={`text-[10px] font-black tracking-widest uppercase mb-3 transition-colors ${
+                    finalDecision === 'GAGAL' ? 'text-red-500 font-extrabold' : 'text-slate-300'
+                  }`}>SEBAB PENOLAKAN (JIKA GAGAL)</h4>
+                  <div className={`space-y-2.5 p-5 rounded-3xl border transition-all ${
+                    finalDecision === 'GAGAL' ? 'bg-white border-red-100' : 'bg-slate-100/50 border-slate-200 opacity-40 pointer-events-none'
+                  }`}>
+                    {rejectionOptions.map((opt) => (
+                      <label key={opt} className="flex items-start gap-3 cursor-pointer text-xs font-bold text-slate-600 hover:text-slate-800">
+                        <input
+                          type="checkbox"
+                          checked={rejectionReasons.includes(opt)}
+                          onChange={e => {
+                            if (e.target.checked) setRejectionReasons([...rejectionReasons, opt]);
+                            else setRejectionReasons(rejectionReasons.filter(r => r !== opt));
+                          }}
+                          className="mt-0.5 rounded border-slate-300 text-red-500 focus:ring-red-400 size-4"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Ulasan (Comments) & Signature details */}
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-[10px] font-black tracking-widest uppercase text-slate-400 mb-3">ULASAN PENILAI</h4>
+                  <textarea
+                    required
+                    rows={4}
+                    value={evaluationComments}
+                    onChange={e => setEvaluationComments(e.target.value)}
+                    placeholder="Sila masukkan ulasan komprehensif berkenaan prestasi hafazan, kelancaran tajwid, akhlak, dan kesediaan calon..."
+                    className="w-full p-4 border border-slate-200 rounded-3xl text-sm text-slate-700 outline-none focus:ring-2 focus:ring-[#6FC7CB] focus:border-transparent transition-all placeholder:text-slate-300 bg-white min-h-[140px]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black tracking-widest uppercase text-slate-400 block mb-2">NAMA PANEL PENILAI</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nama penuh panel"
+                      value={panelName}
+                      onChange={e => setPanelName(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#6FC7CB] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black tracking-widest uppercase text-slate-400 block mb-2">JAWATAN (SEMAKAN PEJABAT)</label>
+                    <input
+                      type="text"
+                      required
+                      value={panelDesignation}
+                      onChange={e => setPanelDesignation(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#6FC7CB] outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="p-8 border-t border-slate-100 flex gap-4 bg-white justify-end">
+              <button
+                type="button"
+                onClick={() => setShowEvaluationModal(false)}
+                className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
+              >
+                BATAL
+              </button>
+              <button
+                type="button"
+                onClick={submitEvaluation}
+                className="px-10 py-4 bg-[#1A4D50] hover:bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl"
+              >
+                <CheckCircle2 className="size-4" /> SIMPAN PENILAIAN
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
