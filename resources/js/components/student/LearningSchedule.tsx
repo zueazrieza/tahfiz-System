@@ -25,7 +25,7 @@ export function LearningSchedule() {
           <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center"><BookOpen className="text-white" size={26} /></div>
           <div>
             <h3 className="text-lg font-bold text-gray-900">Kelas {classRoom?.name ?? '—'}</h3>
-            <p className="text-sm text-gray-600">Ustaz/Ustazah: <strong>{teacher?.name ?? '—'}</strong></p>
+            <p className="text-sm text-gray-600">Murabbi/Murabbiah: <strong>{teacher?.name ?? '—'}</strong></p>
             <p className="text-sm text-gray-600">Kapasiti: {classRoom?.studentIds?.length ?? 0} / {classRoom?.capacity ?? 0} pelajar</p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export function LearningSchedule() {
           <li>• Tiba 5 minit awal sebelum sesi bermula</li>
           <li>• Bawa Mushaf dan buku nota anda</li>
           <li>• Ulang kaji pelajaran semalam sebelum hafazan baharu</li>
-          <li>• Tanya ustaz/ustazah jika ada kemusykilan</li>
+          <li>• Tanya murabbi/murabbiah jika ada kemusykilan</li>
         </ul>
       </div>
     </div>

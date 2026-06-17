@@ -73,7 +73,7 @@ export function CertificateModal({ isOpen, onClose, studentName, achievementName
 
                 <div className="grid grid-cols-2 gap-20 w-full mt-auto pt-12">
                    <div className="text-center">
-                      <div className="border-b-2 border-slate-300 pb-2 mb-2 font-serif text-slate-800">Ustaz Ahmad Bin Abdullah</div>
+                      <div className="border-b-2 border-slate-300 pb-2 mb-2 font-serif text-slate-800">Murabbi Ahmad Bin Abdullah</div>
                       <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">MURABBI PEMBIMBING</p>
                    </div>
                    <div className="text-center">

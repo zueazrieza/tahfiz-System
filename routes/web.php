@@ -60,6 +60,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
     Route::post('/login',    [AuthController::class, 'apiLogin'])->middleware('throttle:5,1');
     Route::post('/register', [AuthController::class, 'apiRegister']);
     Route::post('/logout',   [AuthController::class, 'apiLogout']);
+    Route::post('/forgot-password', [AuthController::class, 'apiForgotPassword']);
     Route::get('/me',        [AuthController::class, 'me']);
 
     // Public enrollment (no auth)
@@ -123,7 +124,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::apiResource('notifications', NotificationController::class)->only(['update', 'destroy']);
 
         // Announcements
-        Route::apiResource('announcements', AnnouncementController::class)->only(['index', 'store', 'destroy']);
+        Route::apiResource('announcements', AnnouncementController::class)->only(['index', 'store', 'update', 'destroy']);
 
         // Enrollment management (staff)
         Route::get('/enrollment/applicants',                [EnrollmentController::class, 'index']);

@@ -103,6 +103,11 @@ export function ManageAttendance() {
       return;
     }
 
+    if (!confirm('Adakah anda pasti ingin menyimpan rekod kehadiran ini?')) {
+      return;
+    }
+
+
     const records = studentsInClass.map(s => ({
       studentId: s.id,
       classId: selectedClassId,
@@ -204,14 +209,14 @@ export function ManageAttendance() {
       {viewMode === 'daily' ? (
         <div className="flex gap-4">
           <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setAttendanceMap({}); }} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name} - {state.teachers.find(t => String(t.id) === String(c.teacherId))?.name ?? 'Tiada Murabbi'}</option>)}
           </select>
           <input type="date" value={date} onChange={e => { setDate(e.target.value); setAttendanceMap({}); }} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
         </div>
       ) : (
         <div className="flex gap-4">
           <select value={selectedClassId} onChange={e => setSelectedClassId(e.target.value)} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name} - {state.teachers.find(t => String(t.id) === String(c.teacherId))?.name ?? 'Tiada Murabbi'}</option>)}
           </select>
           <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
             {['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'].map((m, i) => (

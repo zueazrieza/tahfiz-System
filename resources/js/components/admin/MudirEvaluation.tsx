@@ -22,6 +22,7 @@ export function MudirEvaluation() {
     remarks: ''
   });
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
@@ -44,20 +45,49 @@ export function MudirEvaluation() {
   };
 
   const handleScoreChange = (field: string, value: string, max: number) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
     if (value === '') {
       setFormData(prev => ({ ...prev, [field]: '' }));
       return;
     }
     const num = Number(value);
-    if (!isNaN(num) && num >= 0 && num <= max) {
-      setFormData(prev => ({ ...prev, [field]: num }));
+    if (!isNaN(num)) {
+      if (num < 0) {
+        setFormData(prev => ({ ...prev, [field]: 0 }));
+      } else if (num > max) {
+        setFormData(prev => ({ ...prev, [field]: max }));
+      } else {
+        setFormData(prev => ({ ...prev, [field]: value }));
+      }
     }
   };
 
+  const isFormValid = selectedStudent !== '' &&
+                      formData.surah !== '' &&
+                      formData.juzuk !== '' &&
+                      formData.tajwid_score !== '' &&
+                      formData.kelancaran_score !== '' &&
+                      formData.hafazan_score !== '' &&
+                      formData.lagu_score !== '';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent || !formData.surah || !formData.juzuk) {
-      alert('Sila lengkapkan butiran pelajar, surah dan juzuk.');
+    
+    setTouched({
+      student: true,
+      surah: true,
+      juzuk: true,
+      tajwid_score: true,
+      kelancaran_score: true,
+      hafazan_score: true,
+      lagu_score: true,
+    });
+
+    if (!isFormValid) {
+      return;
+    }
+
+    if (!confirm('Adakah anda pasti ingin menghantar penilaian ini?')) {
       return;
     }
 
@@ -71,6 +101,7 @@ export function MudirEvaluation() {
       alert('Penilaian Mudir berjaya direkodkan.');
       setFormData({ surah: '', juzuk: '', tajwid_score: '', kelancaran_score: '', hafazan_score: '', lagu_score: '', remarks: '' });
       setSelectedStudent('');
+      setTouched({});
       fetchEvaluations();
     } catch (err: any) {
       alert('Gagal merekod penilaian: ' + (err.response?.data?.message || err.message));
@@ -102,12 +133,21 @@ export function MudirEvaluation() {
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pelajar</label>
               <select 
                 value={selectedStudent} 
-                onChange={e => setSelectedStudent(e.target.value)}
-                className="w-full rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                onChange={e => {
+                  setSelectedStudent(e.target.value);
+                  setTouched(prev => ({ ...prev, student: true }));
+                }}
+                onBlur={() => setTouched(prev => ({ ...prev, student: true }))}
+                className={`w-full rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500 ${
+                  !selectedStudent && touched.student ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                }`}
               >
                 <option value="">Pilih Pelajar...</option>
                 {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.juzukCompleted || 0} Juzuk)</option>)}
               </select>
+              {!selectedStudent && touched.student && (
+                <p className="text-red-500 text-xs mt-1">Sila pilih pelajar.</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -115,22 +155,40 @@ export function MudirEvaluation() {
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Surah Ujian</label>
                 <select 
                   value={formData.surah}
-                  onChange={e => setFormData(prev => ({...prev, surah: e.target.value}))}
-                  className="w-full rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                  onChange={e => {
+                    setFormData(prev => ({...prev, surah: e.target.value}));
+                    setTouched(prev => ({ ...prev, surah: true }));
+                  }}
+                  onBlur={() => setTouched(prev => ({ ...prev, surah: true }))}
+                  className={`w-full rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500 ${
+                    !formData.surah && touched.surah ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                  }`}
                 >
                   <option value="">Pilih Surah...</option>
                   {SURAHS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
+                {!formData.surah && touched.surah && (
+                  <p className="text-red-500 text-xs mt-1">Sila pilih surah.</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tahap / Juzuk</label>
                 <input 
                   type="number" 
                   value={formData.juzuk}
-                  onChange={e => setFormData(prev => ({...prev, juzuk: e.target.value}))}
-                  className="w-full rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500"
+                  onChange={e => {
+                    setFormData(prev => ({...prev, juzuk: e.target.value}));
+                    setTouched(prev => ({ ...prev, juzuk: true }));
+                  }}
+                  onBlur={() => setTouched(prev => ({ ...prev, juzuk: true }))}
+                  className={`w-full rounded-xl border-slate-200 focus:border-teal-500 focus:ring-teal-500 ${
+                    !formData.juzuk && touched.juzuk ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                  }`}
                   placeholder="Cth: 29"
                 />
+                {!formData.juzuk && touched.juzuk && (
+                  <p className="text-red-500 text-xs mt-1">Sila masukkan tahap/juzuk.</p>
+                )}
               </div>
             </div>
 
@@ -143,32 +201,88 @@ export function MudirEvaluation() {
                 <label className="text-[11px] font-bold text-slate-500 flex justify-between">
                   <span>TAJWID</span> <span className="text-slate-400">/ 40</span>
                 </label>
-                <input type="number" min="0" max="40" value={formData.tajwid_score} onChange={e => handleScoreChange('tajwid_score', e.target.value, 40)} className="w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500" />
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="40" 
+                  value={formData.tajwid_score} 
+                  onChange={e => handleScoreChange('tajwid_score', e.target.value, 40)} 
+                  onBlur={() => setTouched(prev => ({ ...prev, tajwid_score: true }))}
+                  className={`w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500 ${
+                    formData.tajwid_score === '' && touched.tajwid_score ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                  }`} 
+                />
+                {formData.tajwid_score === '' && touched.tajwid_score && (
+                  <p className="text-red-500 text-xs mt-1">Sila masukkan markah Tajwid (0-40).</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-500 flex justify-between">
                   <span>KELANCARAN</span> <span className="text-slate-400">/ 30</span>
                 </label>
-                <input type="number" min="0" max="30" value={formData.kelancaran_score} onChange={e => handleScoreChange('kelancaran_score', e.target.value, 30)} className="w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500" />
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="30" 
+                  value={formData.kelancaran_score} 
+                  onChange={e => handleScoreChange('kelancaran_score', e.target.value, 30)} 
+                  onBlur={() => setTouched(prev => ({ ...prev, kelancaran_score: true }))}
+                  className={`w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500 ${
+                    formData.kelancaran_score === '' && touched.kelancaran_score ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                  }`} 
+                />
+                {formData.kelancaran_score === '' && touched.kelancaran_score && (
+                  <p className="text-red-500 text-xs mt-1">Sila masukkan markah Kelancaran (0-30).</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-500 flex justify-between">
                   <span>HAFAZAN</span> <span className="text-slate-400">/ 20</span>
                 </label>
-                <input type="number" min="0" max="20" value={formData.hafazan_score} onChange={e => handleScoreChange('hafazan_score', e.target.value, 20)} className="w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500" />
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="20" 
+                  value={formData.hafazan_score} 
+                  onChange={e => handleScoreChange('hafazan_score', e.target.value, 20)} 
+                  onBlur={() => setTouched(prev => ({ ...prev, hafazan_score: true }))}
+                  className={`w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500 ${
+                    formData.hafazan_score === '' && touched.hafazan_score ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                  }`} 
+                />
+                {formData.hafazan_score === '' && touched.hafazan_score && (
+                  <p className="text-red-500 text-xs mt-1">Sila masukkan markah Hafazan (0-20).</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-500 flex justify-between">
                   <span>LAGU (TARANNUM)</span> <span className="text-slate-400">/ 10</span>
                 </label>
-                <input type="number" min="0" max="10" value={formData.lagu_score} onChange={e => handleScoreChange('lagu_score', e.target.value, 10)} className="w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500" />
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="10" 
+                  value={formData.lagu_score} 
+                  onChange={e => handleScoreChange('lagu_score', e.target.value, 10)} 
+                  onBlur={() => setTouched(prev => ({ ...prev, lagu_score: true }))}
+                  className={`w-full rounded-xl border-slate-200 text-center font-bold text-lg focus:border-teal-500 ${
+                    formData.lagu_score === '' && touched.lagu_score ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''
+                  }`} 
+                />
+                {formData.lagu_score === '' && touched.lagu_score && (
+                  <p className="text-red-500 text-xs mt-1">Sila masukkan markah Lagu (0-10).</p>
+                )}
               </div>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center mt-4">
+            <div className={`p-4 rounded-xl border flex justify-between items-center mt-4 transition-all duration-300 ${
+              calculateTotal() >= 80 
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
                <div>
-                 <p className="text-xs font-bold text-slate-500 uppercase">Jumlah Markah</p>
-                 <p className="text-xs text-slate-400">Minimum Lulus: 80</p>
+                 <p className="text-xs font-bold uppercase opacity-80">Jumlah Markah</p>
+                 <p className="text-xs opacity-60">Minimum Lulus: 80</p>
                </div>
                <div className={`text-4xl font-black ${calculateTotal() >= 80 ? 'text-emerald-600' : 'text-red-500'}`}>
                  {calculateTotal()}%
@@ -187,7 +301,7 @@ export function MudirEvaluation() {
 
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={!isFormValid || loading}
               className="w-full mt-4 py-3 bg-teal-600 text-white font-black rounded-xl hover:bg-teal-700 transition-all disabled:opacity-50"
             >
               {loading ? 'Menyimpan...' : 'Sahkan Keputusan Ujian'}

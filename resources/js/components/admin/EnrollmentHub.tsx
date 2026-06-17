@@ -70,7 +70,7 @@ export function EnrollmentHub() {
   });
   const [evaluationComments, setEvaluationComments] = useState('');
   const [panelName, setPanelName] = useState('');
-  const [panelDesignation, setPanelDesignation] = useState('Mudir');
+  const [panelDesignation, setPanelDesignation] = useState('Temuduga Mudir');
   const [rejectionReasons, setRejectionReasons] = useState<string[]>([]);
   const [overrideDecision, setOverrideDecision] = useState<'LULUS' | 'GAGAL' | null>(null);
 
@@ -154,14 +154,7 @@ export function EnrollmentHub() {
     window.open(`/api/enrollment/offer-letter/${dbId}`, '_blank');
   };
 
-  const calculateFees = (applicant: Applicant) => {
-    const base = 850;
-    const uniform = applicant.gender === 'Lelaki' ? 150 : 250;
-    const registration = 100;
-    const date = new Date(applicant.dateApplied);
-    const earlyBird = date.getDate() <= 5 ? 50 : 0;
-    return { base, uniform, registration, earlyBird, total: base + uniform + registration - earlyBird };
-  };
+
 
   const stats = [
     { label: 'Calon Baharu', count: applicants.filter(a => a.status === 'PROSPECT').length, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -172,6 +165,15 @@ export function EnrollmentHub() {
   const updateStatus = async (id: string, newStatus: EnrollmentStatus) => {
     const dbId = applicants.find(a => a.id === id)?.dbId;
     if (!dbId) return;
+
+    if (newStatus === 'OFFERED' || newStatus === 'ENROLLED') {
+      const confirmText = newStatus === 'OFFERED' 
+        ? 'Adakah anda pasti mahu menukar status calon ini kepada Tawaran Dihantar?' 
+        : 'Adakah anda pasti mahu menukar status permohonan ini kepada BERJAYA?';
+      if (!confirm(confirmText)) {
+        return;
+      }
+    }
 
     try {
       await axios.patch(`/api/enrollment/status/${dbId}`, { status: newStatus });
@@ -190,6 +192,10 @@ export function EnrollmentHub() {
     if (!selectedApplicant) return;
     const dbId = selectedApplicant.dbId;
     if (!dbId) return;
+
+    if (!confirm('Adakah anda pasti ingin menjadualkan temuduga ini?')) {
+      return;
+    }
 
     try {
       const response = await axios.post(`/api/enrollment/schedule-interview/${dbId}`, {
@@ -231,6 +237,25 @@ export function EnrollmentHub() {
     const dbId = selectedApplicant.dbId;
     if (!dbId) return;
 
+    if (!panelName.trim()) {
+      alert('Sila masukkan nama panel penilai.');
+      return;
+    }
+
+    if (!evaluationComments.trim()) {
+      alert('Sila masukkan ulasan penilai.');
+      return;
+    }
+
+    if (finalDecision === 'GAGAL' && rejectionReasons.length === 0) {
+      alert('Sila pilih sekurang-kurangnya satu sebab penolakan.');
+      return;
+    }
+
+    if (!confirm('Adakah anda pasti ingin menghantar penilaian temuduga ini?')) {
+      return;
+    }
+
     const breakdown = aspectsList.map(a => `- ${a.label}: ${aspectScores[a.id]} (${scales.find(s => s.value === aspectScores[a.id])?.label})`).join('\n');
     const reasonsStr = finalDecision === 'GAGAL' ? `\nSebab Penolakan:\n${rejectionReasons.map(r => `- ${r}`).join('\n')}` : '';
     
@@ -247,6 +272,7 @@ export function EnrollmentHub() {
     try {
       setLoading(true);
       await axios.post(`/api/enrollment/update-interview/${dbId}`, {
+
         hafazan_mark: calculatedPercentage,
         tajwid_mark: calculatedPercentage,
         akhlaq_mark: calculatedPercentage,
@@ -266,8 +292,7 @@ export function EnrollmentHub() {
   };
 
   const sendWhatsAppOffer = (applicant: Applicant) => {
-    const fees = calculateFees(applicant);
-    const message = `Assalamualaikum Tn/Puan ${applicant.parentName}, Tahniah! Anak anda ${applicant.name} telah DITERIMA masuk ke AKMAL Tahfiz. Jumlah yuran: RM${fees.total}. Sila muat turun surat tawaran: https://akmal-tahfiz.edu.my/off/${applicant.id}`;
+    const message = `Assalamualaikum Tn/Puan ${applicant.parentName}, Tahniah! Anak anda ${applicant.name} telah DITERIMA masuk ke AKMAL Tahfiz. Sila muat turun surat tawaran: https://akmal-tahfiz.edu.my/off/${applicant.id}`;
     window.open(`https://wa.me/${applicant.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -319,14 +344,14 @@ export function EnrollmentHub() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {['ALL', 'PROSPECT', 'SCHEDULED', 'INTERVIEW', 'ACCEPTED', 'OFFERED', 'WAITING_PAYMENT'].map((t) => (
+        {['ALL', 'PROSPECT', 'SCHEDULED', 'INTERVIEW', 'ACCEPTED', 'OFFERED'].map((t) => (
           <button
             key={t}
             onClick={() => setActiveTab(t as any)}
             className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${activeTab === t ? 'bg-[#1A4D50] text-[#6FC7CB] border-[#1A4D50] shadow-lg' : 'bg-white text-slate-400 border-slate-200 hover:border-[#6FC7CB]'
               }`}
           >
-            {t === 'ALL' ? 'Semua Pemohon' : t === 'PROSPECT' ? 'Calon' : t === 'SCHEDULED' ? 'Dijadualkan' : t === 'INTERVIEW' ? 'Temuduga' : t === 'ACCEPTED' ? 'Layak' : t === 'OFFERED' ? 'Tawaran' : 'Bayaran'}
+            {t === 'ALL' ? 'Semua Pemohon' : t === 'PROSPECT' ? 'Calon' : t === 'SCHEDULED' ? 'Dijadualkan' : t === 'INTERVIEW' ? 'Temuduga' : t === 'ACCEPTED' ? 'Layak' : 'Tawaran'}
           </button>
         ))}
       </div>
@@ -420,7 +445,7 @@ export function EnrollmentHub() {
                         setAspectScores({ 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3 });
                         setEvaluationComments('');
                         setPanelName('');
-                        setPanelDesignation('Mudir');
+                        setPanelDesignation('Temuduga Mudir');
                         setRejectionReasons([]);
                         setOverrideDecision(null);
                         setShowEvaluationModal(true);
@@ -482,33 +507,7 @@ export function EnrollmentHub() {
                   Memaklumkan bahawa anakanda **{selectedApplicant.name}**, telah berjaya dalam sesi temuduga dengan markah purata **{selectedApplicant.marks ? Math.round((selectedApplicant.marks.hafazan + selectedApplicant.marks.tajwid + selectedApplicant.marks.akhlaq) / 3) : 0}%** dan ditawarkan tempat di AKMAL Tahfiz.
                 </p>
 
-                <div className="bg-slate-50 rounded-[32px] p-8 border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 text-center">STRUKTUR YURAN AUTOMATIK</p>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Yuran Asas Pengajian</span>
-                      <span className="font-bold text-slate-700">RM{calculateFees(selectedApplicant).base}.00</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Pakaian Seragam ({selectedApplicant.gender})</span>
-                      <span className="font-bold text-slate-700">RM{calculateFees(selectedApplicant).uniform}.00</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Pendaftaran & Pentadbiran</span>
-                      <span className="font-bold text-slate-700">RM{calculateFees(selectedApplicant).registration}.00</span>
-                    </div>
-                    {calculateFees(selectedApplicant).earlyBird > 0 && (
-                      <div className="flex justify-between text-sm text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg">
-                        <span>Diskaun Pendaftaran Awal</span>
-                        <span>-RM{calculateFees(selectedApplicant).earlyBird}.00</span>
-                      </div>
-                    )}
-                    <div className="pt-4 mt-4 border-t-2 border-dashed border-slate-200 flex justify-between items-center">
-                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">JUMLAH PERLU DIBAYAR</span>
-                      <span className="text-3xl font-black text-[#1A4D50]">RM{calculateFees(selectedApplicant).total}.00</span>
-                    </div>
-                  </div>
-                </div>
+
 
                 <div className="grid grid-cols-2 gap-8 py-6 border-y border-slate-100">
                   <div>
@@ -535,6 +534,9 @@ export function EnrollmentHub() {
                   <button
                     onClick={async () => {
                       if (!selectedApplicant) return;
+                      if (!confirm('Adakah anda pasti mahu menukar status calon ini kepada Tawaran Dihantar?')) {
+                        return;
+                      }
                       try {
                         await axios.post(`/api/enrollment/send-offer-email/${selectedApplicant.dbId}`);
                         alert(`Surat tawaran telah dihantar ke e-mel penjaga.`);
@@ -550,10 +552,20 @@ export function EnrollmentHub() {
                     <Mail className="size-6 text-white" /> EMAIL
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      if (!selectedApplicant) return;
+                      if (!confirm('Adakah anda pasti mahu menukar status calon ini kepada Tawaran Dihantar?')) {
+                        return;
+                      }
                       sendWhatsAppOffer(selectedApplicant);
-                      updateStatus(selectedApplicant.id, 'OFFERED');
-                      setShowOfferModal(false);
+                      try {
+                        await axios.patch(`/api/enrollment/status/${selectedApplicant.dbId}`, { status: 'OFFERED' });
+                        setApplicants(prev => prev.map(a => a.id === selectedApplicant.id ? { ...a, status: 'OFFERED' } : a));
+                        setSelectedApplicant(prev => prev ? { ...prev, status: 'OFFERED' } : null);
+                        setShowOfferModal(false);
+                      } catch (err) {
+                        alert('Gagal mengemaskini status');
+                      }
                     }}
                     className="flex-1 py-5 bg-emerald-500 text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-emerald-600 shadow-2xl shadow-emerald-200 transition-all flex items-center justify-center gap-3"
                   >
@@ -775,29 +787,27 @@ export function EnrollmentHub() {
                 </div>
 
                 {/* Sebab Penolakan Checklist */}
-                <div>
-                  <h4 className={`text-[10px] font-black tracking-widest uppercase mb-3 transition-colors ${
-                    finalDecision === 'GAGAL' ? 'text-red-500 font-extrabold' : 'text-slate-300'
-                  }`}>SEBAB PENOLAKAN (JIKA GAGAL)</h4>
-                  <div className={`space-y-2.5 p-5 rounded-3xl border transition-all ${
-                    finalDecision === 'GAGAL' ? 'bg-white border-red-100' : 'bg-slate-100/50 border-slate-200 opacity-40 pointer-events-none'
-                  }`}>
-                    {rejectionOptions.map((opt) => (
-                      <label key={opt} className="flex items-start gap-3 cursor-pointer text-xs font-bold text-slate-600 hover:text-slate-800">
-                        <input
-                          type="checkbox"
-                          checked={rejectionReasons.includes(opt)}
-                          onChange={e => {
-                            if (e.target.checked) setRejectionReasons([...rejectionReasons, opt]);
-                            else setRejectionReasons(rejectionReasons.filter(r => r !== opt));
-                          }}
-                          className="mt-0.5 rounded border-slate-300 text-red-500 focus:ring-red-400 size-4"
-                        />
-                        <span>{opt}</span>
-                      </label>
-                    ))}
+                {finalDecision === 'GAGAL' && (
+                  <div>
+                    <h4 className="text-[10px] font-black tracking-widest uppercase mb-3 text-red-500 font-extrabold">SEBAB PENOLAKAN (JIKA GAGAL)</h4>
+                    <div className="space-y-2.5 p-5 rounded-3xl border bg-white border-red-100">
+                      {rejectionOptions.map((opt) => (
+                        <label key={opt} className="flex items-start gap-3 cursor-pointer text-xs font-bold text-slate-600 hover:text-slate-800">
+                          <input
+                            type="checkbox"
+                            checked={rejectionReasons.includes(opt)}
+                            onChange={e => {
+                              if (e.target.checked) setRejectionReasons([...rejectionReasons, opt]);
+                              else setRejectionReasons(rejectionReasons.filter(r => r !== opt));
+                            }}
+                            className="mt-0.5 rounded border-slate-300 text-red-500 focus:ring-red-400 size-4"
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Right Side: Ulasan (Comments) & Signature details */}
@@ -828,13 +838,15 @@ export function EnrollmentHub() {
                   </div>
                   <div>
                     <label className="text-[10px] font-black tracking-widest uppercase text-slate-400 block mb-2">JAWATAN (SEMAKAN PEJABAT)</label>
-                    <input
-                      type="text"
+                    <select
                       required
                       value={panelDesignation}
                       onChange={e => setPanelDesignation(e.target.value)}
                       className="w-full px-4 py-3 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#6FC7CB] outline-none"
-                    />
+                    >
+                      <option value="Temuduga Mudir">Temuduga Mudir</option>
+                      <option value="Temuduga Murabbi / Murabbiah">Temuduga Murabbi / Murabbiah</option>
+                    </select>
                   </div>
                 </div>
               </div>

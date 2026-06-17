@@ -69,8 +69,13 @@ export function ManageAchievements() {
     const name = customName || newAchievement.name;
     if (!selectedStudentId || !name) return;
 
+    if (!confirm(`Adakah anda pasti ingin menganugerahkan "${name}" kepada pelajar ini?`)) {
+      return;
+    }
+
     try {
       await axios.post('/api/achievements', {
+
         student_id: selectedStudentId,
         name: name,
         type: customName ? 'badge' : newAchievement.type,

@@ -65,8 +65,12 @@ export function StudentAIPrediction({ onNavigate }: Props) {
 
   const handleGenerate = async () => {
     if (!student?.id) return;
+    if (!confirm('Adakah anda pasti ingin menjana semula ramalan AI anda?')) {
+      return;
+    }
     try {
       setLoading(true);
+
       const resp = await axios.post('/api/ai-predictions/generate', { student_id: student.id });
       setPrediction(resp.data);
     } catch (err: any) {

@@ -42,6 +42,9 @@ export function UploadReport() {
 
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin menghantar laporan mingguan ini?')) {
+      return;
+    }
     try {
       // Logic for saving weekly report to be viewed by Admin
       await axios.post('/api/reports/weekly', {
@@ -64,6 +67,9 @@ export function UploadReport() {
     if (!selectedStudent) {
        alert('Sila pilih pelajar.');
        return;
+    }
+    if (!confirm('Adakah anda pasti ingin menetapkan sasaran hafazan pelajar ini?')) {
+      return;
     }
     try {
       const combinedTarget = `${targetM1} | ${targetM2} | ${targetM3}`;

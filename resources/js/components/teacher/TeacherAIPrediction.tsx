@@ -56,7 +56,11 @@ export function TeacherAIPrediction() {
   };
 
   const handleGenerate = async () => {
+    if (!confirm('Adakah anda pasti ingin menjana semula ramalan AI untuk kelas anda?')) {
+      return;
+    }
     setIsGenerating(true);
+
     try {
       const classIds = (teacher?.classIds || []).map(id => String(id));
       

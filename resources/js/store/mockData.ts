@@ -168,8 +168,8 @@ export interface Notification {
 
 export const SEED_USERS: User[] = [
   { id: 'u1', name: 'Admin User', email: 'admin@akmal.edu.my', password: 'admin123', role: 'admin', status: 'active' },
-  { id: 'u2', name: 'Ustaz Abdullah', email: 'abdullah@akmal.edu.my', password: 'teacher123', role: 'teacher', linkedId: 't1', status: 'active' },
-  { id: 'u3', name: 'Ustazah Sarah', email: 'sarah@akmal.edu.my', password: 'teacher123', role: 'teacher', linkedId: 't2', status: 'active' },
+  { id: 'u2', name: 'Murabbi Abdullah', email: 'abdullah@akmal.edu.my', password: 'teacher123', role: 'teacher', linkedId: 't1', status: 'active' },
+  { id: 'u3', name: 'Murabbiah Sarah', email: 'sarah@akmal.edu.my', password: 'teacher123', role: 'teacher', linkedId: 't2', status: 'active' },
   { id: 'u4', name: 'Hassan bin Ahmad', email: 'hassan@gmail.com', password: 'parent123', role: 'parent', linkedId: 's1', status: 'active' },
   { id: 'u5', name: 'Ali bin Omar', email: 'ali@gmail.com', password: 'parent123', role: 'parent', linkedId: 's2', status: 'active' },
   { id: 'u6', name: 'Ahmad bin Hassan', email: 'ahmad@student.akmal.edu.my', password: 'student123', role: 'student', linkedId: 's1', status: 'active' },
@@ -178,9 +178,9 @@ export const SEED_USERS: User[] = [
 ];
 
 export const SEED_TEACHERS: Teacher[] = [
-  { id: 't1', name: 'Ustaz Abdullah', email: 'abdullah@akmal.edu.my', phone: '+60 12-111 2222', classIds: ['c1', 'c3'], specialization: 'Hafazan & Tajwid', status: 'Aktif', joinedDate: '2023-01-10' },
-  { id: 't2', name: 'Ustazah Sarah', email: 'sarah@akmal.edu.my', phone: '+60 13-333 4444', classIds: ['c2'], specialization: 'Hafazan', status: 'Aktif', joinedDate: '2023-06-01' },
-  { id: 't3', name: 'Ustaz Yusuf', email: 'yusuf@akmal.edu.my', phone: '+60 14-555 6666', classIds: ['c4'], specialization: 'Qiraat', status: 'Aktif', joinedDate: '2024-01-15' },
+  { id: 't1', name: 'Murabbi Abdullah', email: 'abdullah@akmal.edu.my', phone: '+60 12-111 2222', classIds: ['c1', 'c3'], specialization: 'Hafazan & Tajwid', status: 'Aktif', joinedDate: '2023-01-10' },
+  { id: 't2', name: 'Murabbiah Sarah', email: 'sarah@akmal.edu.my', phone: '+60 13-333 4444', classIds: ['c2'], specialization: 'Hafazan', status: 'Aktif', joinedDate: '2023-06-01' },
+  { id: 't3', name: 'Murabbi Yusuf', email: 'yusuf@akmal.edu.my', phone: '+60 14-555 6666', classIds: ['c4'], specialization: 'Qiraat', status: 'Aktif', joinedDate: '2024-01-15' },
 ];
 
 export const SEED_CLASSES: ClassRoom[] = [
@@ -272,11 +272,11 @@ export const SEED_ACTIVITY_LOG: ActivityLog[] = [
   { id: 'log1', type: 'student_added', description: 'Pelajar Baharu Didaftarkan', subDescription: 'Ahmad bin Ali', timestamp: new Date(Date.now() - 5 * 60000).toISOString() },
   { id: 'log2', type: 'payment_received', description: 'Yuran Diterima', subDescription: 'Keluarga Hassan', timestamp: new Date(Date.now() - 60 * 60000).toISOString() },
   { id: 'log3', type: 'hafazan_updated', description: 'Rekod Hafazan Dikemas Kini', subDescription: 'Kelas Al-Falah', timestamp: new Date(Date.now() - 2 * 60 * 60000).toISOString() },
-  { id: 'log4', type: 'teacher_added', description: 'Guru Ditambah', subDescription: 'Ustazah Fatimah', timestamp: new Date(Date.now() - 3 * 60 * 60000).toISOString() },
+  { id: 'log4', type: 'teacher_added', description: 'Guru Ditambah', subDescription: 'Murabbiah Fatimah', timestamp: new Date(Date.now() - 3 * 60 * 60000).toISOString() },
 ];
 
 export const SEED_NOTIFICATIONS: Notification[] = [
-  { id: 'n1', studentId: 's1', type: 'hafazan', title: 'Rekod Hafazan Dikemas Kini', message: 'Ahmad telah melengkapkan Sabaq Al-Baqarah 50-60 dengan gred Mumtaz. Catatan Ustaz: Progres yang baik hari ini!', timestamp: new Date(Date.now() - 30 * 60000).toISOString(), read: false },
+  { id: 'n1', studentId: 's1', type: 'hafazan', title: 'Rekod Hafazan Dikemas Kini', message: 'Ahmad telah melengkapkan Sabaq Al-Baqarah 50-60 dengan gred Mumtaz. Catatan Murabbi: Progres yang baik hari ini!', timestamp: new Date(Date.now() - 30 * 60000).toISOString(), read: false },
   { id: 'n2', studentId: 's1', type: 'attendance', title: 'Kehadiran Dicatat', message: 'Ahmad telah dicatat Hadir untuk sesi hari ini.', timestamp: new Date(Date.now() - 2 * 60 * 60000).toISOString(), read: false },
   { id: 'n3', studentId: 's1', type: 'achievement', title: '🏆 Pencapaian Dibuka!', message: 'Ahmad telah mendapat lencana "Kehadiran Sempurna" selama 30 hari berturut-turut!', timestamp: new Date(Date.now() - 24 * 60 * 60000).toISOString(), read: true },
   { id: 'n4', studentId: 's1', type: 'payment', title: 'Peringatan Yuran', message: 'Yuran Mac 2026 (RM 200) telah diterima. Terima kasih!', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60000).toISOString(), read: true },

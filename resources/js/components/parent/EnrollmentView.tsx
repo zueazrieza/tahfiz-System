@@ -47,7 +47,7 @@ export function EnrollmentView() {
 
     try {
       await axios.post(`/api/enrollment/parent-decide/${id}`, { decision });
-      alert(decision === 'ACCEPT' ? 'Tawaran diterima! Sila buat pembayaran yuran pendaftaran.' : 'Tawaran ditolak.');
+      alert(decision === 'ACCEPT' ? 'Tawaran diterima!' : 'Tawaran ditolak.');
       window.location.reload(); // Refresh to show new status
     } catch (err) {
       alert('Gagal menghantar keputusan.');
@@ -157,25 +157,7 @@ export function EnrollmentView() {
                 </div>
               )}
 
-              {student.status === 'WAITING_PAYMENT' && (
-                <div className="space-y-6">
-                  <div className="p-8 bg-orange-50 rounded-[32px] border border-orange-100 flex items-center gap-6">
-                    <div className="size-16 bg-white rounded-2xl flex items-center justify-center text-orange-500 shadow-sm shrink-0">
-                      <CreditCard className="size-8" />
-                    </div>
-                    <div>
-                      <p className="text-orange-900 font-black text-lg">Tindakan Diperlukan: Bayaran Yuran Pendaftaran</p>
-                      <p className="text-orange-700 text-sm font-medium mt-1">Sila buat pembayaran yuran pendaftaran berjumlah **RM 1,000.00** untuk mengesahkan kemasukan anakanda.</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => window.location.href = '/app/parent/dashboard?view=payment'}
-                    className="w-full py-5 bg-slate-900 text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-black shadow-2xl transition-all flex items-center justify-center gap-3"
-                  >
-                    BUAT PEMBAYARAN SEKARANG
-                  </button>
-                </div>
-              )}
+
 
               {student.status === 'ENROLLED' && (
                 <div className="p-8 bg-emerald-900 text-emerald-100 rounded-[32px] shadow-lg flex items-center justify-between">

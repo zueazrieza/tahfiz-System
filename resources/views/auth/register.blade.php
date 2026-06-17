@@ -42,10 +42,8 @@
                 <select name="role" required
                     class="w-full p-4 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-custom-green">
                     <option value="" disabled selected>Select Role</option>
-                    <option value="admin">👑 Admin</option>
                     <option value="teacher">👨‍🏫 Teacher</option>
                     <option value="parent">👪 Parent</option>
-                    <option value="student">🎓 Student</option>
                 </select>
 
                 <input type="password" name="password" placeholder="Password" required

@@ -68,7 +68,7 @@ export function StudentQRCode({ student: propStudent }: StudentQRCodeProps) {
       </div>
 
       <p className="text-center text-slate-500 text-sm max-w-xs mb-8 font-medium">
-        Tunjukkan kod QR ini kepada Ustaz/Ustazah untuk merekod kehadiran anda secara automatik.
+        Tunjukkan kod QR ini kepada Murabbi/Murabbiah untuk merekod kehadiran anda secara automatik.
       </p>
 
       <button 

@@ -141,7 +141,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '1.2rem', color: '#111' }}>{dashboardData?.student?.name || userName}</p>
-                  <p style={{ margin: '0.15rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>Kelas: <strong>{dashboardData?.student?.className || 'Tiada Kelas'}</strong> · Ustaz: <strong>{dashboardData?.student?.teacherName || 'Tiada Murabbi'}</strong></p>
+                  <p style={{ margin: '0.15rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>Kelas: <strong>{dashboardData?.student?.className || 'Tiada Kelas'}</strong> · Murabbi: <strong>{dashboardData?.student?.teacherName || 'Tiada Murabbi'}</strong></p>
                   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
                     <span style={{ background: '#ede9fe', color: '#7c3aed', fontSize: '0.72rem', fontWeight: 700, borderRadius: '999px', padding: '2px 10px' }}>🏆 {dashboardData?.rankName || 'Pemula'}</span>
                     <span style={{ background: '#dcfce7', color: '#16a34a', fontSize: '0.72rem', fontWeight: 700, borderRadius: '999px', padding: '2px 10px' }}>{dashboardData?.juzukCompleted ?? 0} Juzuk Dihafal</span>

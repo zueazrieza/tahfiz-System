@@ -3,6 +3,25 @@ import { Plus, Search, Edit, Trash2, Eye, User, Shield, BookOpen, HeartPulse, Ch
 import { useAppStore } from '../../store/AppContext';
 import axios from 'axios';
 
+const extractDobFromIc = (ic: string): string => {
+  const digits = ic.replace(/\D/g, '');
+  if (digits.length < 6) return '';
+  const yy = digits.substring(0, 2);
+  const mm = digits.substring(2, 4);
+  const dd = digits.substring(4, 6);
+  
+  const month = parseInt(mm, 10);
+  const day = parseInt(dd, 10);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return '';
+
+  const currentYear = new Date().getFullYear();
+  const currentShortYear = currentYear % 100;
+  const yearPrefix = parseInt(yy, 10) <= currentShortYear ? '20' : '19';
+  const fullYear = `${yearPrefix}${yy}`;
+  
+  return `${fullYear}-${mm}-${dd}`;
+};
+
 export function ManageStudents() {
   const { state, dispatch } = useAppStore();
   const [showAddModal, setShowAddModal] = useState(false);
@@ -120,6 +139,9 @@ export function ManageStudents() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin menyimpan data pelajar baharu ini?')) {
+      return;
+    }
     try {
       const response = await axios.post('/api/students', {
         ...addForm,
@@ -161,6 +183,9 @@ export function ManageStudents() {
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin mengemaskini maklumat pelajar ini?')) {
+      return;
+    }
     try {
       const res = await axios.put(`/api/students/${editForm.id}`, {
         name: editForm.name,
@@ -201,11 +226,15 @@ export function ManageStudents() {
 
   const handleImport = async () => {
     if (!importFile) return;
+    if (!confirm('Adakah anda pasti ingin mengimport data pelajar dari fail ini?')) {
+      return;
+    }
     setImportLoading(true);
     setImportResult(null);
     const formData = new FormData();
     formData.append('file', importFile);
     try {
+
       const res = await axios.post('/api/students/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -322,7 +351,7 @@ export function ManageStudents() {
         </div>
         <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#6FC7CB] outline-none font-medium text-slate-600">
           <option value="">Semua Kelas</option>
-          {state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {state.classes.map(c => <option key={c.id} value={c.id}>{c.name} - {getTeacherName(c.teacherId)}</option>)}
         </select>
       </div>
 
@@ -445,7 +474,21 @@ export function ManageStudents() {
                     </div>
                     <div>
                       <label className={labelCls}>No. Kad Pengenalan / MyKid *</label>
-                      <input required className={inputCls} placeholder="Contoh: 121101101234" value={addForm.icNo} onChange={e => setAddForm({ ...addForm, icNo: e.target.value })} />
+                      <input
+                        required
+                        className={inputCls}
+                        placeholder="Contoh: 121101101234"
+                        value={addForm.icNo}
+                        onChange={e => {
+                          const val = e.target.value;
+                          const extractedDob = extractDobFromIc(val);
+                          setAddForm(prev => ({
+                            ...prev,
+                            icNo: val,
+                            dob: extractedDob || prev.dob
+                          }));
+                        }}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -506,7 +549,7 @@ export function ManageStudents() {
                     <div>
                       <label className={labelCls}>Kelas *</label>
                       <select required className={inputCls} value={addForm.classId} onChange={e => setAddForm({ ...addForm, classId: e.target.value })}>
-                        {state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {state.classes.map(c => <option key={c.id} value={c.id}>{c.name} - {getTeacherName(c.teacherId)}</option>)}
                       </select>
                     </div>
                     <div>
@@ -622,7 +665,7 @@ export function ManageStudents() {
                         teacherId: selectedClass?.teacherId || editForm.teacherId
                       });
                     }}>
-                      {state.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {state.classes.map(c => <option key={c.id} value={c.id}>{c.name} - {getTeacherName(c.teacherId)}</option>)}
                     </select>
                   </div>
                   <div><label className={labelCls}>Murabbi / Murabbiah</label>

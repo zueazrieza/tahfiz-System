@@ -183,7 +183,7 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111', margin: 0 }}>
                   Aktiviti Terkini (Semua Pengguna)
                 </h3>
-                <span style={{ fontSize: '0.7rem', background: '#f3f4f6', color: '#6b7280', borderRadius: '999px', padding: '2px 8px' }}>Log Langsung</span>
+                <span style={{ fontSize: '0.7rem', background: '#f3f4f6', color: '#6b7280', borderRadius: '999px', padding: '2px 8px' }}>Aktiviti Langsung</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
                 {activitiesLoading ? (

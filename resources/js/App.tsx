@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, clearAuthCache } from './hooks/useAuth';
 
@@ -95,6 +95,25 @@ function RootRedirect() {
 
 // ── App ───────────────────────────────────────────────────────────────────
 export default function App() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Push initial state to history stack to capture popstate
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (e: PopStateEvent) => {
+      window.history.pushState(null, '', window.location.href);
+      alert("Tindakan ini tidak dibenarkan atas sebab keselamatan.");
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [user]);
+
   return (
     <BrowserRouter basename="/app">
       <Suspense fallback={<FullPageSpinner />}>

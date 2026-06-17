@@ -168,11 +168,6 @@ export function Login({ onLogin, onSwitchToRegister }: LoginProps) {
           </p>
         </div>
 
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-500 text-center">
-            Demo Logins: admin@tahfiz.com, teacher@tahfiz.com, parent@tahfiz.com, student@tahfiz.com
-          </p>
-        </div>
       </div>
     </div>
   );

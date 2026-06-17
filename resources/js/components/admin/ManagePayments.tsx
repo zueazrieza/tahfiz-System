@@ -12,6 +12,33 @@ export function ManagePayments() {
   const [viewingInvoice, setViewingInvoice] = useState<any>(null);
   const inputCls = 'w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500';
 
+  const [activeTab, setActiveTab] = useState<'semua' | 'dibayar' | 'belum_bayar'>('semua');
+  const [filterFeeType, setFilterFeeType] = useState<string>('semua');
+  const [filterMonth, setFilterMonth] = useState<string>('semua');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+
+  const feeTypes = [
+    { value: 'semua', label: 'Semua Jenis Yuran' },
+    { value: 'bulanan', label: 'Yuran Bulanan (RM1300/RM1350)' },
+    { value: 'pendaftaran', label: 'Yuran Pendaftaran Masuk (RM1000)' },
+    { value: 'asrama', label: 'Yuran Pengurusan Asrama (RM350)' },
+    { value: 'lain', label: 'Yuran Pembelajaran Lain' }
+  ];
+
+  const monthsFilter = [
+    { value: 'semua', label: 'Semua Bulan' },
+    ...MONTHS.slice(1).map((m, idx) => ({ value: String(idx + 1), label: m }))
+  ];
+
+  const getFeeType = (amount: number) => {
+    const amt = Number(amount);
+    if (amt === 1350 || amt === 1300) return 'bulanan';
+    if (amt === 1000) return 'pendaftaran';
+    if (amt === 350) return 'asrama';
+    return 'lain';
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,10 +55,6 @@ export function ManagePayments() {
     fetchData();
   }, [dispatch]);
 
-  const total = getTotalRevenue(state);
-  const monthly = getMonthlyRevenue(state);
-  const pending = getPendingRevenue(state);
-
   const getStudentName = (id: string | number) => state.students.find(s => String(s.id) === String(id))?.name ?? id;
   const getClassName = (classId: string | number | undefined) => {
     if (!classId) return '—';
@@ -43,9 +66,35 @@ export function ManagePayments() {
     return b.month - a.month;
   });
 
+  const filteredPayments = sortedPayments.filter(p => {
+    // Tab Filter
+    if (activeTab === 'dibayar' && p.status !== 'Dibayar') return false;
+    if (activeTab === 'belum_bayar' && p.status !== 'Belum Bayar' && p.status !== 'Tertunggak') return false;
+
+    // Search Query (Student Name)
+    const studentName = getStudentName(p.studentId).toLowerCase();
+    if (searchQuery && !studentName.includes(searchQuery.toLowerCase())) return false;
+
+    // Month Filter
+    if (filterMonth !== 'semua' && String(p.month) !== filterMonth) return false;
+
+    // Fee Type Filter
+    const feeType = getFeeType(Number(p.amount));
+    if (filterFeeType !== 'semua' && feeType !== filterFeeType) return false;
+
+    return true;
+  });
+
+  const total = filteredPayments.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const paid = filteredPayments.filter(p => p.status === 'Dibayar').reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const pending = filteredPayments.filter(p => p.status !== 'Dibayar').reduce((acc, curr) => acc + Number(curr.amount), 0);
+
   const handleInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!invoiceForm.studentId) return;
+    if (!confirm('Adakah anda pasti ingin menjana invois baharu ini?')) {
+      return;
+    }
     const dueDate = new Date(invoiceForm.year, invoiceForm.month - 1, 5).toISOString().split('T')[0];
     try {
       const res = await axios.post('/api/payments', {
@@ -64,6 +113,12 @@ export function ManagePayments() {
 
   const handleToggle = async (p: any) => {
     const newStatus = p.status === 'Dibayar' ? 'Belum Bayar' : 'Dibayar';
+    const confirmText = newStatus === 'Dibayar' 
+      ? `Adakah anda pasti ingin menukar status bayaran kepada DIBAYAR untuk ${getStudentName(p.studentId)}?`
+      : `Adakah anda pasti ingin menukar status bayaran kepada BELUM BAYAR untuk ${getStudentName(p.studentId)}?`;
+    if (!confirm(confirmText)) {
+      return;
+    }
     try {
       const res = await axios.put(`/api/payments/${p.id}`, { status: newStatus });
       dispatch({ type: 'TOGGLE_PAYMENT', payload: { id: p.id, status: newStatus } });
@@ -85,20 +140,96 @@ export function ManagePayments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Manage Payments & Invoices</h2>
-          <p className="text-gray-600 mt-1">Track and manage student payments</p>
+          <h2 className="text-2xl font-semibold text-gray-900">Urus Bayaran & Invois</h2>
+          <p className="text-gray-600 mt-1">Jejak dan uruskan bayaran yuran pelajar</p>
         </div>
         <button onClick={() => setShowInvoiceModal(true)} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
           <FileText className="w-5 h-5" /> Jana Invois
         </button>
       </div>
 
+      {/* Tabs Navigation */}
+      <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
+        {[
+          { id: 'semua', label: 'Semua Bayaran' },
+          { id: 'dibayar', label: 'Telah Dibayar (Status Bayar)' },
+          { id: 'belum_bayar', label: 'Belum Dibayar (Status Belum Bayar)' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              activeTab === tab.id
+                ? 'bg-white text-green-700 shadow-sm font-bold'
+                : 'text-slate-600 hover:text-slate-900 font-medium'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Filters Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+        {/* Search */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Cari nama pelajar..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm"
+          />
+        </div>
+
+        {/* Jenis Yuran */}
+        <div>
+          <select
+            value={filterFeeType}
+            onChange={e => setFilterFeeType(e.target.value)}
+            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm"
+          >
+            {feeTypes.map(ft => (
+              <option key={ft.value} value={ft.value}>{ft.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Bulan */}
+        <div>
+          <select
+            value={filterMonth}
+            onChange={e => setFilterMonth(e.target.value)}
+            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm"
+          >
+            {monthsFilter.map(m => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Quick Reset */}
+        <div>
+          <button
+            onClick={() => {
+              setActiveTab('semua');
+              setFilterFeeType('semua');
+              setFilterMonth('semua');
+              setSearchQuery('');
+            }}
+            className="w-full py-2.5 border border-slate-200 text-slate-500 hover:bg-slate-50 rounded-xl text-sm font-bold transition-all"
+          >
+            Set Semula Penapis
+          </button>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Jumlah Terkumpul', value: `RM ${total.toLocaleString()}`, icon: <DollarSign className="w-6 h-6 text-green-600" />, bg: 'bg-green-50' },
-          { label: 'Dibayar Bulan Ini', value: `RM ${monthly.toLocaleString()}`, icon: <CheckCircle className="w-6 h-6 text-blue-600" />, bg: 'bg-blue-50' },
-          { label: 'Belum Dibayar', value: `RM ${pending.toLocaleString()}`, icon: <Clock className="w-6 h-6 text-orange-600" />, bg: 'bg-orange-50' },
+          { label: 'Jumlah Kasar Terpilih', value: `RM ${total.toLocaleString()}`, icon: <DollarSign className="w-6 h-6 text-green-600" />, bg: 'bg-green-50' },
+          { label: 'Dibayar (Tapis)', value: `RM ${paid.toLocaleString()}`, icon: <CheckCircle className="w-6 h-6 text-blue-600" />, bg: 'bg-blue-50' },
+          { label: 'Belum Dibayar (Tapis)', value: `RM ${pending.toLocaleString()}`, icon: <Clock className="w-6 h-6 text-orange-600" />, bg: 'bg-orange-50' },
         ].map(c => (
           <div key={c.label} className="bg-white rounded-xl p-6 border border-gray-200">
             <div className="flex items-center gap-3 mb-3">
@@ -124,7 +255,7 @@ export function ManagePayments() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {sortedPayments.map(p => (
+              {filteredPayments.map(p => (
                 <tr key={p.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{getStudentName(p.studentId)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{MONTHS[p.month]} {p.year}</td>
@@ -152,10 +283,18 @@ export function ManagePayments() {
                   </td>
                 </tr>
               ))}
+              {filteredPayments.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
+                    Tiada rekod bayaran ditemui mengikut penapis semasa.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
 
       {/* Invoice Modal */}
       {showInvoiceModal && (

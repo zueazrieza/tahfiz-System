@@ -31,7 +31,7 @@ const roles: RoleOption[] = [
   },
   {
     id: 'teacher',
-    label: 'Ustaz / Ustazah',
+    label: 'Murabbi / Murabbiah',
     subtitle: 'Urus rekod pelajar dan kemajuan hafazan',
     icon: <BookOpen className="size-6" />,
     color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -141,7 +141,7 @@ export function RoleSelectionPage() {
           </div>
 
           <div className="space-y-4 mb-10">
-            {roles.map((role, idx) => {
+            {(action === 'register' ? roles.filter(r => r.id === 'teacher' || r.id === 'parent') : roles).map((role, idx) => {
               const isSelected = selectedRole === role.id;
               return (
                 <button

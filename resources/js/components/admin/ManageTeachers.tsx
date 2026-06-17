@@ -10,6 +10,7 @@ export function ManageTeachers() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditClassModal, setShowEditClassModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showAssignHalaqahModal, setShowAssignHalaqahModal] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', icNo: '', username: '', specialization: '', gender: 'M' });
   const [addClassForm, setAddClassForm] = useState({ name: '', capacity: 20, teacherId: '' });
@@ -81,6 +82,9 @@ export function ManageTeachers() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin menyimpan data guru baharu ini?')) {
+      return;
+    }
     try {
       const response = await axios.post('/api/teachers', {
         ...addForm,
@@ -110,9 +114,13 @@ export function ManageTeachers() {
 
   const toggleStatus = async (teacher: any) => {
     const newStatus = teacher.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif';
+    if (!confirm(`Adakah anda pasti ingin menukar status guru ${teacher.name} kepada ${newStatus}?`)) {
+      return;
+    }
     try {
       const response = await axios.put(`/api/teachers/${teacher.id}`, { status: newStatus });
       dispatch({ type: 'EDIT_TEACHER', payload: response.data });
+
     } catch (error) {
       console.error('Error toggling teacher status:', error);
       alert('Gagal mengemas kini status guru.');
@@ -121,6 +129,9 @@ export function ManageTeachers() {
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin mengemaskini maklumat guru ini?')) {
+      return;
+    }
     try {
       const response = await axios.put(`/api/teachers/${editForm.id}`, editForm);
       dispatch({ type: 'EDIT_TEACHER', payload: response.data });
@@ -134,6 +145,9 @@ export function ManageTeachers() {
 
   const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin menambah kelas baharu ini?')) {
+      return;
+    }
     try {
       const response = await axios.post('/api/classes', {
         ...addClassForm,
@@ -150,6 +164,9 @@ export function ManageTeachers() {
 
   const handleEditClass = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin mengemaskini maklumat kelas ini?')) {
+      return;
+    }
     try {
       const response = await axios.put(`/api/classes/${editClassForm.id}`, {
         name: editClassForm.name,
@@ -188,9 +205,14 @@ export function ManageTeachers() {
           <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
             <Plus className="w-5 h-5" /> Tambah Guru
           </button>
-          <button onClick={() => setShowAddClassModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            <Plus className="w-5 h-5" /> Tambah Kelas
+          <button 
+            onClick={() => setShowAssignHalaqahModal(true)} 
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold"
+          >
+            <BookOpen className="w-5 h-5" /> Assign Halaqah
           </button>
+
+
           <a
             href="/api/export/teachers"
             className="flex items-center gap-2 px-4 py-2 bg-white border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition-all font-semibold"
@@ -222,7 +244,7 @@ export function ManageTeachers() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-600">Emel:</span><span className="text-gray-900 truncate ml-2">{teacher.email}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Telefon:</span><span className="text-gray-900">{teacher.phone}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Kelas:</span><span className="text-gray-900">{getClassNames(teacher.classIds)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Halaqah:</span><span className="text-gray-900">{getClassNames(teacher.classIds)}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Pelajar:</span><span className="font-semibold text-green-600">{getStudentCount(teacher.id)}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Kepakaran:</span><span className="text-gray-900">{teacher.specialization}</span></div>
             </div>
@@ -233,14 +255,21 @@ export function ManageTeachers() {
               >
                 <Edit className="w-4 h-4" /> Edit
               </button>
-              <button 
-                onClick={() => toggleStatus(teacher)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-none cursor-pointer ${
-                  teacher.status === 'Aktif' ? 'bg-[#E9F5F1] text-[#52B788] hover:bg-[#D8EDE5]' : 'bg-gray-100 text-gray-500'
-                }`}
-              >
-                {teacher.status === 'Aktif' ? 'Assigned Class' : 'Activate'}
-              </button>
+              {teacher.status === 'Aktif' ? (
+                <button 
+                  onClick={() => toggleStatus(teacher)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-none cursor-pointer bg-red-50 text-red-600 hover:bg-red-100"
+                >
+                  Nyahaktif
+                </button>
+              ) : (
+                <button 
+                  onClick={() => toggleStatus(teacher)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-none cursor-pointer bg-green-50 text-green-600 hover:bg-green-100"
+                >
+                  Aktifkan
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -287,22 +316,23 @@ export function ManageTeachers() {
 
       {/* Classes Overview - High Fidelity Design */}
       <div className="bg-white rounded-[2.5rem] border border-gray-100 p-10 shadow-sm mt-8">
-        <h3 className="text-xl font-bold text-[#2D3142] mb-8">All Classes</h3>
+        <h3 className="text-xl font-bold text-[#2D3142] mb-8">Senarai Halaqah & Guru</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {state.classes.map(cls => {
             const studentCount = cls.studentIds.length;
+            const teacherName = state.teachers.find(t => String(t.id) === String(cls.teacherId))?.name ?? 'Tiada Guru';
             return (
               <div 
                 key={cls.id} 
                 className="p-8 bg-[#F8F9FA] border-2 border-transparent hover:border-[#8A63F2] rounded-[1.5rem] transition-all duration-300 group cursor-pointer"
               >
-                <h4 className="text-xl font-bold text-[#2D3142] mb-2">{cls.name}</h4>
-                <p className="text-sm text-gray-500 mb-6 font-medium">{studentCount} students</p>
+                <h4 className="text-xl font-bold text-[#2D3142] mb-2">{cls.name} - {teacherName}</h4>
+                <p className="text-sm text-gray-500 mb-6 font-medium">{studentCount} Pelajar</p>
                 <button 
                   onClick={() => { setEditClassForm(cls); setShowEditClassModal(true); }}
                   className="flex items-center gap-2 text-[#52B788] font-bold hover:gap-3 transition-all border-none bg-transparent p-0 cursor-pointer text-sm"
                 >
-                  Edit Class <span className="text-lg">→</span>
+                  Edit Halaqah <span className="text-lg">→</span>
                 </button>
               </div>
             );
@@ -316,14 +346,14 @@ export function ManageTeachers() {
           <div className="bg-white rounded-xl max-w-md w-full p-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Tambah Guru Baharu</h3>
             <form className="space-y-4" onSubmit={handleAdd}>
-              <div><label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label><input required className={inputCls} placeholder="Ustaz / Ustazah name" value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-2">Nama Penuh</label><input required className={inputCls} placeholder="Murabbi / Murabbiah name" value={addForm.name} onChange={e => setAddForm({ ...addForm, name: e.target.value })} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-2">Email</label><input type="email" required className={inputCls} placeholder="teacher@akmal.edu.my" value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium text-gray-700 mb-2">ID Log Masuk (Username)</label><input className={inputCls} placeholder="e.g. murabbi_alif" value={addForm.username} onChange={e => setAddForm({ ...addForm, username: e.target.value })} /></div>
                 <div><label className="block text-sm font-medium text-gray-700 mb-2">No. IC (Opsional)</label><input className={inputCls} placeholder="Jika ada" value={addForm.icNo} onChange={e => setAddForm({ ...addForm, icNo: e.target.value })} /></div>
               </div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-2">Phone</label><input type="tel" required className={inputCls} placeholder="+60 12-345 6789" value={addForm.phone} onChange={e => setAddForm({ ...addForm, phone: e.target.value })} /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label><input className={inputCls} placeholder="e.g. Hafazan & Tajweed" value={addForm.specialization} onChange={e => setAddForm({ ...addForm, specialization: e.target.value })} /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-2">No. Telefon</label><input type="tel" required className={inputCls} placeholder="+60 12-345 6789" value={addForm.phone} onChange={e => setAddForm({ ...addForm, phone: e.target.value })} /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-2">Kepakaran</label><input className={inputCls} placeholder="e.g. Hafazan & Tajweed" value={addForm.specialization} onChange={e => setAddForm({ ...addForm, specialization: e.target.value })} /></div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Jantina</label>
                 <select className={inputCls} value={addForm.gender} onChange={e => setAddForm({ ...addForm, gender: e.target.value })}>
@@ -343,10 +373,10 @@ export function ManageTeachers() {
       {showAddClassModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-8 shadow-2xl">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Create New Class</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Cipta Halaqah Baharu</h3>
             <form className="space-y-6" onSubmit={handleAddClass}>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Class Name</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Nama Halaqah</label>
                 <input 
                   required 
                   className={inputCls} 
@@ -356,25 +386,25 @@ export function ManageTeachers() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Capacity</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Kapasiti</label>
                 <input 
                   type="number" 
                   required 
                   className={inputCls} 
-                  placeholder="Maximum students" 
+                  placeholder="Maksimum pelajar" 
                   value={addClassForm.capacity} 
                   onChange={e => setAddClassForm({ ...addClassForm, capacity: Number(e.target.value) })} 
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Assign Teacher</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Pilih Guru / Murabbi</label>
                 <select 
                   required 
                   className={inputCls} 
                   value={addClassForm.teacherId} 
                   onChange={e => setAddClassForm({ ...addClassForm, teacherId: e.target.value })}
                 >
-                  <option value="">Select teacher</option>
+                  <option value="">Pilih guru</option>
                   {state.teachers.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
@@ -382,14 +412,14 @@ export function ManageTeachers() {
               </div>
               <div className="flex flex-col gap-3 pt-4">
                 <button type="submit" className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
-                  Create Class
+                  Cipta Halaqah
                 </button>
                 <button 
                   type="button" 
                   onClick={() => setShowAddClassModal(false)} 
                   className="w-full py-3 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-all"
                 >
-                  Cancel
+                  Batal
                 </button>
               </div>
             </form>
@@ -403,19 +433,19 @@ export function ManageTeachers() {
             <h3 className="text-2xl font-bold text-[#2D3142] mb-8 text-center px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">Edit Profil Guru</h3>
             <form className="space-y-5" onSubmit={handleEdit}>
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Full Name</label>
-                <input required className={inputCls} placeholder="Ustaz / Ustazah name" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                <label className="block text-sm font-bold text-gray-500 ml-1">Nama Penuh</label>
+                <input required className={inputCls} placeholder="Murabbi / Murabbiah name" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-gray-500 ml-1">Email</label>
                 <input type="email" required className={inputCls} placeholder="teacher@akmal.edu.my" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Phone</label>
+                <label className="block text-sm font-bold text-gray-500 ml-1">No. Telefon</label>
                 <input type="tel" required className={inputCls} placeholder="+60 12-345 6789" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Specialization</label>
+                <label className="block text-sm font-bold text-gray-500 ml-1">Kepakaran</label>
                 <input className={inputCls} placeholder="e.g. Hafazan & Tajweed" value={editForm.specialization} onChange={e => setEditForm({ ...editForm, specialization: e.target.value })} />
               </div>
               <div className="space-y-2">
@@ -442,10 +472,10 @@ export function ManageTeachers() {
       {showEditClassModal && editClassForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-[2.5rem] max-w-md w-full p-10 shadow-2xl overflow-hidden border border-gray-100">
-            <h3 className="text-2xl font-bold text-[#2D3142] mb-8 text-center px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">Edit Maklumat Kelas</h3>
+            <h3 className="text-2xl font-bold text-[#2D3142] mb-8 text-center px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">Edit Maklumat Halaqah</h3>
             <form className="space-y-6" onSubmit={handleEditClass}>
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Class Name</label>
+                <label className="block text-sm font-bold text-gray-500 ml-1">Nama Halaqah</label>
                 <input 
                   required 
                   className={inputCls} 
@@ -454,7 +484,7 @@ export function ManageTeachers() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Capacity</label>
+                <label className="block text-sm font-bold text-gray-500 ml-1">Kapasiti</label>
                 <input 
                   type="number" 
                   required 
@@ -464,14 +494,14 @@ export function ManageTeachers() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Assign Teacher</label>
+                <label className="block text-sm font-bold text-gray-500 ml-1">Pilih Guru / Murabbi</label>
                 <select 
                   required 
                   className={inputCls} 
                   value={editClassForm.teacherId} 
                   onChange={e => setEditClassForm({ ...editClassForm, teacherId: e.target.value })}
                 >
-                  <option value="">Select teacher</option>
+                  <option value="">Pilih guru</option>
                   {state.teachers.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
@@ -493,6 +523,7 @@ export function ManageTeachers() {
           </div>
         </div>
       )}
+
 
       {/* View Teacher Modal */}
       {showViewModal && selectedTeacher && (
@@ -576,6 +607,80 @@ export function ManageTeachers() {
                   TUTUP
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Assign Halaqah Modal */}
+      {showAssignHalaqahModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-[2.5rem] max-w-2xl w-full p-10 shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in duration-300">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-[#2D3142]">Urus Tugasan Halaqah & Murabbi</h3>
+              <p className="text-sm text-gray-500 mt-1">Tetapkan Murabbi/Murabbiah bagi setiap halaqah (Maksimum 10 Halaqah).</p>
+            </div>
+            
+            <div className="max-h-[50vh] overflow-y-auto pr-2 space-y-4">
+              {state.classes.map((cls) => {
+                const teacherName = state.teachers.find(t => String(t.id) === String(cls.teacherId))?.name ?? 'Tiada Guru';
+                return (
+                  <div key={cls.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-slate-50 rounded-2xl gap-4 border border-slate-100">
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-lg">{cls.name}</h4>
+                      <p className="text-xs text-slate-400 font-medium">Kapasiti: {cls.capacity} pelajar | Guru: {teacherName}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={cls.teacherId || ''}
+                        onChange={async (e) => {
+                          const newTeacherId = e.target.value;
+                          try {
+                            const response = await axios.put(`/api/classes/${cls.id}`, {
+                              name: cls.name,
+                              capacity: cls.capacity,
+                              teacherId: newTeacherId || null
+                            });
+                            // Update global state
+                            const updatedClasses = state.classes.map(c => c.id === cls.id ? response.data : c);
+                            dispatch({ type: 'SET_CLASSES', payload: updatedClasses });
+                            
+                            // Refresh teachers list to update their classIds
+                            const teachersResponse = await axios.get('/api/teachers', {
+                              params: { page: page, search: debouncedSearch }
+                            });
+                            const { data } = teachersResponse.data;
+                            dispatch({ type: 'SET_TEACHERS', payload: data });
+                          } catch (error) {
+                            console.error('Error assigning teacher:', error);
+                            alert('Gagal mengemas kini tugasan halaqah.');
+                          }
+                        }}
+                        className="w-64 rounded-xl border-slate-200 focus:border-green-500 focus:ring-green-500 text-sm"
+                      >
+                        <option value="">Tiada Murabbi/Murabbiah</option>
+                        {state.teachers.filter(t => t.status === 'Aktif').map(t => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {state.classes.length === 0 && (
+                <p className="text-center py-6 text-slate-400 font-medium">Tiada halaqah didaftarkan dalam sistem.</p>
+              )}
+            </div>
+
+            <div className="flex gap-4 pt-6 border-t border-slate-100 mt-6">
+              <button 
+                type="button" 
+                onClick={() => setShowAssignHalaqahModal(false)} 
+                className="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all border-none cursor-pointer"
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>

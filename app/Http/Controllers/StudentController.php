@@ -419,11 +419,16 @@ class StudentController extends Controller
             'target' => 'required|string',
         ]);
 
-        // Just logging it or saving it if there is a target_hafazan column, 
-        // wait, I don't think there is a target_hafazan column on students. 
-        // Let's create a target_hafazan column if needed, or simply return success
-        // In the real system, a separate Target model is better.
-        // For now, let's just return success for the mock frontend.
+        if ($request->user() && $request->user()->role === 'student') {
+            return response()->json(['message' => 'Tindakan ini tidak dibenarkan.'], 403);
+        }
+
+        $student = \App\Models\Student::find($request->student_id);
+        if ($student) {
+            $student->target_hafazan = $request->target;
+            $student->save();
+        }
+
         return response()->json(['message' => 'Target set successfully']);
     }
 

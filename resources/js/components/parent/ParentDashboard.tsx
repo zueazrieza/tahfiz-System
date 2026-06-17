@@ -155,7 +155,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
                 <div>
                   <p style={{ margin: 0, fontWeight: 700, fontSize: '1rem', color: '#111' }}>{childInfo.name}</p>
                   <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>Kelas: <strong>{childInfo.class}</strong></p>
-                  <p style={{ margin: '0.1rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>Ustaz/Ustazah: <strong>{childInfo.teacher}</strong></p>
+                  <p style={{ margin: '0.1rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>Murabbi/Murabbiah: <strong>{childInfo.teacher}</strong></p>
                   <p style={{ margin: '0.1rem 0 0', fontSize: '0.82rem', color: '#16a34a', fontWeight: 600 }}>Kemajuan: {childInfo.currentProgress}</p>
                 </div>
               </div>

@@ -17,7 +17,7 @@ class TeacherFactory extends Factory
      */
     public function definition(): array
     {
-        $prefix = $this->faker->randomElement(['Ustaz', 'Ustazah']);
+        $prefix = $this->faker->randomElement(['Murabbi', 'Murabbiah']);
         $name = $prefix . ' ' . $this->faker->name();
 
         return [

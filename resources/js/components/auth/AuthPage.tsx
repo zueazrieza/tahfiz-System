@@ -30,14 +30,40 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1500));
-    setSent(true);
-    setLoading(false);
+    setError(null);
+    try {
+      const csrfRes = await fetch('/api/csrf-cookie');
+      const csrfJson = await csrfRes.json();
+      const csrfToken = csrfJson.token as string;
+
+      const res = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.message || 'Semakan e-mel gagal.');
+        setLoading(false);
+        return;
+      }
+      setSent(true);
+    } catch (err) {
+      setError('Ralat sambungan rangkaian. Sila cuba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,6 +98,12 @@ function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
             <p className="text-slate-500 text-sm leading-relaxed">
               Masukkan e-mel anda yang berdaftar dan kami akan menghantar arahan untuk menetapkan semula kata laluan anda.
             </p>
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 text-red-600 animate-in zoom-in duration-300">
+                <AlertCircle className="size-5 shrink-0" />
+                <span className="text-sm font-bold uppercase tracking-wider">{error}</span>
+              </div>
+            )}
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-300" />
               <input 
@@ -103,7 +135,8 @@ export function AuthPage() {
   const roleParam = searchParams.get('role') as UserRole | null;
   const actionParam = searchParams.get('action') || 'login';
 
-  const [mode, setMode] = useState<'login' | 'register'>(actionParam === 'register' ? 'register' : 'login');
+  const isSelfRegisterAllowed = roleParam === 'teacher' || roleParam === 'parent';
+  const [mode, setMode] = useState<'login' | 'register'>((actionParam === 'register' && isSelfRegisterAllowed) ? 'register' : 'login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -383,21 +416,7 @@ export function AuthPage() {
             )}
 
             {mode === 'login' && (
-              <div className="flex items-center justify-between pb-2">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                      className="peer size-5 opacity-0 absolute cursor-pointer"
-                    />
-                    <div className="size-5 border-2 border-slate-200 rounded-lg peer-checked:bg-[#6FC7CB] peer-checked:border-[#6FC7CB] transition-all flex items-center justify-center">
-                      <CheckCircle2 className="size-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-slate-500 group-hover:text-slate-700 transition-colors">Ingat saya</span>
-                </label>
+              <div className="flex justify-end pb-2">
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(true)}
@@ -425,17 +444,20 @@ export function AuthPage() {
             </button>
           </form>
 
-          <div className="mt-10 text-center">
-            <p className="text-slate-400 font-medium">
-              {mode === 'login' ? 'Tiada akaun lagi?' : 'Sudah mempunyai akaun?'}
-              <button
-                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-                className="ml-2 font-black text-[#6FC7CB] hover:text-[#5FB3B7] transition-colors hover:underline underline-offset-4"
-              >
-                {mode === 'login' ? 'Daftar Sekarang' : 'Log Masuk'}
-              </button>
-            </p>
-          </div>
+          {isSelfRegisterAllowed && (
+            <div className="mt-10 text-center">
+              <p className="text-slate-400 font-medium">
+                {mode === 'login' ? 'Tiada akaun lagi?' : 'Sudah mempunyai akaun?'}
+                <button
+                  type="button"
+                  onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+                  className="ml-2 font-black text-[#6FC7CB] hover:text-[#5FB3B7] transition-colors hover:underline underline-offset-4"
+                >
+                  {mode === 'login' ? 'Daftar Sekarang' : 'Log Masuk'}
+                </button>
+              </p>
+            </div>
+          )}
 
           <div className="mt-12 flex items-center justify-center gap-8 opacity-20 grayscale">
              <img src="/images/logo.png" alt="Partner 1" className="h-6" />

@@ -502,8 +502,12 @@ export function HafazanAI() {
   };
 
   const handleSaveHistory = async () => {
+    if (!confirm('Adakah anda pasti ingin menyimpan rekod penilaian Tarteel AI ini?')) {
+      return;
+    }
     try {
       setIsSubmitting(true);
+
       
       const studentId = authUser.linked_id;
       if (!studentId) {

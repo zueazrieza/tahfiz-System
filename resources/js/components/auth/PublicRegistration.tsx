@@ -2,6 +2,25 @@ import { useState, useEffect } from 'react';
 import { BookOpen, User, Phone, Mail, Award, CheckCircle2, ChevronRight, ChevronLeft, Shield, Sparkles, Building2, Wallet } from 'lucide-react';
 import axios from 'axios';
 
+const extractDobFromIc = (ic: string): string => {
+  const digits = ic.replace(/\D/g, '');
+  if (digits.length < 6) return '';
+  const yy = digits.substring(0, 2);
+  const mm = digits.substring(2, 4);
+  const dd = digits.substring(4, 6);
+  
+  const month = parseInt(mm, 10);
+  const day = parseInt(dd, 10);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return '';
+
+  const currentYear = new Date().getFullYear();
+  const currentShortYear = currentYear % 100;
+  const yearPrefix = parseInt(yy, 10) <= currentShortYear ? '20' : '19';
+  const fullYear = `${yearPrefix}${yy}`;
+  
+  return `${fullYear}-${mm}-${dd}`;
+};
+
 export function PublicRegistration() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -59,6 +78,9 @@ export function PublicRegistration() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm('Adakah anda pasti ingin menghantar permohonan pendaftaran ini?')) {
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
@@ -259,7 +281,21 @@ export function PublicRegistration() {
                   </div>
                   <div>
                     <label className={labelCls}>IC/MyKid Pemohon *</label>
-                    <input required className={inputCls} placeholder="Contoh: 170101114455" value={formData.studentIc} onChange={e => setFormData({ ...formData, studentIc: e.target.value })} />
+                    <input
+                      required
+                      className={inputCls}
+                      placeholder="Contoh: 170101114455"
+                      value={formData.studentIc}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const extractedDob = extractDobFromIc(val);
+                        setFormData(prev => ({
+                          ...prev,
+                          studentIc: val,
+                          studentDob: extractedDob || prev.studentDob
+                        }));
+                      }}
+                    />
                   </div>
                </div>
 

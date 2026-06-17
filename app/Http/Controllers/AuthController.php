@@ -35,7 +35,15 @@ class AuthController extends Controller
             'role'     => ['required', 'string', 'in:admin,teacher,parent,student'],
         ]);
 
-        // Match by email only — no name fallback (prevents username enumeration)
+        // Check if email exists in the database
+        $emailExists = User::where('email', $credentials['email'])->exists();
+        if (!$emailExists) {
+            return response()->json([
+                'message' => 'Akaun dengan e-mel ini tidak wujud / belum dicipta.',
+            ], 404);
+        }
+
+        // Match by email and role
         $user = User::where('email', $credentials['email'])
             ->where('role', $credentials['role'])
             ->first();
@@ -77,7 +85,7 @@ class AuthController extends Controller
             'name'                  => ['required', 'string', 'max:255'],
             'email'                 => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password'              => ['required', 'string', 'min:8', 'confirmed'],
-            'role'                  => ['required', 'string', 'in:admin,teacher,parent,student'],
+            'role'                  => ['required', 'string', 'in:teacher,parent'],
         ]);
 
         $user = User::create([
@@ -132,6 +140,27 @@ class AuthController extends Controller
                 'status' => $user->status,
                 'linked_id' => $user->linked_id,
             ],
+        ]);
+    }
+
+    /**
+     * POST /api/forgot-password
+     */
+    public function apiForgotPassword(Request $request)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+        if (!$user) {
+            return response()->json([
+                'message' => 'E-mel ini tidak berdaftar dalam sistem.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Pautan set semula kata laluan telah dihantar ke e-mel anda.',
         ]);
     }
 

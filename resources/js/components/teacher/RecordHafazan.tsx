@@ -31,6 +31,9 @@ export function RecordHafazan() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudent) return;
+    if (!confirm('Adakah anda pasti ingin menyimpan rekod hafazan ini?')) {
+      return;
+    }
     
     const ayahCount =
       (formData.sabaqTo ? parseInt(formData.sabaqTo) - parseInt(formData.sabaqFrom || '0') : 0) +
@@ -128,7 +131,7 @@ export function RecordHafazan() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas *</label>
               <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedStudent(''); }} className={inCls}>
-                {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name} - {state.teachers.find(t => String(t.id) === String(c.teacherId))?.name ?? 'Tiada Murabbi'}</option>)}
               </select>
             </div>
             <div>
@@ -179,7 +182,7 @@ export function RecordHafazan() {
 
           {/* Remarks */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Catatan Ustaz / Ustazah</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Catatan Murabbi / Murabbiah</label>
             <textarea value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} rows={4} placeholder="Tambah sebarang ulasan atau pemerhatian..." className={inCls} />
           </div>
 

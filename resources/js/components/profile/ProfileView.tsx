@@ -152,7 +152,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userId }) => {
   };
 
   const handleSave = async () => {
+    if (!confirm('Adakah anda pasti ingin menyimpan perubahan profil anda?')) {
+      return;
+    }
     try {
+
       const payload = { 
         ...formData,
         name: formData.username, // Map username back to 'name' for the API

@@ -32,10 +32,38 @@ class StudentReportController extends Controller
             ->where('date', '>=', $yearStart->toDateString())
             ->sum('ayah_count');
 
-        // Targets (Default)
+        // Targets (Default / Murabbi inputs)
         $weeklyTarget = 100;
         $monthlyTarget = 400;
         $yearlyTarget = 4800;
+
+        if (!empty($student->target_hafazan)) {
+            $parts = explode('|', $student->target_hafazan);
+            
+            $parseValue = function($str) {
+                $str = trim($str);
+                if (empty($str)) return 0;
+                $strLower = strtolower($str);
+                preg_match('/\d+/', $str, $matches);
+                if (empty($matches)) return 0;
+                $val = (int)$matches[0];
+                
+                if (str_contains($strLower, 'juzuk') || str_contains($strLower, 'juz')) {
+                    return $val * 200; // 200 ayahs per juzuk estimate
+                }
+                return $val;
+            };
+
+            $m1 = isset($parts[0]) ? $parseValue($parts[0]) : 0;
+            $m2 = isset($parts[1]) ? $parseValue($parts[1]) : 0;
+            $m3 = isset($parts[2]) ? $parseValue($parts[2]) : 0;
+
+            if ($m1 > 0) {
+                $monthlyTarget = $m1;
+                $weeklyTarget = max(1, (int)round($m1 / 4));
+                $yearlyTarget = $m1 + $m2 + $m3;
+            }
+        }
 
         // Streak
         $streak = $this->calculateStreak($studentId);
@@ -59,7 +87,8 @@ class StudentReportController extends Controller
             'stats' => [
                 'streak' => $streak,
                 'totalRecords' => $records->count(),
-                'juzukCompleted' => $student->juzuk_completed ?? 0
+                'juzukCompleted' => $student->juzuk_completed ?? 0,
+                'targetHafazan' => $student->target_hafazan
             ]
         ]);
     }

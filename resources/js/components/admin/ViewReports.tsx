@@ -419,7 +419,7 @@ export function ViewReports() {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between">
                     <p className="font-medium text-sm text-gray-900">
-                      {r.teacher?.name || 'Ustaz/Ustazah'}
+                      {r.teacher?.name || 'Murabbi/Murabbiah'}
                     </p>
                     <span className="text-xs text-gray-500">{r.date}</span>
                   </div>
@@ -438,7 +438,7 @@ export function ViewReports() {
           </h3>
           {weeklyReports.length > 0 ? (
             <div className="space-y-4">
-              <p className="text-sm text-amber-800 mb-4">Ustaz/Ustazah dengan laporan dan markah KPI tertinggi minggu ini.</p>
+              <p className="text-sm text-amber-800 mb-4">Murabbi/Murabbiah dengan laporan dan markah KPI tertinggi minggu ini.</p>
               {weeklyReports
                 .sort((a, b) => b.weekly_score - a.weekly_score)
                 .slice(0, 3)
@@ -446,7 +446,7 @@ export function ViewReports() {
                   <div key={r.id} className="bg-white p-4 rounded-xl border border-amber-100 flex items-center gap-4 shadow-sm">
                     <div className="text-2xl">{i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div>
                     <div className="flex-1">
-                      <p className="font-bold text-gray-900">{r.teacher?.name || 'Ustaz/Ustazah'}</p>
+                      <p className="font-bold text-gray-900">{r.teacher?.name || 'Murabbi/Murabbiah'}</p>
                       <p className="text-xs text-gray-500">{r.date}</p>
                     </div>
                     <div className="text-xl font-black text-amber-600">{r.weekly_score}%</div>

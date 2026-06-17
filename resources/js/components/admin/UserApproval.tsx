@@ -53,6 +53,9 @@ export function UserApproval() {
   };
 
   const handleApprove = async (id: number) => {
+    if (!confirm('Adakah anda pasti ingin meluluskan akaun pengguna ini?')) {
+      return;
+    }
     try {
       await axios.post(`/api/users/${id}/approve`);
       setPendingUsers(prev => prev.filter(u => u.id !== id));
@@ -77,9 +80,14 @@ export function UserApproval() {
     e.preventDefault();
     if (!selectedStudent) return;
     
+    if (!confirm('Adakah anda pasti ingin mencipta akaun pelajar ini?')) {
+      return;
+    }
+
     try {
       setSubmitting(true);
       await axios.post('/api/users/student-account', {
+
         student_id: selectedStudent,
         username,
         password

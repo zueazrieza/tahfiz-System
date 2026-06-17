@@ -84,7 +84,7 @@ export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
         </div>
         <div>
           <p className="font-bold text-gray-900 text-lg">{child?.name ?? '—'}</p>
-          <p className="text-sm text-gray-600">Kelas: <strong>{childClass?.name ?? '—'}</strong> · Ustaz/Ustazah: <strong>{teacher?.name ?? '—'}</strong></p>
+          <p className="text-sm text-gray-600">Kelas: <strong>{childClass?.name ?? '—'}</strong> · Murabbi/Murabbiah: <strong>{teacher?.name ?? '—'}</strong></p>
           <p className="text-sm text-green-700 font-semibold mt-0.5">{child?.juzukCompleted ?? 0} / 30 Juzuk Dihafal</p>
         </div>
       </div>

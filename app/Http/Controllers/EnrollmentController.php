@@ -63,6 +63,14 @@ class EnrollmentController extends Controller
 
         $student->update($updateData);
 
+        // Send confirmation email to parent if status becomes Aktif / ENROLLED
+        if ($student->status === 'Aktif') {
+            $parent = User::find($student->parent_id);
+            if ($parent && $parent->email) {
+                Mail::to($parent->email)->queue(new \App\Mail\StatusNotificationMail($student, 'Aktif'));
+            }
+        }
+
         return response()->json(['success' => true, 'student' => $student]);
     }
 
@@ -114,11 +122,23 @@ class EnrollmentController extends Controller
                 'enrolled_date' => now(),
                 'notes' => $student->notes . "\n[Penjaga]: Setuju dengan tawaran. Pendaftaran disahkan secara automatik."
             ]);
+
+            // Notify parent that they accepted the offer
+            $parent = User::find($student->parent_id);
+            if ($parent && $parent->email) {
+                Mail::to($parent->email)->queue(new \App\Mail\StatusNotificationMail($student, 'Aktif', 'Pendaftaran anda telah disahkan dan diaktifkan.'));
+            }
         } else {
             $student->update([
                 'status' => 'REJECTED',
                 'notes' => $student->notes . "\n[Penjaga]: Menolak tawaran. Sebab: " . ($validated['notes'] ?? '')
             ]);
+
+            // Notify parent of rejection status
+            $parent = User::find($student->parent_id);
+            if ($parent && $parent->email) {
+                Mail::to($parent->email)->queue(new \App\Mail\StatusNotificationMail($student, 'REJECTED', 'Menolak tawaran.'));
+            }
         }
 
         return response()->json([
@@ -143,6 +163,12 @@ class EnrollmentController extends Controller
 
         $student = Student::findOrFail($id);
         $student->update($validated);
+
+        // Send status update email to parent
+        $parent = User::find($student->parent_id);
+        if ($parent && $parent->email) {
+            Mail::to($parent->email)->queue(new \App\Mail\StatusNotificationMail($student, $student->status, $student->notes ?? ''));
+        }
 
         return response()->json(['success' => true, 'student' => $student]);
     }

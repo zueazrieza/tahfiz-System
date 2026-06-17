@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'ustaz@tahfiz.com'],
             [
-                'name' => 'Ustaz Ahmad',
+                'name' => 'Murabbi Ahmad',
                 'password' => Hash::make('password'),
                 'role' => 'teacher',
                 'status' => 'active'
@@ -59,9 +59,6 @@ class DatabaseSeeder extends Seeder
                 'status' => 'active'
             ]
         );
-
-        $this->call([
-            DemoDataSeeder::class,
-        ]);
+        // DemoDataSeeder removed
     }
 }

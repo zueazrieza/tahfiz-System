@@ -37,11 +37,15 @@ export function ManageParents() {
 
   const handleImport = async () => {
     if (!importFile) return;
+    if (!confirm('Adakah anda pasti ingin mengimport data penjaga dari fail ini?')) {
+      return;
+    }
     setImportLoading(true);
     setImportResult(null);
     const formData = new FormData();
     formData.append('file', importFile);
     try {
+
       const res = await axios.post('/api/students/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

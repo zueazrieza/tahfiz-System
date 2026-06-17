@@ -88,7 +88,7 @@ export function StudentList() {
           onChange={e => setSelectedClassId(e.target.value)}
           className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {classes.map(c => <option key={c.id} value={c.id}>{c.name} - {teacher?.name || 'Tiada Murabbi'}</option>)}
         </select>
       </div>
 

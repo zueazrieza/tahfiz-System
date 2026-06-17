@@ -141,7 +141,7 @@ export function ViewProgress({ childId }: ViewProgressProps) {
               </div>
               {rec.remarks && (
                 <div className="mt-4 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/50">
-                  <p className="text-xs text-indigo-700 italic font-medium leading-relaxed">💬 Ustaz/Ustazah: {rec.remarks}</p>
+                  <p className="text-xs text-indigo-700 italic font-medium leading-relaxed">💬 Murabbi/Murabbiah: {rec.remarks}</p>
                 </div>
               )}
             </div>

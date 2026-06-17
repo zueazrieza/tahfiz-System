@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Megaphone, Plus, Trash2, Send, Filter, Clock } from 'lucide-react';
+import { Megaphone, Plus, Trash2, Send, Filter, Clock, Edit } from 'lucide-react';
 
 export function Announcements() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ title: '', content: '', type: 'General', target_audience: 'All' });
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   const role = authUser.role || 'student';
   const canPost = role === 'admin' || role === 'teacher';
 
   // Determine which announcements to fetch
-  const fetchTarget = role === 'parent' ? 'Parents' : role === 'student' ? 'Students' : role === 'teacher' ? 'Teachers' : 'All';
+  const fetchTarget = role === 'admin' ? 'admin' : role === 'parent' ? 'Parents' : role === 'student' ? 'Students' : role === 'teacher' ? 'Teachers' : 'All';
 
   useEffect(() => {
     fetchAnnouncements();
@@ -33,18 +34,39 @@ export function Announcements() {
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirm("Adakah anda pasti ingin menghantar pengumuman ini?")) {
+      return;
+    }
     try {
-      await axios.post('/api/announcements', {
-        ...formData,
-        author_id: authUser.id
-      });
+      if (editingId) {
+        await axios.put(`/api/announcements/${editingId}`, {
+          ...formData
+        });
+      } else {
+        await axios.post('/api/announcements', {
+          ...formData,
+          author_id: authUser.id
+        });
+      }
       setShowForm(false);
+      setEditingId(null);
       setFormData({ title: '', content: '', type: 'General', target_audience: 'All' });
       fetchAnnouncements();
     } catch (err) {
-      console.error('Error posting announcement', err);
-      alert('Gagal memuat naik pengumuman.');
+      console.error('Error posting/updating announcement', err);
+      alert('Gagal memproses pengumuman.');
     }
+  };
+
+  const handleEditClick = (ann: any) => {
+    setEditingId(ann.id);
+    setFormData({
+      title: ann.title,
+      content: ann.content,
+      type: ann.type,
+      target_audience: ann.target_audience
+    });
+    setShowForm(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -79,7 +101,15 @@ export function Announcements() {
         
         {canPost && (
           <button 
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm) {
+                setShowForm(false);
+                setEditingId(null);
+                setFormData({ title: '', content: '', type: 'General', target_audience: 'All' });
+              } else {
+                setShowForm(true);
+              }
+            }}
             className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-sm"
           >
             {showForm ? 'Batal' : <><Plus className="w-4 h-4" /> Hebahan Baru</>}
@@ -89,7 +119,7 @@ export function Announcements() {
 
       {showForm && canPost && (
         <form onSubmit={handlePost} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 animate-in slide-in-from-top-4">
-          <h3 className="font-bold text-slate-800">Cipta Hebahan Baru</h3>
+          <h3 className="font-bold text-slate-800">{editingId ? 'Kemaskini Hebahan' : 'Cipta Hebahan Baru'}</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -141,12 +171,12 @@ export function Announcements() {
                  <option value="All">Semua Warga Tahfiz</option>
                  <option value="Parents">Ibu Bapa Sahaja</option>
                  <option value="Students">Pelajar Sahaja</option>
-                 <option value="Teachers">Guru Sahaja</option>
+                 <option value="Teachers">Murabbi/Murabbiah Sahaja</option>
                </select>
             </div>
             
             <button type="submit" className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md">
-              <Send className="w-4 h-4" /> Hantar
+              <Send className="w-4 h-4" /> {editingId ? 'Simpan' : 'Hantar'}
             </button>
           </div>
         </form>
@@ -177,7 +207,13 @@ export function Announcements() {
                    </span>
                    {canPost && (
                      <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase">
-                       Untuk: {ann.target_audience === 'All' ? 'Semua' : ann.target_audience}
+                       Untuk: {
+                          ann.target_audience === 'All' ? 'Semua' : 
+                          ann.target_audience === 'Teachers' ? 'Murabbi/Murabbiah' : 
+                          ann.target_audience === 'Students' ? 'Pelajar' : 
+                          ann.target_audience === 'Parents' ? 'Ibu Bapa' : 
+                          ann.target_audience
+                        }
                      </span>
                    )}
                  </div>
@@ -196,7 +232,14 @@ export function Announcements() {
                </div>
                
                {canPost && role === 'admin' && (
-                 <div className="flex-shrink-0">
+                 <div className="flex-shrink-0 flex gap-2">
+                   <button 
+                     onClick={() => handleEditClick(ann)}
+                     className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                     title="Edit Pengumuman"
+                   >
+                     <Edit className="w-5 h-5" />
+                   </button>
                    <button 
                      onClick={() => handleDelete(ann.id)}
                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

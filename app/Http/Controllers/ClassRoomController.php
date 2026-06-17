@@ -25,6 +25,11 @@ class ClassRoomController extends Controller
             'teacherId' => 'nullable',
         ]);
 
+        if (ClassRoom::count() >= 10) {
+            return response()->json(['message' => 'Had maksimum halaqah (10 kelas) telah dicapai.'], 422);
+        }
+
+
         $class = ClassRoom::create([
             'name' => $validated['name'],
             'capacity' => $validated['capacity'],

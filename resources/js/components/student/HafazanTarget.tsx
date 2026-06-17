@@ -41,9 +41,9 @@ export function HafazanTarget() {
   }
 
   const targets = [
-    { label: 'Sasaran Mingguan', current: data?.weekly?.current ?? 0, target: data?.weekly?.target ?? 100, icon: <Calendar size={24} />, color: 'blue', period: 'Minggu Ini', progress: data?.weekly?.progress ?? 0 },
-    { label: 'Sasaran Bulanan', current: data?.monthly?.current ?? 0, target: data?.monthly?.target ?? 400, icon: <Target size={24} />, color: 'green', period: 'Bulan Ini', progress: data?.monthly?.progress ?? 0 },
-    { label: 'Sasaran Tahunan', current: data?.yearly?.current ?? 0, target: data?.yearly?.target ?? 4800, icon: <TrendingUp size={24} />, color: 'purple', period: 'Tahun Ini', progress: data?.yearly?.progress ?? 0 },
+    { label: 'Sasaran Mingguan (Ditentukan oleh Murabbi)', current: data?.weekly?.current ?? 0, target: data?.weekly?.target ?? 100, icon: <Calendar size={24} />, color: 'blue', period: 'Minggu Ini', progress: data?.weekly?.progress ?? 0 },
+    { label: 'Sasaran Bulanan (Ditentukan oleh Murabbi)', current: data?.monthly?.current ?? 0, target: data?.monthly?.target ?? 400, icon: <Target size={24} />, color: 'green', period: 'Bulan Ini', progress: data?.monthly?.progress ?? 0 },
+    { label: 'Sasaran Tahunan (Ditentukan oleh Murabbi)', current: data?.yearly?.current ?? 0, target: data?.yearly?.target ?? 4800, icon: <TrendingUp size={24} />, color: 'purple', period: 'Tahun Ini', progress: data?.yearly?.progress ?? 0 },
   ];
 
   const bgMap: Record<string, string> = { blue: 'bg-blue-50', green: 'bg-green-50', purple: 'bg-purple-50' };
@@ -52,7 +52,29 @@ export function HafazanTarget() {
 
   return (
     <div className="space-y-6">
-      <div><h2 className="text-2xl font-semibold text-gray-900">Sasaran Hafazan</h2><p className="text-gray-600 mt-1">Jejaki sasaran hafazan anda</p></div>
+      <div>
+        <h2 className="text-2xl font-semibold text-gray-900">Sasaran Hafazan</h2>
+        <p className="text-gray-600 mt-1">Jejaki sasaran hafazan anda yang ditetapkan oleh Murabbi / Murabbiah</p>
+      </div>
+
+      {/* Alert if target has not been set by Murabbi */}
+      {!data?.stats?.targetHafazan ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800 text-sm flex items-start gap-2 shadow-sm">
+          <Target className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold">Sasaran Belum Ditetapkan</p>
+            <p className="text-xs text-amber-700 mt-1">Murabbi / Murabbiah anda belum menetapkan sasaran rasmi. Nilai lalai sistem sedang dipaparkan.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-800 text-sm flex items-start gap-2 shadow-sm">
+          <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold">Sasaran Aktif</p>
+            <p className="text-xs text-green-700 mt-1">Semua sasaran di bawah diselaraskan secara automatik berdasarkan tetapan Murabbi / Murabbiah anda.</p>
+          </div>
+        </div>
+      )}
 
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-4">
@@ -67,6 +89,24 @@ export function HafazanTarget() {
           </div>
         ))}
       </div>
+
+      {/* Target dari Murabbi */}
+      {data?.stats?.targetHafazan && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Target className="w-5 h-5 text-indigo-600 animate-pulse" />
+            Sasaran 3 Bulan Anda (Ditetapkan oleh Murabbi)
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            {data.stats.targetHafazan.split('|').map((part: string, idx: number) => (
+              <div key={idx} className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 text-center hover:scale-105 transition-all">
+                <p className="text-xs font-bold text-indigo-500 uppercase tracking-wider">Bulan {idx + 1}</p>
+                <p className="text-lg font-black text-indigo-900 mt-1">{part.trim()}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Targets */}
       {targets.map(t => (

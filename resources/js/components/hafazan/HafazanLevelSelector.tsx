@@ -80,7 +80,7 @@ export function HafazanLevelSelector({ currentRank = 'Beginner' }: HafazanLevelS
             PERJALANAN <br /> <span className="text-teal-300">HAFIZ</span> ANDA
           </h2>
           <p className="mt-6 text-teal-100/70 text-lg font-medium leading-relaxed">
-            Aras pengajian diberikan oleh Ustazah berdasarkan kualiti hafalan dan pemahaman anda. 
+            Aras pengajian diberikan oleh Murabbiah berdasarkan kualiti hafalan dan pemahaman anda. 
             Terus beristiqamah untuk membuka badge-badge kecemerlangan.
           </p>
         </div>
@@ -196,7 +196,7 @@ export function HafazanLevelSelector({ currentRank = 'Beginner' }: HafazanLevelS
           <h3 className="text-2xl font-black text-slate-800 uppercase">Terus Berusaha, Hafiz!</h3>
           <p className="mt-4 text-slate-500 font-medium leading-relaxed">
             Setiap juzuk yang dihafal membawa anda lebih dekat kepada gelaran Al-Hafiz. 
-            Ustazah akan mengemaskini aras anda selepas sesi tasmik dan penilaian kualiti.
+            Murabbiah akan mengemaskini aras anda selepas sesi tasmik dan penilaian kualiti.
           </p>
         </div>
       </div>
