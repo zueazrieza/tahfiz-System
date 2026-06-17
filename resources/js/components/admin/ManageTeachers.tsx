@@ -248,28 +248,13 @@ export function ManageTeachers() {
               <div className="flex justify-between"><span className="text-gray-600">Pelajar:</span><span className="font-semibold text-green-600">{getStudentCount(teacher.id)}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Kepakaran:</span><span className="text-gray-900">{teacher.specialization}</span></div>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 flex gap-3">
+            <div className="mt-4 pt-4 border-t border-gray-100 flex">
               <button 
                 onClick={() => { setEditForm(teacher); setShowEditModal(true); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#F4F4F9] text-[#2D3142] font-bold rounded-xl hover:bg-gray-200 transition-all border-none cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#F4F4F9] text-[#2D3142] font-bold rounded-xl hover:bg-gray-200 transition-all border-none cursor-pointer"
               >
                 <Edit className="w-4 h-4" /> Edit
               </button>
-              {teacher.status === 'Aktif' ? (
-                <button 
-                  onClick={() => toggleStatus(teacher)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-none cursor-pointer bg-red-50 text-red-600 hover:bg-red-100"
-                >
-                  Nyahaktif
-                </button>
-              ) : (
-                <button 
-                  onClick={() => toggleStatus(teacher)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-none cursor-pointer bg-green-50 text-green-600 hover:bg-green-100"
-                >
-                  Aktifkan
-                </button>
-              )}
             </div>
           </div>
         ))}
