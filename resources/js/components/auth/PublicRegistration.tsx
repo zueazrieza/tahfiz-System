@@ -61,20 +61,28 @@ export function PublicRegistration() {
     successReason: '',
   });
 
-  // Auto-calc age
+  // Auto-calc age based on birth year
   useEffect(() => {
     if (formData.studentDob) {
       const birthDate = new Date(formData.studentDob);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      if (age >= 9 && age <= 12) {
+      const birthYear = birthDate.getFullYear();
+      if (!isNaN(birthYear)) {
+        const currentYear = new Date().getFullYear();
+        const age = currentYear - birthYear;
         setFormData(prev => ({ ...prev, studentAge: age }));
       }
     }
   }, [formData.studentDob]);
+
+  // Auto-detect gender (jantina) based on studentName containing "BIN" or "BINTI"
+  useEffect(() => {
+    const name = formData.studentName.trim().toUpperCase();
+    if (/\bBINTI\b/i.test(name)) {
+      setFormData(prev => ({ ...prev, studentGender: 'Perempuan' }));
+    } else if (/\bBIN\b/i.test(name)) {
+      setFormData(prev => ({ ...prev, studentGender: 'Lelaki' }));
+    }
+  }, [formData.studentName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,8 +184,8 @@ export function PublicRegistration() {
                  
                  <div className="grid grid-cols-2 gap-4">
                    {[
-                     { name: 'MURABBI IDHAM', img: '/images/murbi_idham.png', fallbackImg: '/images/murabbi_idham.png' },
-                     { name: 'MURABBI ARASH', img: '/images/murbi_arash.png', fallbackImg: '/images/murabbi_arash.png' }
+                     { name: 'MURABBI IDHAM', img: '/images/murabbi_idham.png' },
+                     { name: 'MURABBI ARASH', img: '/images/murabbi_arash.png' }
                    ].map(r => (
                      <button
                        key={r.name}
@@ -190,10 +198,10 @@ export function PublicRegistration() {
                        }`}
                      >
                        <div className="size-20 rounded-2xl overflow-hidden bg-slate-100 shadow-sm border border-slate-50">
-                         <img 
-                           src={r.fallbackImg} 
-                           alt={r.name} 
-                           className="w-full h-full object-cover" 
+                         <img
+                           src={r.img}
+                           alt={r.name}
+                           className="w-full h-full object-cover"
                          />
                        </div>
                        <span className={`text-[10px] font-bold uppercase tracking-wider ${
@@ -318,6 +326,9 @@ export function PublicRegistration() {
                       <option value={10}>Umur - 10 Tahun</option>
                       <option value={11}>Umur - 11 Tahun</option>
                       <option value={12}>Umur - 12 Tahun</option>
+                      {![9, 10, 11, 12].includes(formData.studentAge) && (
+                        <option value={formData.studentAge}>Umur - {formData.studentAge} Tahun</option>
+                      )}
                     </select>
                   </div>
                </div>
