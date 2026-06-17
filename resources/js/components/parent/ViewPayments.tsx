@@ -70,7 +70,7 @@ export function ViewPayments({ childId, readOnly = false }: ViewPaymentsProps) {
         {[
           { label: 'Jumlah Dibayar', value: `RM ${totalPaid}`, color: 'text-green-600', bg: 'bg-green-50' },
           { label: 'Belum Bayar', value: pending.length, color: 'text-orange-600', bg: 'bg-orange-50' },
-          { label: 'Yuran Bulanan', value: 'RM 200', color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Yuran Bulanan', value: 'RM 1112.50', color: 'text-blue-600', bg: 'bg-blue-50' },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center`}>
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -108,7 +108,12 @@ export function ViewPayments({ childId, readOnly = false }: ViewPaymentsProps) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.paidDate ?? '—'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {p.status !== 'Dibayar' && !readOnly && (
-                      <button onClick={() => handlePay(String(p.id))} className="px-4 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700">Bayar Sekarang</button>
+                      <button 
+                        onClick={() => window.open('https://asis.awfatech.com/main/appfee/adm/index.php?sysapp=asis0077', '_blank')} 
+                        className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg cursor-pointer border-none transition-all shadow-sm"
+                      >
+                        Bayar Sekarang
+                      </button>
                     )}
                   </td>
                 </tr>

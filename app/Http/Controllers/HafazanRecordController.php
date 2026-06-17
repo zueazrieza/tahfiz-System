@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\HafazanRecord;
 use App\Models\Student;
+use App\Models\AppNotification;
+use App\Models\User;
 
 class HafazanRecordController extends Controller
 {
@@ -104,6 +106,26 @@ class HafazanRecordController extends Controller
             'remarks' => $validated['remarks'] ?? null,
             'ayah_count' => $validated['ayahCount'] ?? 0,
         ]);
+
+        // Auto-notify student and parent
+        $student = Student::with('parents')->find($record->student_id);
+        if ($student) {
+            $sabaqGrade  = $record->sabaq_grade  ?? '—';
+            $sabkiGrade  = $record->sabaqi_grade ?? '—';
+            $manzilGrade = $record->manzil_grade ?? '—';
+            $title   = "Rekod Hafazan {$record->date}";
+            $content = "Sabak: {$sabaqGrade} | Sabki: {$sabkiGrade} | Manzil: {$manzilGrade}";
+
+            // Notify student user account
+            $studentUser = User::where('linked_id', $student->id)->where('role', 'student')->first();
+            if ($studentUser) AppNotification::send($studentUser->id, $title, $content, 'hafazan');
+
+            // Notify parent user accounts
+            foreach ($student->parents as $parent) {
+                $parentUser = User::where('linked_id', $parent->id)->where('role', 'parent')->first();
+                if ($parentUser) AppNotification::send($parentUser->id, "Rekod Hafazan {$student->name}", $content, 'hafazan');
+            }
+        }
 
         return response()->json($record, 201);
     }

@@ -133,11 +133,12 @@ class AuthController extends Controller
         $user = Auth::user();
         return response()->json([
             'user' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
-                'role'  => $user->role,
-                'status' => $user->status,
+                'id'        => $user->id,
+                'name'      => $user->name,
+                'full_name' => $user->full_name ?: $user->name,
+                'email'     => $user->email,
+                'role'      => $user->role,
+                'status'    => $user->status,
                 'linked_id' => $user->linked_id,
             ],
         ]);

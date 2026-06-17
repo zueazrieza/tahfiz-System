@@ -7,24 +7,27 @@ interface Level {
   name: string;
   img: string;
   description: string;
-  category: 'Basic' | 'Advanced' | 'Rank' | 'Special';
+  category: 'Pangkat' | 'Legend';
   color: string;
   requirement: string;
+  rankNo: number;
 }
 
 const levels: Level[] = [
-  { id: 'level1', name: 'Level 1', img: '/images/logo/level_1.jpeg', description: 'Permulaan perjalanan hafazan dengan fokus kepada surah-surah lazim.', category: 'Basic', color: 'from-emerald-400 to-teal-500', requirement: 'Tamat hafazan Surah-surah Lazim.' },
-  { id: 'level2', name: 'Level 2', img: '/images/logo/level2.jpeg', description: 'Meningkatkan ketepatan bacaan dan kelancaran hafazan.', category: 'Basic', color: 'from-blue-400 to-indigo-500', requirement: 'Ulang balik tafsiran hafalan (Tadabbur) untuk mendapatkan badge ini.' },
-  { id: 'level3', name: 'Level 3', img: '/images/logo/level3.jpeg', description: 'Memperkukuh hafazan sedia ada dengan teknik pengulangan efektif.', category: 'Basic', color: 'from-purple-400 to-fuchsia-500', requirement: 'Lancar Tasmik 3 muka surat tanpa salah.' },
-  { id: 'level4', name: 'Level 4', img: '/images/logo/level4.jpeg', description: 'Penguasaan tajwid dan makhraj yang lebih mendalam.', category: 'Basic', color: 'from-rose-400 to-pink-500', requirement: 'Lulus ujian Tajwid Aras 1.' },
-  { id: 'warrior', name: 'Warrior', img: '/images/logo/warrior.jpeg', description: 'Tahap pejuang yang telah membuktikan istiqamah dalam hafazan.', category: 'Rank', color: 'from-orange-400 to-red-500', requirement: 'Hafal 5 Juzuk pertama.' },
-  { id: 'elite', name: 'Elite', img: '/images/logo/elite.jpeg', description: 'Golongan elit dengan kualiti hafazan yang sangat baik.', category: 'Rank', color: 'from-amber-400 to-yellow-600', requirement: 'Hafal 15 Juzuk dengan Itqan.' },
-  { id: 'master', name: 'Master', img: '/images/logo/master.jpeg', description: 'Pakar hafazan yang mampu membimbing rakan-rakan lain.', category: 'Rank', color: 'from-slate-700 to-slate-900', requirement: 'Hafal 25 Juzuk & Ujian Lisan.' },
-  { id: 'silver', name: 'Silver S', img: '/images/logo/level_S.jpeg', description: 'Anugerah perak atas pencapaian juzuk yang konsisten.', category: 'Special', color: 'from-slate-300 to-slate-500', requirement: 'Anugerah Khas Prestasi Bulanan.' },
-  { id: 'gold', name: 'Gold G', img: '/images/logo/Level_G.jpeg', description: 'Anugerah emas bagi kecemerlangan hafazan tanpa kesilapan.', category: 'Special', color: 'from-yellow-300 to-amber-500', requirement: 'Khatam 30 Juzuk (Syahadah).' },
-  { id: 'titanium', name: 'Titanium T', img: '/images/logo/level_T.jpeg', description: 'Ketahanan hafazan yang luar biasa dan sangat kukuh (Itqan).', category: 'Special', color: 'from-cyan-400 to-blue-600', requirement: 'Lulus Ujian Syahadah (10 Juzuk sekali duduk).' },
-  { id: 'special', name: 'Special Edition', img: '/images/logo/level_SE.jpeg', description: 'Pencapaian luar biasa dalam tempoh yang sangat singkat.', category: 'Special', color: 'from-violet-500 to-purple-800', requirement: 'Anugerah Tokoh Huffaz AKMAL.' },
-  { id: 'hafiz', name: 'Hafiz Level 1', img: '/images/logo/level_1_hafiz.jpeg', description: 'Langkah rasmi pertama dalam perjalanan menjadi Al-Hafiz 30 Juzuk.', category: 'Advanced', color: 'from-emerald-600 to-green-900', requirement: 'Memulakan perjalanan Hafiz Setahun.' },
+  // ── Pangkat Utama (0–6) ──────────────────────────────────────────────
+  { id: 'tahsin',      rankNo: 0,  name: 'Tahsin',                   img: '/images/logo/level_1.jpeg',       category: 'Pangkat', color: 'from-teal-400 to-emerald-600',   description: 'Peringkat permulaan — mempelajari bacaan Al-Quran yang betul dan lancar.', requirement: 'Fasa asas tajwid & makhraj sebelum mula menghafaz.' },
+  { id: 'warrior',     rankNo: 1,  name: 'Warrior',                  img: '/images/logo/warrior.jpeg',       category: 'Pangkat', color: 'from-orange-400 to-red-600',     description: 'Pejuang hafazan yang telah membuktikan istiqamah sejak awal.', requirement: 'Hafal ≥ 1 Juzuk dengan lancar.' },
+  { id: 'elite',       rankNo: 2,  name: 'Elite',                    img: '/images/logo/elite.jpeg',         category: 'Pangkat', color: 'from-amber-400 to-yellow-600',   description: 'Golongan elit dengan kualiti hafazan yang konsisten dan mantap.', requirement: 'Hafal ≥ 5 Juzuk dengan Itqan.' },
+  { id: 'master',      rankNo: 3,  name: 'Master',                   img: '/images/logo/master.jpeg',        category: 'Pangkat', color: 'from-slate-600 to-slate-900',    description: 'Pakar hafazan separuh Al-Quran, mampu membimbing rakan-rakan lain.', requirement: 'Hafal ≥ 10 Juzuk & lulus Ujian Lisan.' },
+  { id: 'grandmaster', rankNo: 4,  name: 'Grandmaster',              img: '/images/logo/Level_G.jpeg',       category: 'Pangkat', color: 'from-yellow-300 to-amber-600',   description: 'Grandmaster hafazan — kekuatan dan ketepatan hafazan pada tahap tertinggi.', requirement: 'Hafal ≥ 15 Juzuk dengan kualiti tinggi.' },
+  { id: 'titan',       rankNo: 5,  name: 'Titan',                    img: '/images/logo/level_T.jpeg',       category: 'Pangkat', color: 'from-cyan-400 to-blue-700',      description: 'Titan hafazan — ketahanan dan kedalaman hafazan yang luar biasa.', requirement: 'Hafal ≥ 20 Juzuk dengan Itqan penuh.' },
+  { id: 'gladiator',   rankNo: 6,  name: 'Gladiator',                img: '/images/logo/level2.jpeg',        category: 'Pangkat', color: 'from-red-500 to-rose-900',       description: 'Gladiator — hampir khatam, hafazan kokoh tanpa kesilapan bererti.', requirement: 'Hafal ≥ 25 Juzuk & lulus Tasmik Mudir.' },
+  // ── Peringkat Legend Al-Hafiz (7–11) ────────────────────────────────
+  { id: 'legend',      rankNo: 7,  name: 'Legend Al-Hafiz',          img: '/images/logo/level_1_hafiz.jpeg', category: 'Legend',  color: 'from-teal-500 to-emerald-900',   description: 'Khatam 30 Juzuk. Pengiktirafan rasmi AKMAL sebagai Al-Hafiz.', requirement: 'Khatam 30 Juzuk & lulus Ujian Syahadah.' },
+  { id: 'amethyst',    rankNo: 8,  name: 'Legend Al-Hafiz Amethyst', img: '/images/logo/level3.jpeg',        category: 'Legend',  color: 'from-violet-500 to-purple-900',  description: 'Anugerah Amethyst — kecemerlangan pasca-khatam dengan ulangan lancar.', requirement: 'Lulus Tasmik 5 Juzuk sehari tanpa salah (kali pertama).' },
+  { id: 'ruby',        rankNo: 9,  name: 'Legend Al-Hafiz Ruby',     img: '/images/logo/level4.jpeg',        category: 'Legend',  color: 'from-rose-500 to-red-900',       description: 'Anugerah Ruby — menguasai tebuk hafazan dengan cemerlang.', requirement: 'Lulus peperiksaan tebuk hafazan 60 soalan (2 juzuk/soalan).' },
+  { id: 'sapphire',    rankNo: 10, name: 'Legend Al-Hafiz Sapphire', img: '/images/logo/level_S.jpeg',       category: 'Legend',  color: 'from-blue-400 to-indigo-900',    description: 'Anugerah Sapphire — kualiti hafazan setanding pemeriksa jemputan.', requirement: 'Lulus peperiksaan tebuk 120 soalan (4 soalan/juzuk).' },
+  { id: 'emperor',     rankNo: 11, name: 'Syahadah Emperor',         img: '/images/logo/level_SE.jpeg',      category: 'Legend',  color: 'from-yellow-400 to-amber-900',   description: 'Ranking tertinggi AKMAL — Tasmik 5 Juzuk sehari & lulus 120 soalan dengan pemeriksa jemputan.', requirement: 'Tasmik min 5 Juzuk/hari + lulus Peperiksaan Emperor.' },
 ];
 
 interface HafazanLevelSelectorProps {
@@ -50,11 +53,11 @@ export function HafazanLevelSelector({ currentRank = 'Beginner' }: HafazanLevelS
     }
   }, [authUser.linked_id]);
 
-  const categories = ['Basic', 'Advanced', 'Rank', 'Special'];
+  const categories: Array<'Pangkat' | 'Legend'> = ['Pangkat', 'Legend'];
 
-  // Helper to determine if a level is "unlocked" based on real achievements
-  const isUnlocked = (levelName: string) => {
-    return earnedAchievements.some(a => a.name === levelName);
+  // A rank is unlocked if the student has earned that achievement badge
+  const isUnlocked = (level: Level) => {
+    return earnedAchievements.some(a => a.name === level.name);
   };
 
   if (loading) {
@@ -95,14 +98,14 @@ export function HafazanLevelSelector({ currentRank = 'Beginner' }: HafazanLevelS
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-slate-200"></div>
             <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 px-4">
-              {cat === 'Basic' ? 'Aras Permulaan' : cat === 'Advanced' ? 'Aras Lanjutan' : cat === 'Rank' ? 'Pangkat Kehormatan' : 'Edisi Khas'}
+              {cat === 'Pangkat' ? '🏅 Pangkat Utama (Tahsin → Gladiator)' : '🏆 Peringkat Legend Al-Hafiz'}
             </h3>
             <div className="h-px flex-1 bg-slate-200"></div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {levels.filter(l => l.category === cat).map((level) => {
-              const unlocked = isUnlocked(level.name);
+              const unlocked = isUnlocked(level);
               return (
                 <div
                   key={level.id}
@@ -174,9 +177,8 @@ export function HafazanLevelSelector({ currentRank = 'Beginner' }: HafazanLevelS
                         <Info className="w-4 h-4" /> INFO DETAIL
                       </button>
                       <div className="flex gap-2">
-                        {level.category === 'Rank' && <Award className="w-5 h-5 text-amber-500" />}
-                        {level.category === 'Special' && <Star className="w-5 h-5 text-purple-500" />}
-                        {level.category === 'Advanced' && <Zap className="w-5 h-5 text-emerald-500" />}
+                        {level.category === 'Pangkat' && <Award className="w-5 h-5 text-amber-500" />}
+                        {level.category === 'Legend' && <Star className="w-5 h-5 text-purple-500" />}
                       </div>
                     </div>
                   </div>

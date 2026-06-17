@@ -128,7 +128,7 @@ export function StudentList() {
                   </div>
                   {lastRec && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Last Sabaq:</span>
+                      <span className="text-gray-600">Last Sabak:</span>
                       <span className="text-gray-900">{lastRec.sabaq.surah} · {lastRec.sabaq.grade}</span>
                     </div>
                   )}

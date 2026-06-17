@@ -170,17 +170,17 @@ export default function App() {
 // ── Thin wrappers so lazy components get the name prop from auth ───────────
 function AdminDashboardWrapper() {
   const { user } = useAuth();
-  return <AdminDashboard userName={user?.name ?? 'Admin'} onLogout={handleLogout} />;
+  return <AdminDashboard userName={user?.full_name ?? user?.name ?? 'Admin'} onLogout={handleLogout} />;
 }
 function TeacherDashboardWrapper() {
   const { user } = useAuth();
-  return <TeacherDashboard userName={user?.name ?? 'Guru'} onLogout={handleLogout} />;
+  return <TeacherDashboard userName={user?.full_name ?? user?.name ?? 'Guru'} onLogout={handleLogout} />;
 }
 function ParentDashboardWrapper() {
   const { user } = useAuth();
-  return <ParentDashboard userName={user?.name ?? 'Wali'} onLogout={handleLogout} />;
+  return <ParentDashboard userName={user?.full_name ?? user?.name ?? 'Wali'} onLogout={handleLogout} />;
 }
 function StudentDashboardWrapper() {
   const { user } = useAuth();
-  return <StudentDashboard userName={user?.name ?? 'Pelajar'} onLogout={handleLogout} />;
+  return <StudentDashboard userName={user?.full_name ?? user?.name ?? 'Pelajar'} onLogout={handleLogout} />;
 }

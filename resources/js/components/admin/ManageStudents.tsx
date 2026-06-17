@@ -370,7 +370,26 @@ export function ManageStudents() {
               {filtered.map(student => (
                 <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="font-bold text-[#6FC7CB]">#{student.ranking || '—'}</span>
+                    {(() => {
+                      const RANK_NAMES: Record<number, { label: string; color: string }> = {
+                        0:  { label: 'Tahsin',            color: '#0d9488' },
+                        1:  { label: 'Warrior',           color: '#ea580c' },
+                        2:  { label: 'Elite',             color: '#d97706' },
+                        3:  { label: 'Master',            color: '#475569' },
+                        4:  { label: 'Grandmaster',       color: '#b45309' },
+                        5:  { label: 'Titan',             color: '#0284c7' },
+                        6:  { label: 'Gladiator',         color: '#dc2626' },
+                        7:  { label: 'Legend Al-Hafiz',   color: '#7c3aed' },
+                        8:  { label: 'Legend Amethyst',   color: '#7c3aed' },
+                        9:  { label: 'Legend Ruby',       color: '#be123c' },
+                        10: { label: 'Legend Sapphire',   color: '#1d4ed8' },
+                        11: { label: 'Syahadah Emperor',  color: '#92400e' },
+                      };
+                      const r = student.ranking !== null && student.ranking !== undefined ? RANK_NAMES[student.ranking] : null;
+                      return r
+                        ? <span style={{ fontSize: '0.72rem', fontWeight: 800, color: r.color, background: r.color + '18', borderRadius: '999px', padding: '3px 10px', whiteSpace: 'nowrap' }}>{r.label}</span>
+                        : <span className="text-slate-300 font-bold text-sm">—</span>;
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="font-bold text-slate-800">{student.name}</div>
@@ -861,7 +880,7 @@ export function ManageStudents() {
               <div className="pt-2 border-t border-slate-100">
                 <p className="text-[10px] font-black text-[#6FC7CB] uppercase tracking-widest mb-1.5">✨ Format Pencapaian & AI Analytics (Akmal Prima)</p>
                 <div className="flex flex-wrap gap-1">
-                  {['NO','NAMA PELAJAR','UMUR','BIL JUZUK','RANKING SEMASA','JUZUK SEMASA','PURATA SABAQ SEHARI','TARGET BIL JUZ (AKHIR JUN)','HALAQAH/KELAS'].map(col => (
+                  {['NO','NAMA PELAJAR','UMUR','BIL JUZUK','RANKING SEMASA','JUZUK SEMASA','PURATA SABAK SEHARI','TARGET BIL JUZ (AKHIR JUN)','HALAQAH/KELAS'].map(col => (
                     <span key={col} className="px-1.5 py-0.5 bg-[#EEF9FA] border border-[#d2f1f2] text-[#4E9397] rounded-md text-[9px] font-bold">{col}</span>
                   ))}
                 </div>

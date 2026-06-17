@@ -110,6 +110,16 @@ export function EnrollmentHub() {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ── Tambah Pelajar modal ──────────────────────────────────────────────────
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [addForm, setAddForm] = useState({
+    studentName: '', studentIc: '', studentGender: 'Lelaki', studentDob: '',
+    studentAge: '', studentAddress: '',
+    parentName: '', parentEmail: '', parentPhone: '', parentIc: '',
+    parentJob: '', quranLevel: '', notes: '',
+  });
+
   const fetchApplicants = async () => {
     try {
       setLoading(true);
@@ -310,6 +320,35 @@ export function EnrollmentHub() {
     return <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${config[status].cls}`}>{config[status].label}</span>;
   };
 
+  const handleAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirm('Sahkan pendaftaran pelajar ini? Emel pengesahan akan dihantar kepada ibu bapa.')) return;
+    setAddSubmitting(true);
+    try {
+      const res = await axios.post('/api/enrollment/applicants', addForm);
+      const s = res.data.student;
+      const newApplicant: Applicant = {
+        id: `APP-${s.id}`,
+        dbId: s.id,
+        name: s.name,
+        gender: s.gender,
+        parentName: addForm.parentName,
+        phone: addForm.parentPhone,
+        icNo: addForm.studentIc,
+        dateApplied: new Date().toISOString().split('T')[0],
+        status: 'PROSPECT',
+      };
+      setApplicants(prev => [newApplicant, ...prev]);
+      setShowAddModal(false);
+      setAddForm({ studentName:'', studentIc:'', studentGender:'Lelaki', studentDob:'', studentAge:'', studentAddress:'', parentName:'', parentEmail:'', parentPhone:'', parentIc:'', parentJob:'', quranLevel:'', notes:'' });
+      alert(res.data.message);
+    } catch (err: any) {
+      alert('Gagal: ' + (err.response?.data?.message || 'Ralat sambungan.'));
+    } finally {
+      setAddSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -317,11 +356,11 @@ export function EnrollmentHub() {
           <h2 className="text-2xl font-black text-slate-800 tracking-tight underline decoration-[#6FC7CB] decoration-4 underline-offset-8">Pusat Pengurusan Kemasukan</h2>
           <p className="text-slate-500 font-medium mt-3">Proses pendaftaran & temuduga sistematik (Automasi AKMAL).</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 transition-all">
             <Download className="size-4" /> EKSPORT DATA
           </button>
-          <button 
+          <button
             onClick={async () => {
               const res = await axios.get('/api/enrollment/schedules');
               setAllSchedules(res.data);
@@ -330,6 +369,12 @@ export function EnrollmentHub() {
             className="flex items-center gap-2 px-5 py-2.5 bg-[#6FC7CB] text-white rounded-xl font-bold text-xs hover:bg-[#5FB3B7] shadow-xl shadow-cyan-100 transition-all font-black tracking-widest"
           >
             <Calendar className="size-4" /> JADUAL TEMUDUGA
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs hover:bg-emerald-700 shadow-xl shadow-emerald-100 transition-all tracking-widest"
+          >
+            <Users className="size-4" /> + TAMBAH PELAJAR
           </button>
         </div>
       </div>
@@ -872,6 +917,140 @@ export function EnrollmentHub() {
           </div>
         </div>
       )}
+      {/* ── TAMBAH PELAJAR MODAL ──────────────────────────────────────── */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-black text-slate-800">Tambah Pelajar Baharu</h3>
+                  <p className="text-xs text-slate-400 mt-1">Daftarkan pelajar secara manual. Emel pengesahan akan dihantar kepada ibu bapa.</p>
+                </div>
+                <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 text-2xl font-bold">✕</button>
+              </div>
+
+              <form onSubmit={handleAddStudent} className="space-y-6">
+                {/* Maklumat Pelajar */}
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-[#6FC7CB] mb-3">Maklumat Pelajar</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { label: 'Nama Penuh Pelajar *', key: 'studentName', type: 'text', required: true },
+                      { label: 'No. IC Pelajar *', key: 'studentIc', type: 'text', required: true },
+                      { label: 'Tarikh Lahir *', key: 'studentDob', type: 'date', required: true },
+                      { label: 'Umur *', key: 'studentAge', type: 'number', required: true },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">{f.label}</label>
+                        <input
+                          type={f.type}
+                          required={f.required}
+                          value={(addForm as any)[f.key]}
+                          onChange={e => setAddForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6FC7CB]"
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Jantina *</label>
+                      <select
+                        value={addForm.studentGender}
+                        onChange={e => setAddForm(prev => ({ ...prev, studentGender: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6FC7CB]"
+                      >
+                        <option value="Lelaki">Lelaki</option>
+                        <option value="Perempuan">Perempuan</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Tahap Bacaan Al-Quran</label>
+                      <select
+                        value={addForm.quranLevel}
+                        onChange={e => setAddForm(prev => ({ ...prev, quranLevel: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6FC7CB]"
+                      >
+                        <option value="">-- Pilih Tahap --</option>
+                        <option value="Belum Pandai Membaca">Belum Pandai Membaca</option>
+                        <option value="Sedang Belajar Mengaji">Sedang Belajar Mengaji</option>
+                        <option value="Khatam Al-Quran">Khatam Al-Quran</option>
+                        <option value="Hafaz Sebahagian Al-Quran">Hafaz Sebahagian Al-Quran</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Alamat Pelajar *</label>
+                      <textarea
+                        required
+                        rows={2}
+                        value={addForm.studentAddress}
+                        onChange={e => setAddForm(prev => ({ ...prev, studentAddress: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6FC7CB] resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Maklumat Ibu Bapa / Penjaga */}
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-amber-500 mb-3">Maklumat Ibu Bapa / Penjaga</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { label: 'Nama Ibu Bapa *', key: 'parentName', type: 'text', required: true },
+                      { label: 'Email Ibu Bapa *', key: 'parentEmail', type: 'email', required: true },
+                      { label: 'No. Telefon *', key: 'parentPhone', type: 'text', required: true },
+                      { label: 'No. IC Ibu Bapa', key: 'parentIc', type: 'text', required: false },
+                      { label: 'Pekerjaan', key: 'parentJob', type: 'text', required: false },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">{f.label}</label>
+                        <input
+                          type={f.type}
+                          required={f.required}
+                          value={(addForm as any)[f.key]}
+                          onChange={e => setAddForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6FC7CB]"
+                        />
+                      </div>
+                    ))}
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Catatan Tambahan</label>
+                      <textarea
+                        rows={2}
+                        value={addForm.notes}
+                        onChange={e => setAddForm(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Catatan dari guru / admin..."
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6FC7CB] resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={addSubmitting}
+                    className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    {addSubmitting ? (
+                      <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Mendaftar...</>
+                    ) : (
+                      <><Users className="size-4" /> Daftar & Hantar Emel</>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

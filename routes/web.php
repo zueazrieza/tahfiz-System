@@ -128,6 +128,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
 
         // Enrollment management (staff)
         Route::get('/enrollment/applicants',                [EnrollmentController::class, 'index']);
+        Route::post('/enrollment/applicants',               [EnrollmentController::class, 'adminCreate']);
         Route::get('/enrollment/schedules',                 [EnrollmentController::class, 'getInterviewSchedules']);
         Route::patch('/enrollment/status/{id}',             [EnrollmentController::class, 'updateStatus']);
         Route::post('/enrollment/schedule-interview/{id}',  [EnrollmentController::class, 'scheduleInterview']);

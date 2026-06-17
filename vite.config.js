@@ -13,23 +13,39 @@ export default defineConfig({
         react(),
     ],
     build: {
-        // Target modern browsers — smaller output
         target: 'es2020',
+        chunkSizeWarningLimit: 600,
         rollupOptions: {
             output: {
-                // Split large dependencies into separate cacheable chunks
-                manualChunks: {
+                manualChunks(id) {
                     // React core — rarely changes, cached aggressively
-                    'vendor-react': ['react', 'react-dom'],
-                    'vendor-router': ['react-router-dom'],
+                    if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
+                        return 'vendor-react';
+                    }
+                    if (id.includes('/node_modules/react-router')) {
+                        return 'vendor-router';
+                    }
                     // Charting — heavy, load only when dashboards need it
-                    'vendor-charts': ['recharts'],
-                    // PDF / canvas — only used in report export
-                    'vendor-pdf': ['jspdf', 'html2canvas'],
+                    if (id.includes('/node_modules/recharts/')) {
+                        return 'vendor-charts';
+                    }
+                    // PDF — only used in report export
+                    if (id.includes('/node_modules/jspdf/')) {
+                        return 'vendor-pdf';
+                    }
+                    // Canvas — only used in report export
+                    if (id.includes('/node_modules/html2canvas-pro/') ||
+                        id.includes('/node_modules/html2canvas/')) {
+                        return 'vendor-canvas';
+                    }
                     // Lucide icons — large, shared across all dashboards
-                    'vendor-icons': ['lucide-react'],
-                    // Axios — tiny but separated so it's cached separately
-                    'vendor-http': ['axios'],
+                    if (id.includes('/node_modules/lucide-react/')) {
+                        return 'vendor-icons';
+                    }
+                    // Axios
+                    if (id.includes('/node_modules/axios/')) {
+                        return 'vendor-http';
+                    }
                 },
             },
         },

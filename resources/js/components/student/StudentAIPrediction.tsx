@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Brain, TrendingUp, Calendar, Star, Zap, BookOpen, RefreshCw, Award, Target, HelpCircle } from 'lucide-react';
 import { useAppStore, getStudentStreak } from '../../store/AppContext';
+import { ScoreKomponen } from '../shared/ScoreKomponen';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface AIPredictionData {
   id: number;
@@ -14,6 +16,9 @@ interface AIPredictionData {
   attendance_rate: string;
   avg_ayah_per_day: string;
   recommendation?: string;
+  sabaq_score?: number | null;
+  sabki_score?: number | null;
+  manzil_score?: number | null;
 }
 
 import type { StudentView } from './StudentDashboard';
@@ -26,6 +31,8 @@ export function StudentAIPrediction({ onNavigate }: Props) {
   const { state } = useAppStore();
   const [prediction, setPrediction] = useState<AIPredictionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [records, setRecords] = useState<any[]>([]);
+  const [classRank, setClassRank] = useState<{ rank: number; total: number } | null>(null);
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   const studentId = authUser.linked_id;
@@ -36,10 +43,28 @@ export function StudentAIPrediction({ onNavigate }: Props) {
   useEffect(() => {
     if (student?.id) {
       fetchPrediction(String(student.id));
+      fetchRecords(String(student.id));
+      if (student.classId) fetchClassRank(String(student.id), String(student.classId));
     } else {
       setLoading(false);
     }
   }, [student?.id]);
+
+  const fetchRecords = async (id: string) => {
+    try {
+      const resp = await axios.get(`/api/hafazan-records?student_id=${id}&limit=7`);
+      setRecords(resp.data);
+    } catch {}
+  };
+
+  const fetchClassRank = async (studentId: string, classId: string) => {
+    try {
+      const resp = await axios.get(`/api/students/leaderboard/${classId}`);
+      const list: any[] = resp.data;
+      const pos = list.findIndex((s: any) => String(s.id) === studentId);
+      if (pos !== -1) setClassRank({ rank: pos + 1, total: list.length });
+    } catch {}
+  };
 
   const fetchPrediction = async (id: string | number) => {
     try {
@@ -189,6 +214,13 @@ export function StudentAIPrediction({ onNavigate }: Props) {
             </div>
           </div>
 
+          {/* Sabak / Sabki / Manzil scores */}
+          <ScoreKomponen
+            sabaq={prediction.sabaq_score ?? null}
+            sabki={prediction.sabki_score ?? null}
+            manzil={prediction.manzil_score ?? null}
+          />
+
           {/* Progress overview */}
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -217,6 +249,45 @@ export function StudentAIPrediction({ onNavigate }: Props) {
               <span className="text-lg font-bold text-green-600">{prediction.attendance_rate}</span>
             </div>
           </div>
+
+          {/* Trend Chart + Class Rank */}
+          {records.length > 0 && (() => {
+            const gradeToScore = (g: string | null) => {
+              if (!g) return null;
+              const map: Record<string, number> = { 'Mumtaz': 95, 'Jayyid Jiddan': 87, 'Jayyid': 80, 'Maqbul': 67, 'Perlu Penambahbaikan': 45, 'Sangat Baik': 92, 'Baik': 80, 'Sederhana': 67, 'Lemah': 45 };
+              return map[g] ?? null;
+            };
+            const chartData = [...records].reverse().map((r, i) => ({
+              name: `R${i + 1}`,
+              Sabak:  gradeToScore(r.sabaq?.grade),
+              Sabki:  gradeToScore(r.sabaqi?.grade),
+              Manzil: gradeToScore(r.manzil?.grade),
+            }));
+            return (
+              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900">📊 Trend Sabak–Sabki–Manzil (7 Rekod Terkini)</h3>
+                  {classRank && (
+                    <span className="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">
+                      🏆 #{classRank.rank} / {classRank.total} dalam kelas
+                    </span>
+                  )}
+                </div>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+                    <Tooltip formatter={(v: any, n: string) => [`${v}%`, n]} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="Sabak"  fill="#10b981" radius={[4,4,0,0]} />
+                    <Bar dataKey="Sabki"  fill="#3b82f6" radius={[4,4,0,0]} />
+                    <Bar dataKey="Manzil" fill="#8b5cf6" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })()}
 
           {/* AI Recommendation */}
           <div className={`rounded-xl border-2 p-6 ${trendBg(prediction.performance_trend)}`}>
@@ -261,7 +332,7 @@ export function StudentAIPrediction({ onNavigate }: Props) {
             </div>
             <ul className="text-sm text-purple-800 space-y-1">
               <li>• Hafal sekurang-kurangnya 5 ayat setiap hari secara konsisten</li>
-              <li>• Ulang kaji Sabaqi sebelum memulakan Sabaq baharu</li>
+              <li>• Ulang kaji Sabki sebelum memulakan Sabak baharu</li>
               <li>• Hadiri setiap sesi — kehadiran konsisten meningkatkan ingatan</li>
               <li>• Kongsi kemajuan anda dengan ibu bapa untuk sokongan moral</li>
             </ul>

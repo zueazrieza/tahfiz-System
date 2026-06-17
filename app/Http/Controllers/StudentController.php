@@ -334,24 +334,86 @@ class StudentController extends Controller
             }
         }
 
-        // Rank name based on juzuk
+        // Rank name: DB ranking field takes priority, else derived from juzuk
         $juzuk = $student->juzuk_completed ?? 0;
-        $rankName = 'Beginner';
-        if ($juzuk >= 1) $rankName = 'Warrior';
-        if ($juzuk >= 5) $rankName = 'Elite';
-        if ($juzuk >= 15) $rankName = 'Master';
-        if ($juzuk >= 30) $rankName = 'Al-Hafiz';
+        $rankNames = [
+            0  => 'Tahsin',
+            1  => 'Warrior',
+            2  => 'Elite',
+            3  => 'Master',
+            4  => 'Grandmaster',
+            5  => 'Titan',
+            6  => 'Gladiator',
+            7  => 'Legend Al-Hafiz',
+            8  => 'Legend Al-Hafiz Amethyst',
+            9  => 'Legend Al-Hafiz Ruby',
+            10 => 'Legend Al-Hafiz Sapphire',
+            11 => 'Syahadah Emperor',
+        ];
+        $dbRanking = $student->ranking;
+        if ($dbRanking !== null && isset($rankNames[$dbRanking])) {
+            $rankName = $rankNames[$dbRanking];
+        } else {
+            if ($juzuk >= 30)     $rankName = 'Legend Al-Hafiz';
+            elseif ($juzuk >= 25) $rankName = 'Gladiator';
+            elseif ($juzuk >= 20) $rankName = 'Titan';
+            elseif ($juzuk >= 15) $rankName = 'Grandmaster';
+            elseif ($juzuk >= 10) $rankName = 'Master';
+            elseif ($juzuk >= 5)  $rankName = 'Elite';
+            elseif ($juzuk >= 1)  $rankName = 'Warrior';
+            else                  $rankName = 'Tahsin';
+        }
+
+        // Today's hafazan record
+        $todayRecord = HafazanRecord::where('student_id', $id)
+            ->whereDate('date', now()->toDateString())
+            ->first();
+
+        $todayHafazan = $todayRecord ? [
+            'sabaq'  => $todayRecord->sabaq_grade,
+            'sabki'  => $todayRecord->sabaqi_grade,
+            'manzil' => $todayRecord->manzil_grade,
+            'surah'  => $todayRecord->sabaq_surah,
+        ] : null;
+
+        // Anonymous class rank
+        $classRank = null;
+        $classTotal = null;
+        if ($student->class_id) {
+            $classmates = Student::where('class_id', $student->class_id)
+                ->orderByDesc('juzuk_completed')
+                ->pluck('id')
+                ->values();
+            $pos = $classmates->search($student->id);
+            $classRank  = $pos !== false ? $pos + 1 : null;
+            $classTotal = $classmates->count();
+        }
+
+        // Streak milestones
+        $streakMilestone = match(true) {
+            $streak >= 100 => '💎 Legenda',
+            $streak >= 30  => '🔥 Konsisten',
+            $streak >= 14  => '⭐ Dua Minggu',
+            $streak >= 7   => '✨ Seminggu',
+            $streak >= 3   => '🌱 Bermula',
+            default        => null,
+        };
 
         return response()->json([
-            'juzukCompleted' => $juzuk,
-            'streak' => $streak,
-            'rankName' => $rankName,
-            'student' => [
-                'id' => $student->id,
-                'name' => $student->name,
-                'className' => $student->classRoom?->name ?? 'Tiada Kelas',
+            'juzukCompleted'   => $juzuk,
+            'streak'           => $streak,
+            'streakMilestone'  => $streakMilestone,
+            'rankName'         => $rankName,
+            'classRank'        => $classRank,
+            'classTotal'       => $classTotal,
+            'todayHafazan'     => $todayHafazan,
+            'student'          => [
+                'id'          => $student->id,
+                'name'        => $student->name,
+                'className'   => $student->classRoom?->name ?? 'Tiada Kelas',
                 'teacherName' => $student->classRoom?->primaryTeacher?->name ?? $student->teacher?->name ?? 'Tiada Murabbi',
-            ]
+                'class_id'    => $student->class_id,
+            ],
         ]);
     }
     public function leaderboard($classId)

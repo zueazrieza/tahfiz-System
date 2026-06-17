@@ -8,6 +8,8 @@ export function Announcements() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ title: '', content: '', type: 'General', target_audience: 'All' });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [timeFilter, setTimeFilter] = useState<'All' | 'Today' | 'Week'>('All');
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   const role = authUser.role || 'student';
@@ -25,12 +27,43 @@ export function Announcements() {
       setLoading(true);
       const res = await axios.get('/api/announcements', { params: { target_audience: fetchTarget } });
       setAnnouncements(res.data);
+      setCurrentPage(1);
     } catch (err) {
       console.error('Error fetching announcements', err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Trigger page reset when timeFilter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [timeFilter]);
+
+  const filteredAnnouncements = announcements.filter(ann => {
+    if (timeFilter === 'All') return true;
+    
+    const createdDate = new Date(ann.created_at);
+    const today = new Date();
+    
+    if (timeFilter === 'Today') {
+      return createdDate.toDateString() === today.toDateString();
+    }
+    
+    if (timeFilter === 'Week') {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(today.getDate() - 7);
+      return createdDate >= oneWeekAgo;
+    }
+    
+    return true;
+  });
+
+  const itemsPerPage = 10;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentAnnouncements = filteredAnnouncements.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredAnnouncements.length / itemsPerPage);
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +150,28 @@ export function Announcements() {
         )}
       </div>
 
+      {/* Quick Filters */}
+      <div className="flex gap-2 bg-slate-100/60 p-1.5 rounded-2xl w-fit">
+        {[
+          { id: 'All', label: 'Semua' },
+          { id: 'Today', label: 'Hari Ini' },
+          { id: 'Week', label: 'Minggu Lepas' }
+        ].map(filter => (
+          <button
+            key={filter.id}
+            type="button"
+            onClick={() => setTimeFilter(filter.id as any)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border-none cursor-pointer ${
+              timeFilter === filter.id
+                ? 'bg-white text-teal-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50 bg-transparent'
+            }`}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
       {showForm && canPost && (
         <form onSubmit={handlePost} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4 animate-in slide-in-from-top-4">
           <h3 className="font-bold text-slate-800">{editingId ? 'Kemaskini Hebahan' : 'Cipta Hebahan Baru'}</h3>
@@ -193,64 +248,123 @@ export function Announcements() {
            <p className="text-slate-500 font-medium">Tiada pengumuman buat masa ini.</p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {announcements.map((ann) => (
-            <div key={ann.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex flex-col md:flex-row gap-6">
-               <div className="flex-1 space-y-3">
-                 <div className="flex items-center gap-3">
-                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getTypeColor(ann.type)}`}>
-                     {ann.type}
-                   </span>
-                   <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
-                     <Clock className="w-3 h-3" />
-                     {new Date(ann.created_at).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
-                   </span>
-                   {canPost && (
-                     <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase">
-                       Untuk: {
-                          ann.target_audience === 'All' ? 'Semua' : 
-                          ann.target_audience === 'Teachers' ? 'Murabbi/Murabbiah' : 
-                          ann.target_audience === 'Students' ? 'Pelajar' : 
-                          ann.target_audience === 'Parents' ? 'Ibu Bapa' : 
-                          ann.target_audience
-                        }
-                     </span>
-                   )}
+        <div className="space-y-6">
+          <div className="grid gap-4">
+            {currentAnnouncements.map((ann) => {
+              const createdAt = new Date(ann.created_at);
+              const now = new Date();
+              const diffTime = now.getTime() - createdAt.getTime();
+              const diffDays = diffTime / (1000 * 60 * 60 * 24);
+              const daysRemaining = 30 - diffDays;
+              const isExpiringSoon = daysRemaining <= 3 && daysRemaining > 0;
+              const daysCeil = Math.max(0, Math.ceil(daysRemaining));
+              
+              const isWarning = role === 'admin' && isExpiringSoon;
+              const cardBg = isWarning ? 'bg-amber-50/50 border-amber-200 hover:border-amber-300' : 'bg-white border-slate-100';
+
+              return (
+                <div key={ann.id} className={`${cardBg} p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all flex flex-col md:flex-row gap-6`}>
+                   <div className="flex-1 space-y-3">
+                     <div className="flex items-center gap-3">
+                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getTypeColor(ann.type)}`}>
+                         {ann.type}
+                       </span>
+                       <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                         <Clock className="w-3 h-3" />
+                         {new Date(ann.created_at).toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
+                       </span>
+                       {canPost && (
+                         <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase">
+                           Untuk: {
+                              ann.target_audience === 'All' ? 'Semua' : 
+                              ann.target_audience === 'Teachers' ? 'Murabbi/Murabbiah' : 
+                              ann.target_audience === 'Students' ? 'Pelajar' : 
+                              ann.target_audience === 'Parents' ? 'Ibu Bapa' : 
+                              ann.target_audience
+                            }
+                         </span>
+                       )}
+                       {role === 'admin' && isExpiringSoon && (
+                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                           ⚠️ Hampir Tamat ({daysCeil} Hari Lagi)
+                         </span>
+                       )}
+                     </div>
+                   
+                   <h3 className="text-xl font-black text-slate-800">{ann.title}</h3>
+                   <p className="text-slate-600 whitespace-pre-wrap">{ann.content}</p>
+                   
+                   <div className="pt-2 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                        {ann.author?.name?.charAt(0) || 'A'}
+                      </div>
+                      <span className="text-xs font-bold text-slate-500">
+                        Oleh: {ann.author?.name || 'Admin'}
+                      </span>
+                   </div>
                  </div>
                  
-                 <h3 className="text-xl font-black text-slate-800">{ann.title}</h3>
-                 <p className="text-slate-600 whitespace-pre-wrap">{ann.content}</p>
-                 
-                 <div className="pt-2 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                      {ann.author?.name?.charAt(0) || 'A'}
-                    </div>
-                    <span className="text-xs font-bold text-slate-500">
-                      Oleh: {ann.author?.name || 'Admin'}
-                    </span>
-                 </div>
-               </div>
-               
-               {canPost && role === 'admin' && (
-                 <div className="flex-shrink-0 flex gap-2">
-                   <button 
-                     onClick={() => handleEditClick(ann)}
-                     className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                     title="Edit Pengumuman"
-                   >
-                     <Edit className="w-5 h-5" />
-                   </button>
-                   <button 
-                     onClick={() => handleDelete(ann.id)}
-                     className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                     title="Padam Pengumuman"
-                   >
-                     <Trash2 className="w-5 h-5" />
-                   </button>
-                 </div>
-               )}
+                 {canPost && role === 'admin' && (
+                   <div className="flex-shrink-0 flex gap-2">
+                     <button 
+                       onClick={() => handleEditClick(ann)}
+                       className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                       title="Edit Pengumuman"
+                     >
+                       <Edit className="w-5 h-5" />
+                     </button>
+                     <button 
+                       onClick={() => handleDelete(ann.id)}
+                       className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                       title="Padam Pengumuman"
+                     >
+                       <Trash2 className="w-5 h-5" />
+                     </button>
+                   </div>
+                 )}
+              </div>
+            );
+          })}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 disabled:opacity-40 transition-all cursor-pointer text-xs"
+              >
+                Sebelum
+              </button>
+              
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-9 h-9 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                      currentPage === page
+                        ? 'bg-teal-600 text-white shadow-md shadow-teal-100'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 disabled:opacity-40 transition-all cursor-pointer text-xs"
+              >
+                Seterusnya
+              </button>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

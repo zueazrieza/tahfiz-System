@@ -8,7 +8,7 @@ const MONTHS = ['','Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos'
 export function ManagePayments() {
   const { state, dispatch } = useAppStore();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [invoiceForm, setInvoiceForm] = useState({ studentId: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), amount: 1300 });
+  const [invoiceForm, setInvoiceForm] = useState({ studentId: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), amount: 1462.5 });
   const [viewingInvoice, setViewingInvoice] = useState<any>(null);
   const inputCls = 'w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500';
 
@@ -20,9 +20,9 @@ export function ManagePayments() {
 
   const feeTypes = [
     { value: 'semua', label: 'Semua Jenis Yuran' },
-    { value: 'bulanan', label: 'Yuran Bulanan (RM1300/RM1350)' },
-    { value: 'pendaftaran', label: 'Yuran Pendaftaran Masuk (RM1000)' },
-    { value: 'asrama', label: 'Yuran Pengurusan Asrama (RM350)' },
+    { value: 'bulanan', label: 'Yuran Bulanan Pengajian (RM1012.50 / RM1112.50)' },
+    { value: 'pendaftaran', label: 'Yuran Pendaftaran (RM1150 / RM1000 / RM300)' },
+    { value: 'asrama', label: 'Yuran Bulanan Asrama (RM350)' },
     { value: 'lain', label: 'Yuran Pembelajaran Lain' }
   ];
 
@@ -33,8 +33,8 @@ export function ManagePayments() {
 
   const getFeeType = (amount: number) => {
     const amt = Number(amount);
-    if (amt === 1350 || amt === 1300) return 'bulanan';
-    if (amt === 1000) return 'pendaftaran';
+    if (amt === 1012.5 || amt === 1112.5 || amt === 1362.5 || amt === 1462.5 || amt === 1050 || amt === 500) return 'bulanan';
+    if (amt === 1150 || amt === 1000 || amt === 300) return 'pendaftaran';
     if (amt === 350) return 'asrama';
     return 'lain';
   };
@@ -320,7 +320,7 @@ export function ManagePayments() {
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-2">Jumlah (RM)</label>
                 <input type="number" required className={inputCls} value={invoiceForm.amount} onChange={e => setInvoiceForm({ ...invoiceForm, amount: Number(e.target.value) })} />
-                <p className="text-xs text-slate-500 mt-1">* RM 1300 (Yuran Pembelajaran RM950 + Yuran Asrama RM350)</p>
+                <p className="text-xs text-slate-500 mt-1">* Contoh Yuran Bulanan: RM 1462.50 (Pengajian Cawangan RM1112.50 + Asrama RM350) / RM 1362.50 (Pengajian HQ RM1012.50 + Asrama RM350) / Pendaftaran RM 1150</p>
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="submit" className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Jana</button>
@@ -352,10 +352,16 @@ function InvoiceViewModal({ payment, onClose, getClassName }: { payment: any; on
 
   const getPaymentDescription = (amount: number) => {
     const amt = Number(amount);
-    if (amt === 1350) return 'Yuran Bulanan Pengajian (RM1000) & Asrama (RM350)';
-    if (amt === 1300) return 'Yuran Bulanan Pengajian (RM950) & Asrama (RM350)';
-    if (amt === 1000) return 'Yuran Pendaftaran Masuk';
-    if (amt === 350) return 'Yuran Pengurusan Asrama';
+    if (amt === 1462.5) return 'Yuran Bulanan Pengajian Cawangan (RM1112.50) & Asrama (RM350)';
+    if (amt === 1362.5) return 'Yuran Bulanan Pengajian HQ Terengganu (RM1012.50) & Asrama (RM350)';
+    if (amt === 1112.5) return 'Yuran Bulanan Pengajian Cawangan';
+    if (amt === 1012.5) return 'Yuran Bulanan Pengajian HQ Terengganu';
+    if (amt === 1150) return 'Yuran Pendaftaran Masuk (Akademik)';
+    if (amt === 350) return 'Yuran Bulanan Asrama';
+    if (amt === 1050) return 'Yuran Bulanan Online Full Time (Premium)';
+    if (amt === 1000) return 'Yuran Pendaftaran Online Full Time (Premium)';
+    if (amt === 500) return 'Yuran Bulanan Online Part Time (Elite)';
+    if (amt === 300) return 'Yuran Pendaftaran Online Part Time (Elite)';
     return 'Yuran Pembelajaran';
   };
 

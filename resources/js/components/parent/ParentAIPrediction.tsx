@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Brain, TrendingUp, Calendar, Star, BookOpen, Users } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
+import { ScoreKomponen } from '../shared/ScoreKomponen';
 
 interface AIPredictionData {
   id: number;
@@ -13,7 +14,10 @@ interface AIPredictionData {
   recommendations: string;
   attendance_rate: string;
   avg_ayah_per_day: string;
-  recommendation?: string; // Controller uses recommendation (singular) or recommendations (plural)? Let's check.
+  recommendation?: string;
+  sabaq_score?: number | null;
+  sabki_score?: number | null;
+  manzil_score?: number | null;
 }
 
 interface ParentAIPredictionProps {
@@ -109,6 +113,13 @@ export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
                   : ' Konsistensi hafazan adalah kunci kejayaan.'}
             </p>
           </div>
+
+          {/* Sabak / Sabki / Manzil scores */}
+          <ScoreKomponen
+            sabaq={prediction.sabaq_score ?? null}
+            sabki={prediction.sabki_score ?? null}
+            manzil={prediction.manzil_score ?? null}
+          />
 
           {/* Key metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

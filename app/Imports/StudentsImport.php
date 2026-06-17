@@ -247,11 +247,23 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     $ranking = (int)$rankingRaw;
                 } else {
                     $rankingMap = [
-                        'elite'       => 1,
-                        'warrior'     => 2,
-                        'challenger'  => 3,
-                        'apprentice'  => 4,
-                        'beginner'    => 5,
+                        'tahsin'                    => 0,
+                        'warrior'                   => 1,
+                        'elite'                     => 2,
+                        'master'                    => 3,
+                        'grandmaster'               => 4,
+                        'titan'                     => 5,
+                        'gladiator'                 => 6,
+                        'legend al-hafiz'           => 7,
+                        'legend'                    => 7,
+                        'legend al-hafiz amethyst'  => 8,
+                        'amethyst'                  => 8,
+                        'legend al-hafiz ruby'      => 9,
+                        'ruby'                      => 9,
+                        'legend al-hafiz sapphire'  => 10,
+                        'sapphire'                  => 10,
+                        'syahadah emperor'          => 11,
+                        'emperor'                   => 11,
                     ];
                     $ranking = $rankingMap[strtolower($rankingRaw)] ?? null;
                 }
@@ -431,7 +443,7 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
                     $daysLeft = ceil(($remainingJuzuk * 208) / max($avgAyahPerDay, 0.5));
                     $completionDate = \Carbon\Carbon::now()->addDays($daysLeft);
 
-                    $recommendation = "Sasaran akhir Jun: " . ($targetBilJuzuk ?? '—') . " Juzuk. Purata sabaq sehari: " . ($purataSabaq ?? '—') . ".";
+                    $recommendation = "Sasaran akhir Jun: " . ($targetBilJuzuk ?? '—') . " Juzuk. Purata sabak sehari: " . ($purataSabaq ?? '—') . ".";
                     if ($juzukSemasa) {
                         $recommendation .= " Sedang menghafal: Juzuk {$juzukSemasa}.";
                     }

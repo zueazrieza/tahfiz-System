@@ -43,174 +43,226 @@ class AIController extends Controller
     public function getPrediction(string $studentId)
     {
         $student = Student::findOrFail($studentId);
-        
-        // 1. Fetch data
-        $records = HafazanRecord::where('student_id', $studentId)->get();
+
+        $records    = HafazanRecord::where('student_id', $studentId)->orderBy('date')->get();
         $attendances = Attendance::where('student_id', $studentId)->get();
 
-        // 2. Logic Ported from Frontend
-        
-        // Hafazan Progress & Performance
-        $totalSabaqAyah = 0;
-        $gradeScoreTotal = 0;
-        $gradeCount = 0;
+        $completedJuzuk = (int) ($student->juzuk_completed ?? 0);
+        // 604 pages total, ~20.13 pages per juzuk
+        $pagesMemorized  = round($completedJuzuk * (604 / 30));
+        $remainingPages  = 604 - $pagesMemorized;
+        $progressPercent = round($pagesMemorized / 604 * 100, 1);
 
-        foreach ($records as $r) {
-            $totalSabaqAyah += max(0, ($r->sabaq_to ?? 0) - ($r->sabaq_from ?? 0));
-            
-            $grades = [$r->sabaq_grade, $r->sabaqi_grade, $r->manzil_grade];
-            foreach ($grades as $g) {
-                $val = $this->getGradeValue($g);
-                if ($val !== null) {
-                    $gradeScoreTotal += $val;
-                    $gradeCount++;
-                }
-            }
+        // ── 1. SABAK SCORE (Hafazan Baharu) ──────────────────────────────────
+        $sabaqScores = $records->map(fn($r) => $this->gradeToScore($r->sabaq_grade))->filter()->values();
+        $sabaqScore  = $sabaqScores->count() ? round($sabaqScores->avg()) : null;
+
+        // Avg ayah per sabak session → convert to pages (15 ayat ≈ 1 page)
+        $sabaqAyahPerSession = $records->map(function ($r) {
+            return max(0, ($r->sabaq_to ?? 0) - ($r->sabaq_from ?? 0));
+        })->filter(fn($v) => $v > 0);
+        $avgSabaqAyahPerDay  = $sabaqAyahPerSession->count() ? $sabaqAyahPerSession->avg() : null;
+
+        // Pages per week from real records (last 4 weeks window)
+        $recentRecords = $records->filter(fn($r) => Carbon::parse($r->date)->gte(Carbon::now()->subWeeks(4)));
+        $weeksSpanned  = max(1, $recentRecords->count() > 0
+            ? Carbon::parse($recentRecords->first()->date)->diffInWeeks(Carbon::now()) + 1
+            : 1);
+        $totalRecentAyah     = $recentRecords->sum(fn($r) => max(0, ($r->sabaq_to ?? 0) - ($r->sabaq_from ?? 0)));
+        $avgPagesPerWeek     = $weeksSpanned > 0 && $totalRecentAyah > 0
+            ? round($totalRecentAyah / 15 / $weeksSpanned, 1)
+            : ($student->purata_sabaq_sehari ? round($student->purata_sabaq_sehari * 7 / 15, 1) : null);
+
+        // Sabak achievement vs weekly target (default target: 5 pages/week)
+        $weeklyTarget = $student->target_hafazan ? (float) $student->target_hafazan : 5;
+        $sabaqAchievement = $avgPagesPerWeek !== null
+            ? min(100, round($avgPagesPerWeek / $weeklyTarget * 100))
+            : null;
+
+        // ── 2. SABKI SCORE (Ulang Kaji Semasa / Sabaqi) ──────────────────────
+        $sabkiScores = $records->map(fn($r) => $this->gradeToScore($r->sabaqi_grade))->filter()->values();
+        $sabkiScore  = $sabkiScores->count() ? round($sabkiScores->avg()) : null;
+
+        // ── 3. MANZIL SCORE (Ulang Kaji Juzuk Lama) ──────────────────────────
+        $manzilScores = $records->map(fn($r) => $this->gradeToScore($r->manzil_grade))->filter()->values();
+        $manzilScore  = $manzilScores->count() ? round($manzilScores->avg()) : null;
+
+        // Manzil coverage: unique juzuk reviewed vs total completed
+        $manzilCoverage = null;
+        if ($completedJuzuk > 0 && $records->count() > 0) {
+            $uniqueManzilSurah = $records->pluck('manzil_surah')->filter()->unique()->count();
+            // Approximate: assume each unique surah in manzil = at least part of a juzuk reviewed
+            $manzilCoverage = min(100, round($uniqueManzilSurah / max(1, $completedJuzuk) * 100));
         }
 
-        $existingPrediction = AIPrediction::where('student_id', $studentId)->first();
-        if (count($records) > 0) {
-            $avgSabaqPerDay = $totalSabaqAyah / count($records);
-        } elseif (!is_null($student->purata_sabaq_sehari) && $student->purata_sabaq_sehari > 0) {
-            $avgSabaqPerDay = (float) $student->purata_sabaq_sehari;
-        } elseif ($existingPrediction && $existingPrediction->avg_ayah_per_day) {
-            $avgSabaqPerDay = $existingPrediction->avg_ayah_per_day;
+        // ── 4. ATTENDANCE + PONTENG ──────────────────────────────────────────
+        $totalAttendance = $attendances->count();
+        $attendanceRate  = $totalAttendance > 0
+            ? $attendances->whereIn('status', ['Hadir', 'Lewat'])->count() / $totalAttendance
+            : null;
+
+        // Count ponteng specifically (remarks = 'Ponteng', case-insensitive)
+        $pontengCount = $attendances->filter(
+            fn($a) => $a->status === 'Tidak Hadir' && strtolower(trim($a->remarks ?? '')) === 'ponteng'
+        )->count();
+        $pontengRate = $totalAttendance > 0 ? $pontengCount / $totalAttendance : 0;
+
+        // Ponteng penalty label
+        if ($pontengRate >= 0.20) {
+            $pontengLabel   = 'Kritikal';
+            $pontengPenalty = 0.35; // +35% more weeks
+        } elseif ($pontengRate >= 0.10) {
+            $pontengLabel   = 'Membimbangkan';
+            $pontengPenalty = 0.20;
+        } elseif ($pontengRate >= 0.05) {
+            $pontengLabel   = 'Perhatian';
+            $pontengPenalty = 0.10;
         } else {
-            $avgSabaqPerDay = null;
+            $pontengLabel   = null;
+            $pontengPenalty = 0;
         }
-        $qualityMultiplier = $gradeCount > 0 ? $gradeScoreTotal / $gradeCount : 1.0;
 
-        // Attendance Pattern — only use real data, no default inflation
-        $hasAttendance = count($attendances) > 0;
-        $attendanceRate = $hasAttendance
-            ? $attendances->whereIn('status', ['Hadir', 'Lewat'])->count() / count($attendances)
-            : 0;
-
-        // AI Engine Computation
-        $effectiveRate = ($avgSabaqPerDay ?? 0) * $qualityMultiplier * (0.7 + ($attendanceRate * 0.3));
-        
-        // ── AI Optimization with Historical Data ──
-        $alumniAvgDays = \App\Models\AlumniRecord::avg('duration_days') ?: 1095;
-        $historicalDaysPerJuzuk = $alumniAvgDays / 30;
-        
-        $remainingJuzuk = 30 - $student->juzuk_completed;
-        $remainingAyat = $remainingJuzuk * 208; // 208 ayat per juzuk
-        $validEffectiveRate = max($effectiveRate, 0.5);
-        $calculatedDaysLeft = ceil($remainingAyat / $validEffectiveRate);
-
-        // Weigh the calculation with historical average (50/50 split for balance)
-        $historicalFactor = $remainingJuzuk * $historicalDaysPerJuzuk;
-        $daysLeft = ceil(($calculatedDaysLeft * 0.7) + ($historicalFactor * 0.3));
-
-        $completionDate = Carbon::now()->addDays($daysLeft);
-
-        // Confidence Level — base 50% if no data, else 60%
-        $hasAnyData = count($records) > 0 || $avgSabaqPerDay !== null;
-        $confidenceBase = $hasAnyData ? 60 : 50;
-        $dataVolumeScore = min(1, count($records) / 30);
-        $confidence = min(99, round(
-            $confidenceBase
-            + ($dataVolumeScore * 20)
-            + ($hasAttendance ? $attendanceRate * 20 : 0)
-            + (($qualityMultiplier - 1) * 9)
-        ));
-
-        // Trend
-        $trend = ($attendanceRate >= 0.9 && $qualityMultiplier >= 1.0) ? 'Cemerlang' :
-                 (($attendanceRate >= 0.75 && $qualityMultiplier >= 0.8) ? 'Baik' : 'Perlu Perhatian');
-
-        // ── Advanced Pedagogical Recommendation Engine (Based on QUL, VARK & Cognitive Models) ──
-        $completedJuzuk = $student->juzuk_completed ?? 0;
-        
-        $recHeader = "";
-        $recCycle = "";
-        $recTechnique = "";
-        
-        // Dynamic VARK Suggestion based on student profile
-        $varkStyle = "";
-        $varkTechniques = "";
-        
-        if ($qualityMultiplier >= 0.9) {
-            $varkStyle = "🎧 AUDITORI & BACAAN (VARK)";
-            $varkTechniques = "Sangat sesuai dengan gaya audio-linguistik. Lakukan [Pointer & Highlight] pada teks mushaf semasa mendengar bacaan Murattal Qari untuk mengunci ingatan jangka panjang (Long-term Memory).";
+        // ── 5. ESTIMATED COMPLETION DATE ─────────────────────────────────────
+        if ($avgPagesPerWeek && $avgPagesPerWeek > 0) {
+            $weeksLeft = ceil($remainingPages / $avgPagesPerWeek);
+            // Apply ponteng penalty — each skip session extends timeline
+            $weeksLeft = (int) ceil($weeksLeft * (1 + $pontengPenalty));
+            $completionDate = Carbon::now()->addWeeks($weeksLeft);
         } else {
-            $varkStyle = "🎨 VISUAL & KINESTETIK (VARK)";
-            $varkTechniques = "Gunakan teknik [Association of Colour] (kod warna hukum tajwid QUL), dan amalkan [Body Motion & Gesture] semasa menghafal untuk merangsang memori deria (Sensory Memory) ke memori jangka pendek.";
+            // Fallback: alumni average (3 years default)
+            $alumniAvgDays  = \App\Models\AlumniRecord::avg('duration_days') ?: 1095;
+            $daysLeft       = ceil(($remainingPages / 604) * $alumniAvgDays);
+            $daysLeft       = (int) ceil($daysLeft * (1 + $pontengPenalty));
+            $completionDate = Carbon::now()->addDays($daysLeft);
         }
 
-        // LSTM Spaced Repetition Forgetting Curve & Bayesian Weak Point Simulation
-        $atRiskVerses = "Tiada ayat kritikal dikesan.";
-        if (count($records) > 0) {
-            $lastRec = $records->last();
-            $surah = $lastRec->sabaq_surah ?? 'Al-Mulk';
-            $from = $lastRec->sabaq_from ?? 1;
-            $to = $lastRec->sabaq_to ?? 5;
-            
-            // Proactively predict that 1-2 verses in their last sabaq range are at risk of forgetting
-            $atRiskAyah = $from + (($completedJuzuk + count($records)) % max(1, ($to - $from + 1)));
-            $atRiskVerses = "Surah {$surah}, Ayat {$atRiskAyah} (Berdasarkan model perbandingan LSTM & Bayesian). Sila ulang ayat ini dalam tempoh 24 jam!";
+        // ── 6. PERFORMANCE TREND ─────────────────────────────────────────────
+        $recentSabaq = $records->filter(fn($r) => Carbon::parse($r->date)->gte(Carbon::now()->subDays(14)));
+        $olderSabaq  = $records->filter(fn($r) => Carbon::parse($r->date)->lt(Carbon::now()->subDays(14))
+            && Carbon::parse($r->date)->gte(Carbon::now()->subDays(28)));
+
+        $recentAvgGrade = $recentSabaq->map(fn($r) => $this->gradeToScore($r->sabaq_grade))->filter()->avg();
+        $olderAvgGrade  = $olderSabaq->map(fn($r) => $this->gradeToScore($r->sabaq_grade))->filter()->avg();
+
+        if ($recentAvgGrade && $olderAvgGrade) {
+            $trend = $recentAvgGrade >= $olderAvgGrade + 5 ? 'Meningkat'
+                : ($recentAvgGrade <= $olderAvgGrade - 5 ? 'Menurun' : 'Stabil');
+        } elseif ($sabaqScore !== null && $sabaqScore >= 75) {
+            $trend = 'Stabil';
         } else {
-            $atRiskVerses = "Juzuk " . ($completedJuzuk + 1) . ", Halaman Awal (Berdasarkan keluk lupa masa lampau).";
+            $trend = 'Belum Cukup Data';
         }
 
-        if ($completedJuzuk < 30) {
-            $recHeader = "📋 STATUS: Belum Khatam 30 Juzuk (Fasa Pemantapan)";
-            
-            if ($qualityMultiplier < 0.85) {
-                $recCycle = "🔄 Pusingan Muraja'ah: Ulangkaji Manzil Utama. AI mengesan penurunan keluk ingatan. Murid disyorkan memfokuskan kepada [Pengulangan Hafazan Lama (Manzil)] sekurang-kurangnya 1 Juzuk sehari untuk menguatkan semula ingatan lampau yang lemah.";
-            } else {
-                $recCycle = "🔄 Pusingan Muraja'ah: Seimbang Sabqi & Manzil. AI mengesan kestabilan memori. Kekalkan [Pengulangan Hafazan Baru (Sabqi)] sebanyak 5-10 helai terakhir, serta melazimi [Pengulangan Hafazan Lama (Manzil)] untuk pengekalan ingatan (Retention).";
-            }
-            
-            if ($attendanceRate < 0.8) {
-                $recTechnique = "⚡ Teknik Disyorkan: Lakukan [Pengulangan Kendiri atau Bersama Rakan] pada slot waktu lapang, serta aktifkan [Mendengar Bacaan Murattal Qari] untuk mengekalkan rangsangan audio.";
-            } else {
-                $recTechnique = "⚡ Teknik Disyorkan: Amalkan [Pengulangan Dalam Solat & Luar Solat] (Fardhu & Sunat) untuk memindahkan hafazan daripada Short-term Memory ke Long-term Memory.";
-            }
+        // ── 7. OVERALL PERFORMANCE LABEL ─────────────────────────────────────
+        $overallScores = collect([$sabaqScore, $sabkiScore, $manzilScore])->filter();
+        $overallAvg    = $overallScores->count() ? $overallScores->avg() : null;
+        $performanceLabel = $overallAvg !== null ? $this->scoreToLabel($overallAvg) : 'Belum Cukup Data';
+
+        // ── 8. CONFIDENCE ────────────────────────────────────────────────────
+        $confidence = 40; // base
+        $confidence += min(20, $records->count() * 2);         // up to +20 for 10+ records
+        $confidence += $sabaqScore !== null ? 10 : 0;
+        $confidence += $sabkiScore !== null ? 10 : 0;
+        $confidence += $manzilScore !== null ? 10 : 0;
+        $confidence += $attendanceRate !== null ? 10 : 0;
+        // Ponteng reduces confidence: it makes timeline less predictable
+        $confidence -= (int) round($pontengRate * 30);         // -30% of confidence per ponteng rate
+        $confidence  = min(99, max(20, $confidence));
+
+        // ── 9. RECOMMENDATION ────────────────────────────────────────────────
+        $sabaqLabel  = $sabaqScore  !== null ? $this->scoreToLabel($sabaqScore)  : 'Tiada Data';
+        $sabkiLabel  = $sabkiScore  !== null ? $this->scoreToLabel($sabkiScore)  : 'Tiada Data';
+        $manzilLabel = $manzilScore !== null ? $this->scoreToLabel($manzilScore) : 'Tiada Data';
+
+        $sabaqLine  = $sabaqScore  !== null ? "Sabak: {$sabaqScore}% ({$sabaqLabel})"   : "Sabak: Tiada Rekod";
+        $sabkiLine  = $sabkiScore  !== null ? "Sabki: {$sabkiScore}% ({$sabkiLabel})"   : "Sabki: Tiada Rekod";
+        $manzilLine = $manzilScore !== null ? "Manzil: {$manzilScore}% ({$manzilLabel})" : "Manzil: Tiada Rekod";
+
+        // Sabak advice
+        if ($sabaqAchievement !== null && $sabaqAchievement < 80) {
+            $sabaqAdvice = "Pencapaian Sabak minggu ini ({$sabaqAchievement}%) masih di bawah sasaran. Cuba tambah bilangan halaman baharu setiap hari.";
+        } elseif ($sabaqScore !== null && $sabaqScore < 60) {
+            $sabaqAdvice = "Kualiti hafalan baharu (Sabak) perlu diperbaiki. Ulang semula sebelum tambah halaman baharu.";
         } else {
-            $recHeader = "📋 STATUS: Telah Khatam 30 Juzuk (Fasa Huffaz/Alumni)";
-            
-            if ($qualityMultiplier >= 0.95) {
-                $recCycle = "🔄 Pusingan Muraja'ah: [Khatam Setiap Bulan atau Kurang]. AI mengesan tahap kelancaran Mumtaz. Disyorkan melakukan pusingan penuh 1 Juzuk sehari untuk mengekalkan mutu syahadah.";
-            } else {
-                $recCycle = "🔄 Pusingan Muraja'ah: [Penumpuan Juzuk Tertentu]. AI mengesan kelancaran tidak sekata. Fokuskan muraja'ah intensif kepada juzuk-juzuk yang dikesan lemah secara khusus sebelum memulakan pusingan khatam bulanan semula.";
-            }
-            
-            $recTechnique = "⚡ Teknik Disyorkan: Amalkan [Pengulangan Dalam Solat] malam (Qiyamullail) dan sertai [Musabaqah Hafazan atau Ihtifal] tempatan untuk menguji ketahanan hafazan di khalayak ramai.";
+            $sabaqAdvice = "Kekalkan kadar hafalan Sabak semasa. Tambah 1–2 ayat setiap sesi jika selesa.";
         }
 
-        $recommendation = "{$recHeader}\n\n" .
-                         "{$recCycle}\n\n" .
-                         "{$recTechnique}\n\n" .
-                         "🧠 Ramalan Pengekalan Memori AI (Model LSTM):\n" .
-                         "• Ayat Berisiko Dilupakan: {$atRiskVerses}\n\n" .
-                         "📈 Cadangan Gaya Belajar:\n" .
-                         "• Dominasi: {$varkStyle}\n" .
-                         "• Aplikasi Praktikal: {$varkTechniques}";
+        // Sabki advice
+        if ($sabkiScore === null) {
+            $sabkiAdvice = "Tiada rekod Sabki. Pastikan guru merekod ulang kaji semasa setiap sesi.";
+        } elseif ($sabkiScore < 60) {
+            $sabkiAdvice = "Sabki lemah. Pelajar perlu meningkatkan ulang kaji hafalan dalam juzuk semasa sebelum meneruskan Sabak.";
+        } else {
+            $sabkiAdvice = "Sabki dalam keadaan baik. Pastikan kelancaran dikekalkan dalam 5–10 helai terakhir.";
+        }
 
-        // Avg ayah per day
-        $avgTotalAyahPerDay = count($records) ? $records->avg('ayah_count') : $avgSabaqPerDay;
+        // Manzil advice
+        if ($manzilScore === null || $manzilCoverage === null) {
+            $manzilAdvice = "Tiada rekod Manzil. Guru perlu merekod ulang kaji juzuk lama secara berkala.";
+        } elseif ($manzilScore < 60) {
+            $manzilAdvice = "Manzil lemah ({$manzilScore}%). Kurangkan penambahan Sabak dan fokus ulang kaji juzuk lama.";
+        } elseif ($manzilCoverage < 50) {
+            $manzilAdvice = "Liputan Manzil hanya {$manzilCoverage}% daripada juzuk yang dihafal. Perlu lebih konsisten mengulang juzuk lama.";
+        } else {
+            $manzilAdvice = "Manzil baik dengan liputan {$manzilCoverage}%. Teruskan jadual ulang kaji juzuk lama secara sistematik.";
+        }
 
+        $completionStr = $completionDate->format('Y-m-d');
+
+        // Ponteng warning block
+        $pontengWarning = '';
+        if ($pontengLabel !== null) {
+            $pontengPct   = round($pontengRate * 100);
+            $pontengWarning = "\n\n⚠️ AMARAN PONTENG ({$pontengLabel}):\n" .
+                "• Pelajar ponteng {$pontengCount} sesi daripada {$totalAttendance} ({$pontengPct}% kadar ponteng).\n" .
+                "• Anggaran khatam telah dilanjutkan " . round($pontengPenalty * 100) . "% akibat ketidakhadiran tanpa sebab.\n" .
+                "• Sila berbincang dengan pelajar dan ibu bapa untuk mengenal pasti punca ponteng.";
+        }
+
+        $recommendation =
+            "LAPORAN KEMAJUAN HAFAZAN (KAEDAH SABAK–SABKI–MANZIL)\n\n" .
+            "Kemajuan Keseluruhan: {$pagesMemorized} / 604 halaman ({$progressPercent}%)\n" .
+            "Anggaran Khatam: {$completionStr}\n\n" .
+            "SKOR KOMPONEN:\n" .
+            "• {$sabaqLine}\n" .
+            "• {$sabkiLine}\n" .
+            "• {$manzilLine}\n\n" .
+            "CADANGAN GURU:\n" .
+            "• {$sabaqAdvice}\n" .
+            "• {$sabkiAdvice}\n" .
+            "• {$manzilAdvice}" .
+            $pontengWarning;
+
+        // ── 10. STORE ────────────────────────────────────────────────────────
         $predictionData = [
-            'student_id' => $student->id,
-            'current_progress' => $student->juzuk_completed > 0
-                ? "{$student->juzuk_completed} Juzuk (" . round(($student->juzuk_completed / 30) * 100) . "%)"
-                : "Belum Bermula",
+            'student_id'          => $student->id,
+            'current_progress'    => "{$completedJuzuk} Juzuk / {$pagesMemorized} Halaman ({$progressPercent}%)",
             'estimated_completion' => $completionDate->format('Y-m-d'),
-            'performance_trend' => $trend,
-            'confidence' => "{$confidence}%",
-            'recommendation' => $recommendation,
-            'attendance_rate' => round($attendanceRate * 100) . "%",
-            'avg_ayah_per_day' => $avgTotalAyahPerDay !== null ? round($avgTotalAyahPerDay) : 0,
+            'performance_trend'   => $performanceLabel . ' — ' . $trend,
+            'confidence'          => "{$confidence}%",
+            'recommendation'      => $recommendation,
+            'attendance_rate'     => $attendanceRate !== null ? round($attendanceRate * 100) . '%' : 'N/A',
+            'avg_ayah_per_day'    => $avgSabaqAyahPerDay !== null ? round($avgSabaqAyahPerDay) : 0,
         ];
 
-        // 3. Store in DB (Cache)
         $prediction = AIPrediction::updateOrCreate(
             ['student_id' => $student->id],
             $predictionData
         );
 
-        return response()->json($prediction);
+        return response()->json(array_merge($prediction->toArray(), [
+            'sabaq_score'        => $sabaqScore,
+            'sabki_score'        => $sabkiScore,
+            'manzil_score'       => $manzilScore,
+            'sabaq_achievement'  => $sabaqAchievement,
+            'manzil_coverage'    => $manzilCoverage,
+            'pages_memorized'    => $pagesMemorized,
+            'pages_remaining'    => $remainingPages,
+            'avg_pages_per_week' => $avgPagesPerWeek,
+            'ponteng_count'      => $pontengCount,
+            'ponteng_rate'       => round($pontengRate * 100),
+            'ponteng_label'      => $pontengLabel,
+        ]));
     }
 
     public function getClassPredictions(string $classId)
@@ -256,15 +308,41 @@ class AIController extends Controller
         ]);
     }
 
-    private function getGradeValue($g)
+    // Grade string → numeric score (0–100)
+    private function gradeToScore($grade): ?float
     {
-        switch ($g) {
-            case 'Mumtaz': return 1.15;
-            case 'Jayyid': return 1.0;
-            case 'Maqbul': return 0.8;
-            case 'Perlu Penambahbaikan': return 0.5;
-            default: return null;
-        }
+        return match ($grade) {
+            'Mumtaz'                => 95.0,
+            'Jayyid Jiddan'         => 87.0,
+            'Jayyid'                => 80.0,
+            'Maqbul'                => 67.0,
+            'Perlu Penambahbaikan'  => 45.0,
+            'Sangat Baik'           => 92.0,
+            'Baik'                  => 80.0,
+            'Sederhana'             => 67.0,
+            'Lemah'                 => 45.0,
+            'Perlu Ulang'           => 25.0,
+            default                 => null,
+        };
+    }
+
+    // Score → descriptive label
+    private function scoreToLabel(float $score): string
+    {
+        return match (true) {
+            $score >= 90 => 'Mumtaz',
+            $score >= 75 => 'Baik',
+            $score >= 60 => 'Sederhana',
+            $score >= 40 => 'Lemah',
+            default      => 'Perlu Ulang Semula',
+        };
+    }
+
+    // Keep for backward-compat with AIPredictionController
+    private function getGradeValue($g): ?float
+    {
+        $score = $this->gradeToScore($g);
+        return $score !== null ? $score / 100 : null;
     }
 
     /**

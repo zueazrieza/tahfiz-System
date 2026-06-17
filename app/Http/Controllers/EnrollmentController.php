@@ -25,6 +25,88 @@ class EnrollmentController extends Controller
     }
 
     /**
+     * Admin manually creates a new applicant (without going through public form).
+     */
+    public function adminCreate(Request $request)
+    {
+        $validated = $request->validate([
+            'studentName'    => 'required|string|max:255',
+            'studentIc'      => 'required|string|max:20',
+            'studentGender'  => 'required|in:Lelaki,Perempuan',
+            'studentDob'     => 'required|date',
+            'studentAge'     => 'required|integer|min:1|max:99',
+            'studentAddress' => 'required|string',
+            'parentName'     => 'required|string|max:255',
+            'parentEmail'    => 'required|email',
+            'parentPhone'    => 'required|string|max:20',
+            'parentIc'       => 'nullable|string|max:20',
+            'parentJob'      => 'nullable|string|max:255',
+            'quranLevel'     => 'nullable|string|max:255',
+            'notes'          => 'nullable|string',
+        ]);
+
+        try {
+            return DB::transaction(function () use ($validated) {
+                // Find or create parent user account
+                $parent = User::firstOrCreate(
+                    ['email' => $validated['parentEmail']],
+                    [
+                        'name'     => $validated['parentName'],
+                        'password' => Hash::make(substr(str_replace(['-', ' '], '', $validated['parentIc'] ?? $validated['parentPhone']), 0, 12)),
+                        'role'     => 'parent',
+                        'status'   => 'pending',
+                        'phone'    => $validated['parentPhone'],
+                        'job'      => $validated['parentJob'] ?? '',
+                        'full_name'=> $validated['parentName'],
+                    ]
+                );
+
+                $notes = "Didaftarkan oleh Admin.\n"
+                       . "Tahap Bacaan Al-Quran: " . ($validated['quranLevel'] ?? 'N/A') . "\n"
+                       . ($validated['notes'] ? "Catatan: " . $validated['notes'] : '');
+
+                $student = Student::create([
+                    'name'         => $validated['studentName'],
+                    'ic_no'        => $validated['studentIc'],
+                    'gender'       => $validated['studentGender'],
+                    'dob'          => $validated['studentDob'],
+                    'age'          => $validated['studentAge'],
+                    'address'      => $validated['studentAddress'],
+                    'parent_id'    => $parent->id,
+                    'parent_name'  => $validated['parentName'],
+                    'parent_phone' => $validated['parentPhone'],
+                    'parent_ic'    => $validated['parentIc'] ?? '',
+                    'admission_type' => 'interview',
+                    'status'       => 'PROSPECT',
+                    'enrolled_date'=> now()->format('Y-m-d'),
+                    'intake_juzuk' => 0,
+                    'notes'        => $notes,
+                    'batch'        => now()->year,
+                ]);
+
+                // Send enrollment confirmation email to parent
+                try {
+                    Mail::to($parent->email)->queue(new EnrollmentSuccessMail($parent, $student));
+                } catch (\Exception $e) {
+                    // Log but don't fail the whole request
+                    \Log::warning('Enrollment email failed: ' . $e->getMessage());
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pelajar berjaya didaftarkan. Emel pengesahan dihantar ke ' . $parent->email,
+                    'student' => $student,
+                ], 201);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mendaftarkan pelajar: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * List all applicants for the Enrollment Hub.
      */
     public function index()

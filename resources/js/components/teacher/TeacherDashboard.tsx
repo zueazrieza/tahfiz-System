@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BookOpen, Users, Calendar, FileText, Brain, LogOut, LayoutDashboard, Upload, X, Mic2, Layers, Trophy } from 'lucide-react';
+import { BookOpen, Users, Calendar, FileText, Brain, LogOut, LayoutDashboard, Upload, X, Mic2, Layers, Trophy, Menu } from 'lucide-react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { RecordHafazan } from './RecordHafazan';
 import { ManageAttendance } from './ManageAttendance';
 import { UploadReport } from './UploadReport';
@@ -34,8 +35,9 @@ const navItems: { id: TeacherView; label: string; icon: React.ReactNode }[] = [
 ];
 
 export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) {
+  const isMobile = useIsMobile();
   const [currentView, setCurrentView] = useState<TeacherView>('home');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const { state } = useAppStore();
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
@@ -95,7 +97,7 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(1, 1fr)' : 'repeat(3, 1fr)', gap: '1rem' }}>
               {stats.map((s) => (
                 <div key={s.label} style={{ background: s.bg, borderRadius: '16px', padding: '1.25rem', border: '1px solid rgba(0,0,0,0.05)' }}>
                   <span style={{ color: s.color }}>{s.icon}</span>
@@ -130,7 +132,7 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
                 style={{ padding: '1.25rem', background: 'linear-gradient(135deg,#16a34a,#14532d)', color: '#fff', border: 'none', borderRadius: '16px', cursor: 'pointer', textAlign: 'left' }}>
                 <BookOpen size={28} style={{ marginBottom: '0.5rem' }} />
                 <p style={{ margin: 0, fontWeight: 700, fontSize: '1rem' }}>Rekod Hafazan</p>
-                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', opacity: 0.8 }}>Rekod Sabaq, Sabaqi, Manzil</p>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', opacity: 0.8 }}>Rekod Sabak, Sabki, Manzil</p>
               </button>
               <button onClick={() => setCurrentView('attendance')}
                 style={{ padding: '1.25rem', background: 'linear-gradient(135deg,#2563eb,#1e3a8a)', color: '#fff', border: 'none', borderRadius: '16px', cursor: 'pointer', textAlign: 'left' }}>
@@ -146,13 +148,23 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#f3f4f6', overflow: 'hidden' }}>
+      {/* ─── Mobile backdrop ─── */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 49 }} />
+      )}
+
       {/* ─── SIDEBAR ─── */}
-      {sidebarOpen && (
+      {(!isMobile ? sidebarOpen : true) && (
         <aside style={{
           width: '200px', flexShrink: 0,
           background: 'linear-gradient(180deg, #1A4D50 0%, #6FC7CB 100%)',
           display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',
           boxShadow: '8px 0 30px rgba(0,0,0,0.1)',
+          ...(isMobile ? {
+            position: 'fixed' as const, left: 0, top: 0, zIndex: 50,
+            transform: sidebarOpen ? 'translateX(0)' : 'translateX(-200px)',
+            transition: 'transform 0.25s ease',
+          } : {}),
         }}>
           <div style={{ padding: '1.5rem 1rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <img src="/images/logo.png" alt="Logo" style={{ height: '55px', marginBottom: '0.75rem' }} />
@@ -165,7 +177,7 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
             {navItems.map((item) => {
               const isActive = currentView === item.id;
               return (
-                <button key={item.id} onClick={() => setCurrentView(item.id)}
+                <button key={item.id} onClick={() => { setCurrentView(item.id); if (isMobile) setSidebarOpen(false); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.6rem',
                     padding: '0.6rem 0.8rem', borderRadius: '999px', border: 'none', cursor: 'pointer',
@@ -201,10 +213,10 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
       )}
 
       {/* ─── MAIN ─── */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem' }}>
+      <main style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '0.75rem 1rem' : '1.5rem 2rem' }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', padding: '0.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-          <X size={22} />
+          {sidebarOpen && !isMobile ? <X size={22} /> : <Menu size={22} />}
         </button>
         {renderContent()}
       </main>

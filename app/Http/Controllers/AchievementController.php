@@ -51,18 +51,43 @@ class AchievementController extends Controller
 
     private function checkJuzukMilestones($student)
     {
-        $milestones = [
-            1 => ['name' => 'Juzuk Opener', 'desc' => 'Tamat juzuk pertama. Tahniah!'],
-            5 => ['name' => 'Warrior', 'desc' => 'Berjaya menamatkan 5 juzuk.'],
-            15 => ['name' => 'Hafiz Junior', 'desc' => 'Separuh jalan! 15 juzuk telah dihafal.'],
-            30 => ['name' => 'Al-Hafiz', 'desc' => 'MashaAllah! Tamat 30 Juzuk Al-Quran.'],
+        $juzuk = (int) ($student->juzuk_completed ?? 0);
+
+        // Juzuk-based rank badges — awarded automatically when threshold is met
+        $juzukRanks = [
+            0  => ['name' => 'Tahsin',          'desc' => 'Selamat datang ke AKMAL! Perjalanan hafazan anda bermula.'],
+            1  => ['name' => 'Warrior',          'desc' => 'Tamat juzuk pertama — anda seorang pejuang hafazan!'],
+            5  => ['name' => 'Elite',            'desc' => 'Tamat 5 Juzuk dengan lancar. Selamat naik ke Elite!'],
+            10 => ['name' => 'Master',           'desc' => 'Tamat 10 Juzuk — pakar hafazan semakin terserlah!'],
+            15 => ['name' => 'Grandmaster',      'desc' => 'Tamat 15 Juzuk — separuh Al-Quran sudah di dada!'],
+            20 => ['name' => 'Titan',            'desc' => 'Tamat 20 Juzuk — ketahanan hafazan setaraf Titan!'],
+            25 => ['name' => 'Gladiator',        'desc' => 'Tamat 25 Juzuk — hampir khatam, teruskan perjuangan!'],
+            30 => ['name' => 'Legend Al-Hafiz',  'desc' => 'MashaAllah! Khatam 30 Juzuk Al-Quran. Gelaran Al-Hafiz milik anda!'],
         ];
 
-        foreach ($milestones as $juzuk => $info) {
-            if ($student->juzuk_completed >= $juzuk) {
+        foreach ($juzukRanks as $threshold => $info) {
+            if ($juzuk >= $threshold) {
                 Achievement::firstOrCreate(
                     ['student_id' => $student->id, 'name' => $info['name']],
-                    ['type' => 'badge', 'meta' => ['description' => $info['desc']]]
+                    ['type' => 'badge', 'earned_at' => now(), 'meta' => ['description' => $info['desc']]]
+                );
+            }
+        }
+
+        // DB ranking field unlocks Legend sub-ranks (require exam — awarded via ManageAchievements)
+        $dbRanking = (int) ($student->ranking ?? -1);
+        $rankingBadges = [
+            8  => ['name' => 'Legend Al-Hafiz Amethyst', 'desc' => 'Anugerah Amethyst — tasmik 5 Juzuk sehari tanpa salah.'],
+            9  => ['name' => 'Legend Al-Hafiz Ruby',     'desc' => 'Anugerah Ruby — lulus peperiksaan tebuk 60 soalan.'],
+            10 => ['name' => 'Legend Al-Hafiz Sapphire', 'desc' => 'Anugerah Sapphire — lulus peperiksaan tebuk 120 soalan.'],
+            11 => ['name' => 'Syahadah Emperor',         'desc' => 'Pencapaian tertinggi AKMAL — Syahadah Emperor!'],
+        ];
+
+        foreach ($rankingBadges as $rankLevel => $info) {
+            if ($dbRanking >= $rankLevel) {
+                Achievement::firstOrCreate(
+                    ['student_id' => $student->id, 'name' => $info['name']],
+                    ['type' => 'badge', 'earned_at' => now(), 'meta' => ['description' => $info['desc']]]
                 );
             }
         }

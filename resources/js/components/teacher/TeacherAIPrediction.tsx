@@ -1,7 +1,126 @@
-import { useState, useEffect } from 'react';
-import { Brain, TrendingUp, Calendar, RefreshCw, Users } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Brain, TrendingUp, Calendar, RefreshCw, Users, Download } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import axios from 'axios';
+import { ScoreKomponen } from '../shared/ScoreKomponen';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
+
+function StudentPredictionCard({ pred, trendColor }: { pred: any; trendColor: (t: string) => string }) {
+  const printRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  const downloadPDF = async () => {
+    if (!printRef.current) return;
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const margin = 12;
+      const imgW = pdf.internal.pageSize.getWidth() - margin * 2;
+      const imgH = (canvas.height / canvas.width) * imgW;
+      let left = imgH;
+      let pos = margin;
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, pos, imgW, imgH);
+      left -= pdf.internal.pageSize.getHeight() - margin * 2;
+      while (left > 0) {
+        pdf.addPage();
+        pos = pos - pdf.internal.pageSize.getHeight() + margin * 2;
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, pos, imgW, imgH);
+        left -= pdf.internal.pageSize.getHeight() - margin * 2;
+      }
+      pdf.save(`Laporan_AI_${pred.studentName.replace(/\s+/g, '_')}.pdf`);
+    } catch (e: any) { alert('Gagal: ' + e.message); }
+    finally { setDownloading(false); }
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <h4 className="text-lg font-semibold text-gray-900">{pred.studentName}</h4>
+          <p className="text-sm text-gray-600">Kemajuan Semasa: {pred.currentProgress}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${trendColor(pred.performanceTrend)}`}>
+            {pred.performanceTrend}
+          </span>
+          <button
+            onClick={downloadPDF}
+            disabled={downloading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-50 transition-colors"
+          >
+            {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            PDF
+          </button>
+        </div>
+      </div>
+
+      <ScoreKomponen sabaq={pred.sabaq_score ?? null} sabki={pred.sabki_score ?? null} manzil={pred.manzil_score ?? null} />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { icon: <Calendar className="w-5 h-5 text-purple-600" />, bg: 'bg-purple-50', label: 'Anggaran Khatam', value: pred.estimatedCompletion },
+          { icon: <TrendingUp className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50', label: 'Tahap Keyakinan', value: pred.confidence },
+          { icon: <Brain className="w-5 h-5 text-green-600" />, bg: 'bg-green-50', label: 'Purata Ayat/Hari', value: pred.avgAyahPerDay },
+        ].map(item => (
+          <div key={item.label} className="flex items-center gap-3">
+            <div className={`p-2 ${item.bg} rounded-lg`}>{item.icon}</div>
+            <div><p className="text-xs text-gray-600">{item.label}</p><p className="text-sm font-semibold text-gray-900">{item.value}</p></div>
+          </div>
+        ))}
+      </div>
+      <div className="pt-3 border-t border-gray-100 space-y-2">
+        <div className="flex items-center gap-4 text-sm text-gray-600">
+          <span>📅 Kadar Kehadiran: <strong>{pred.attendanceRate}</strong></span>
+          {pred.ponteng_count > 0 && (
+            <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+              pred.ponteng_label === 'Kritikal'        ? 'bg-red-100 text-red-700' :
+              pred.ponteng_label === 'Membimbangkan'   ? 'bg-orange-100 text-orange-700' :
+                                                        'bg-yellow-100 text-yellow-700'
+            }`}>
+              🚫 Ponteng: {pred.ponteng_count} sesi ({pred.ponteng_rate}%) — {pred.ponteng_label}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-500">📝 {(pred.recommendation ?? '').slice(0, 80)}…</p>
+      </div>
+
+      {/* Hidden print view */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '680px', opacity: 0, pointerEvents: 'none', zIndex: -9999, overflow: 'hidden', height: '1px' }}>
+        <div ref={printRef} style={{ width: '680px', background: '#fff', padding: '24px', fontFamily: 'Arial, sans-serif', color: '#111' }}>
+          <div style={{ borderBottom: '3px solid #7c3aed', paddingBottom: '12px', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '16px', color: '#7c3aed', fontWeight: 900 }}>AKMAL — Laporan Ramalan AI Pelajar</h2>
+            <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>Dijana: {new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          </div>
+          <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '4px' }}>{pred.studentName}</h3>
+          <p style={{ fontSize: '12px', color: '#555', marginBottom: '16px' }}>{pred.currentProgress} · Trend: {pred.performanceTrend}</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '16px' }}>
+            <tbody>
+              {[
+                ['Sabak Score', pred.sabaq_score != null ? `${pred.sabaq_score}%` : '—'],
+                ['Sabki Score', pred.sabki_score != null ? `${pred.sabki_score}%` : '—'],
+                ['Manzil Score', pred.manzil_score != null ? `${pred.manzil_score}%` : '—'],
+                ['Anggaran Khatam', pred.estimatedCompletion],
+                ['Keyakinan AI', pred.confidence],
+                ['Kadar Kehadiran', pred.attendanceRate],
+              ].map(([k, v]) => (
+                <tr key={k}>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 10px', fontWeight: 700, background: '#f9fafb', width: '40%' }}>{k}</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 10px' }}>{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ background: '#f5f3ff', borderRadius: '8px', padding: '12px' }}>
+            <p style={{ fontWeight: 700, fontSize: '11px', marginBottom: '6px', color: '#5b21b6' }}>Cadangan AI:</p>
+            <p style={{ fontSize: '10px', color: '#374151', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{pred.recommendation}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function TeacherAIPrediction() {
   const { state } = useAppStore();
@@ -43,7 +162,13 @@ export function TeacherAIPrediction() {
         confidence: p.confidence,
         recommendation: p.recommendation,
         attendanceRate: p.attendance_rate,
-        avgAyahPerDay: p.avg_ayah_per_day
+        avgAyahPerDay: p.avg_ayah_per_day,
+        sabaq_score: p.sabaq_score,
+        sabki_score: p.sabki_score,
+        manzil_score: p.manzil_score,
+        ponteng_count: p.ponteng_count ?? 0,
+        ponteng_rate: p.ponteng_rate ?? 0,
+        ponteng_label: p.ponteng_label ?? null,
       }));
 
       setPredictions(mapped);
@@ -153,34 +278,8 @@ export function TeacherAIPrediction() {
         {predictions.length === 0 && (
           <p className="text-gray-400 text-sm">Tiada data pelajar untuk dianalisis.</p>
         )}
-        {predictions.map((pred, index) => pred && (
-          <div key={index} className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900">{pred.studentName}</h4>
-                <p className="text-sm text-gray-600">Kemajuan Semasa: {pred.currentProgress}</p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${trendColor(pred.performanceTrend)}`}>
-                {pred.performanceTrend}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {[
-                { icon: <Calendar className="w-5 h-5 text-purple-600" />, bg: 'bg-purple-50', label: 'Anggaran Khatam', value: pred.estimatedCompletion },
-                { icon: <TrendingUp className="w-5 h-5 text-blue-600" />, bg: 'bg-blue-50', label: 'Tahap Keyakinan', value: pred.confidence },
-                { icon: <Brain className="w-5 h-5 text-green-600" />, bg: 'bg-green-50', label: 'Cadangan AI', value: pred.recommendation },
-              ].map(item => (
-                <div key={item.label} className="flex items-center gap-3">
-                  <div className={`p-2 ${item.bg} rounded-lg`}>{item.icon}</div>
-                  <div><p className="text-xs text-gray-600">{item.label}</p><p className="text-sm font-semibold text-gray-900">{item.value}</p></div>
-                </div>
-              ))}
-            </div>
-            <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-sm text-gray-600">
-              <span>📅 Kadar Kehadiran: <strong>{pred.attendanceRate}</strong></span>
-              <span>📖 Purata Ayat/Hari: <strong>{pred.avgAyahPerDay}</strong></span>
-            </div>
-          </div>
+        {predictions.map((pred, index) => (
+          <StudentPredictionCard key={index} pred={pred} trendColor={trendColor} />
         ))}
       </div>
     </div>

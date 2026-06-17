@@ -4,6 +4,7 @@ import axios from 'axios';
 export type AuthUser = {
   id: number;
   name: string;
+  full_name?: string;
   email: string;
   role: 'admin' | 'teacher' | 'parent' | 'student';
   status: string;
@@ -34,6 +35,7 @@ async function fetchMe(): Promise<AuthUser> {
         const authPayload = JSON.stringify({
           role: user.role,
           name: user.name,
+          full_name: user.full_name,
           userId: user.id,
           id: user.id,
           email: user.email,

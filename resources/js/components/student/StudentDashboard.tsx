@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import axios from 'axios';
 import { usePolling } from '../../hooks/usePolling';
 import { 
@@ -53,8 +54,9 @@ const navItems: { id: StudentView; label: string; icon: React.ReactNode }[] = [
 ];
 
 export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) {
+  const isMobile = useIsMobile();
   const [currentView, setCurrentView] = useState<StudentView>('home');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const { state } = useAppStore();
@@ -91,10 +93,18 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
   }
 
   const student = dashboardData?.student;
+  const streak = dashboardData?.streak ?? 0;
+  const streakMilestone = dashboardData?.streakMilestone ?? null;
   const stats = [
-    { label: 'Kemajuan Semasa',  value: `${dashboardData?.juzukCompleted ?? 0} Juzuk`, icon: <BookOpen size={28} />, color: '#10b981', bg: '#f0fdf4' },
-    { label: 'Pangkat Semasa',   value: dashboardData?.rankName ?? 'Pemula',         icon: <Trophy size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
-    { label: 'Hari Berturutan',  value: `${dashboardData?.streak ?? 0} hari`,          icon: <Target size={28} />,   color: '#f59e0b', bg: '#fffbeb' },
+    { label: 'Kemajuan Semasa', value: `${dashboardData?.juzukCompleted ?? 0} Juzuk`, icon: <BookOpen size={28} />, color: '#10b981', bg: '#f0fdf4' },
+    { label: 'Pangkat Semasa',  value: dashboardData?.rankName ?? 'Pemula',            icon: <Trophy size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
+    {
+      label: streakMilestone ? `${streakMilestone}` : 'Hari Berturutan',
+      value: `${streak} hari`,
+      icon: <Target size={28} />,
+      color: streak >= 30 ? '#ef4444' : streak >= 7 ? '#f59e0b' : '#f59e0b',
+      bg: streak >= 30 ? '#fef2f2' : '#fffbeb',
+    },
   ];
 
   const studentClass = state.classes.find(c => c.id === student?.class_id);
@@ -173,7 +183,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(1, 1fr)' : 'repeat(3, 1fr)', gap: '1rem' }}>
               {stats.map((s) => (
                 <div key={s.label} style={{ background: s.bg, borderRadius: '16px', padding: '1.25rem', border: '1px solid rgba(0,0,0,0.05)' }}>
                   <span style={{ color: s.color }}>{s.icon}</span>
@@ -182,6 +192,55 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
                 </div>
               ))}
             </div>
+
+            {/* Kad Skor Harian */}
+            {(() => {
+              const today = dashboardData?.todayHafazan;
+              const gradeColor = (g: string | null) => {
+                if (!g) return { bg: '#f3f4f6', text: '#9ca3af', label: 'Belum' };
+                if (g === 'Mumtaz' || g === 'Sangat Baik') return { bg: '#dcfce7', text: '#16a34a', label: g };
+                if (g === 'Jayyid' || g === 'Baik' || g === 'Jayyid Jiddan') return { bg: '#dbeafe', text: '#1d4ed8', label: g };
+                if (g === 'Maqbul' || g === 'Sederhana') return { bg: '#fef9c3', text: '#a16207', label: g };
+                return { bg: '#fee2e2', text: '#b91c1c', label: g };
+              };
+              const classRank  = dashboardData?.classRank;
+              const classTotal = dashboardData?.classTotal;
+              return (
+                <div style={{ background: '#fff', borderRadius: '16px', padding: '1.25rem', border: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111', margin: 0 }}>📋 Status Hafazan Hari Ini</h3>
+                    {classRank && classTotal && (
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, background: '#ede9fe', color: '#7c3aed', borderRadius: '999px', padding: '3px 10px' }}>
+                        🏆 #{classRank} daripada {classTotal} dalam kelas
+                      </span>
+                    )}
+                  </div>
+                  {!today ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fafafa', borderRadius: '12px', padding: '0.9rem 1rem', border: '1px dashed #d1d5db' }}>
+                      <span style={{ fontSize: '1.5rem' }}>📖</span>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>Belum ada rekod hafazan hari ini. Semoga dapat hadir sesi hari ini! 🌿</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(1, 1fr)' : 'repeat(3,1fr)', gap: '0.75rem' }}>
+                      {[
+                        { label: 'Sabak', desc: 'Hafalan Baharu', surah: today.surah, grade: today.sabaq },
+                        { label: 'Sabki', desc: 'Ulang Kaji Semasa', surah: null, grade: today.sabki },
+                        { label: 'Manzil', desc: 'Ulang Kaji Lama', surah: null, grade: today.manzil },
+                      ].map(({ label, desc, surah, grade }) => {
+                        const c = gradeColor(grade);
+                        return (
+                          <div key={label} style={{ background: c.bg, borderRadius: '12px', padding: '0.85rem', textAlign: 'center' }}>
+                            <p style={{ margin: 0, fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>{label}</p>
+                            <p style={{ margin: '0.2rem 0', fontSize: '0.65rem', color: '#9ca3af' }}>{surah ?? desc}</p>
+                            <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: c.text }}>{c.label}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Today's Schedule */}
             <div style={{ background: '#fff', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
@@ -216,13 +275,23 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-gray-100 dark:bg-slate-950 transition-colors duration-500">
+      {/* ─── Mobile backdrop ─── */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 49 }} />
+      )}
+
       {/* ─── SIDEBAR ─── */}
-      {sidebarOpen && (
+      {(!isMobile ? sidebarOpen : true) && (
         <aside className="transition-colors duration-500 from-[#1A4D50] to-[#6FC7CB] dark:from-slate-900 dark:to-slate-800" style={{
           width: '200px', flexShrink: 0,
           background: 'linear-gradient(180deg, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%)',
           display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',
           boxShadow: '8px 0 30px rgba(0,0,0,0.1)',
+          ...(isMobile ? {
+            position: 'fixed' as const, left: 0, top: 0, zIndex: 50,
+            transform: sidebarOpen ? 'translateX(0)' : 'translateX(-200px)',
+            transition: 'transform 0.25s ease',
+          } : {}),
         }}>
           <div style={{ padding: '1.5rem 1rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <img src="/images/logo.png" alt="Logo" style={{ height: '55px', marginBottom: '0.75rem' }} />
@@ -233,7 +302,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
             {navItems.map((item) => {
               const isActive = currentView === item.id;
               return (
-                <button key={item.id} onClick={() => setCurrentView(item.id)}
+                <button key={item.id} onClick={() => { setCurrentView(item.id); if (isMobile) setSidebarOpen(false); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.6rem',
                     padding: '0.6rem 0.8rem', borderRadius: '999px', border: 'none', cursor: 'pointer',
@@ -270,10 +339,10 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
       )}
 
       {/* ─── MAIN ─── */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem' }}>
+      <main style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '0.75rem 1rem' : '1.5rem 2rem' }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', padding: '0.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-          {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+          {sidebarOpen && !isMobile ? <X size={22} /> : <Menu size={22} />}
         </button>
         {renderContent()}
       </main>

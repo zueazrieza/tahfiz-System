@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Student;
 use App\Models\ClassRoom;
 use App\Models\Teacher;
+use App\Models\Attendance;
 
 class ParentController extends Controller
 {
@@ -27,7 +28,15 @@ class ParentController extends Controller
         $data = $children->map(function ($student) {
             $class = $student->classRoom;
             $teacher = $student->teacher;
-            
+
+            $totalAttendance = Attendance::where('student_id', $student->id)->count();
+            $presentCount = Attendance::where('student_id', $student->id)
+                ->whereIn('status', ['Hadir', 'Lewat'])
+                ->count();
+            $attendanceRate = $totalAttendance > 0
+                ? round(($presentCount / $totalAttendance) * 100)
+                : 0;
+
             return [
                 'id' => $student->id,
                 'name' => $student->name,
@@ -37,6 +46,7 @@ class ParentController extends Controller
                 'teacher_id' => $student->teacher_id,
                 'teacher_name' => $teacher ? $teacher->name : 'N/A',
                 'juzuk_completed' => $student->juzuk_completed,
+                'attendance_rate' => $attendanceRate,
                 'status' => $student->status,
                 'enrolled_date' => $student->enrolled_date,
             ];

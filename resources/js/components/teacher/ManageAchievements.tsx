@@ -4,10 +4,18 @@ import { Trophy, Award, Star, Trash2, Plus, Users, Search, Loader2, BookOpen, Ch
 import { useAppStore } from '../../store/AppContext';
 
 const HAFAZAN_LEVELS = [
-  'Level 1', 'Level 2', 'Level 3', 'Level 4', 
-  'Warrior', 'Elite', 'Master', 
-  'Silver S', 'Gold G', 'Titanium T', 
-  'Special Edition', 'Hafiz Level 1'
+  'Tahsin',
+  'Warrior',
+  'Elite',
+  'Master',
+  'Grandmaster',
+  'Titan',
+  'Gladiator',
+  'Legend Al-Hafiz',
+  'Legend Al-Hafiz Amethyst',
+  'Legend Al-Hafiz Ruby',
+  'Legend Al-Hafiz Sapphire',
+  'Syahadah Emperor',
 ];
 
 export function ManageAchievements() {

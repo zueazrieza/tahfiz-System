@@ -116,7 +116,7 @@ class PaymentController extends Controller
                     'student_id' => $studentId,
                     'month'      => $m,
                     'year'       => $startYear,
-                    'amount'     => 200,
+                    'amount'     => 1112.50,
                     'status'     => 'Belum Bayar',
                     'due_date'   => \Carbon\Carbon::create($startYear, $m, 7)->toDateString(),
                 ]);

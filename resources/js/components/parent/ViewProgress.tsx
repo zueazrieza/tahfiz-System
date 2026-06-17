@@ -127,8 +127,8 @@ export function ViewProgress({ childId }: ViewProgressProps) {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
-                  { type: 'Sabaq', data: rec.sabaq, color: 'green' },
-                  { type: 'Sabaqi', data: rec.sabaqi, color: 'blue' },
+                  { type: 'Sabak', data: rec.sabaq, color: 'green' },
+                  { type: 'Sabki', data: rec.sabaqi, color: 'blue' },
                   { type: 'Manzil', data: rec.manzil, color: 'purple' },
                 ].map(({ type, data, color }) => (
                   <div key={type} className="bg-white rounded-xl p-4 border border-slate-100">

@@ -189,7 +189,7 @@ export const SEED_CLASSES: ClassRoom[] = [
     studentIds: ['s1', 's3', 's5', 's7'],
     schedule: [
       { day: 'Monday', time: '8:00 PG – 10:00 PG', topic: 'Surah Al-Baqarah' },
-      { day: 'Wednesday', time: '10:30 PG – 12:30 TG', topic: 'Sesi Ulang Kaji (Sabaqi)' },
+      { day: 'Wednesday', time: '10:30 PG – 12:30 TG', topic: 'Sesi Ulang Kaji (Sabki)' },
       { day: 'Friday', time: '2:00 PTG – 4:00 PTG', topic: 'Semakan Manzil' },
     ],
   },
@@ -198,7 +198,7 @@ export const SEED_CLASSES: ClassRoom[] = [
     studentIds: ['s2', 's4', 's6'],
     schedule: [
       { day: 'Tuesday', time: '8:00 PG – 10:00 PG', topic: 'Surah Ali Imran' },
-      { day: 'Thursday', time: '10:30 PG – 12:30 TG', topic: 'Ulang Kaji Sabaqi' },
+      { day: 'Thursday', time: '10:30 PG – 12:30 TG', topic: 'Ulang Kaji Sabki' },
     ],
   },
   {

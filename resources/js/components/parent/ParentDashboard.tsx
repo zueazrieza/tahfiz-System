@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import axios from 'axios';
 import { usePolling } from '../../hooks/usePolling';
 import { User, BookOpen, Calendar, DollarSign, Bell, Brain, LogOut, LayoutDashboard, X, Menu } from 'lucide-react';
@@ -8,7 +9,7 @@ import { ViewPayments } from './ViewPayments';
 import { InfoCenter } from '../shared/InfoCenter';
 import { ParentAIPrediction } from './ParentAIPrediction';
 import { ProfileView } from '../profile/ProfileView';
-import { useAppStore, getStudentAttendanceRate } from '../../store/AppContext';
+import { useAppStore } from '../../store/AppContext';
 import { EnrollmentView } from './EnrollmentView';
 
 interface ParentDashboardProps {
@@ -16,11 +17,10 @@ interface ParentDashboardProps {
   onLogout: () => void;
 }
 
-type ParentView = 'home' | 'enrollment' | 'progress' | 'attendance' | 'payment' | 'inbox' | 'ai' | 'profile';
+type ParentView = 'home' | 'progress' | 'attendance' | 'payment' | 'inbox' | 'ai' | 'profile';
 
 const navItems: { id: ParentView; label: string; icon: React.ReactNode; badge?: string }[] = [
   { id: 'home',          label: 'Profil Anak',          icon: <LayoutDashboard size={20} /> },
-  { id: 'enrollment',    label: 'Status Pendaftaran',    icon: <Calendar size={20} /> }, // New Tab
   { id: 'progress',      label: 'Kemajuan Hafazan',      icon: <BookOpen size={20} /> },
   { id: 'attendance',    label: 'Lihat Kehadiran',       icon: <Calendar size={20} /> },
   { id: 'payment',       label: 'Status Yuran',          icon: <DollarSign size={20} /> },
@@ -30,8 +30,9 @@ const navItems: { id: ParentView; label: string; icon: React.ReactNode; badge?: 
 ];
 
 export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
+  const isMobile = useIsMobile();
   const [currentView, setCurrentView] = useState<ParentView>('home');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [children, setChildren] = useState<any[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,25 +80,20 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
 
   const child = children.find(c => String(c.id) === selectedChildId) || children[0];
   const parentUser = state.users.find(u => u.name === authUser.name && u.role === 'parent') ?? state.users.find(u => u.role === 'parent')!;
-  
-  // These will be derived from the child object returned by API which already includes class_name/teacher_name
-  const childClass = { name: child?.class_name || '—' };
-  const childTeacher = { name: child?.teacher_name || '—' };
 
-  const attendance = child ? getStudentAttendanceRate(state, String(child.id)) : 0;
+  const attendanceRate = child?.attendance_rate ?? 0;
   const childPayments = state.payments.filter(p => p.studentId === String(child?.id));
   const hasPending = childPayments.some(p => p.status !== 'Dibayar');
-  const unreadCount = state.notifications.filter(n => n.studentId === String(child?.id) && !n.read).length;
 
   const navItemsWithBadge = navItems.map(n =>
     n.id === 'inbox' ? { ...n, badge: notifCount > 0 ? String(notifCount) : undefined } : n
   );
 
   const stats = [
-    { label: 'Kemajuan Hafazan', value: `${child?.juzukCompleted ?? 0} Juzuk`, icon: <BookOpen size={28} />, color: '#10b981', bg: '#f0fdf4' },
-    { label: 'Kadar Kehadiran',  value: `${attendance}%`,                       icon: <Calendar size={28} />, color: '#3b82f6', bg: '#eff6ff' },
-    { label: 'Status Yuran',     value: hasPending ? 'Belum Bayar' : 'Dibayar', icon: <DollarSign size={28} />, color: '#8b5cf6', bg: '#faf5ff' },
-    { label: 'Pemberitahuan',    value: `${unreadCount} Baharu`,                icon: <Bell size={28} />,     color: '#f59e0b', bg: '#fffbeb' },
+    { label: 'Kemajuan Hafazan', value: `${child?.juzuk_completed ?? 0} Juzuk`, icon: <BookOpen size={28} />, color: '#10b981', bg: '#f0fdf4' },
+    { label: 'Kadar Kehadiran',  value: `${attendanceRate}%`,                    icon: <Calendar size={28} />, color: '#3b82f6', bg: '#eff6ff' },
+    { label: 'Status Yuran',     value: hasPending ? 'Belum Bayar' : 'Dibayar',  icon: <DollarSign size={28} />, color: '#8b5cf6', bg: '#faf5ff' },
+    { label: 'Pemberitahuan',    value: `${notifCount} Baharu`,                  icon: <Bell size={28} />,     color: '#f59e0b', bg: '#fffbeb' },
   ];
 
   const childInfo = {
@@ -109,7 +105,6 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
 
   const renderContent = () => {
     switch (currentView) {
-      case 'enrollment':    return <EnrollmentView />;
       case 'progress':      return <ViewProgress childId={String(child?.id || '')} />;
       case 'attendance':    return <ViewAttendance childId={String(child?.id || '')} />;
       case 'payment':       return <ViewPayments childId={String(child?.id || '')} />;
@@ -122,7 +117,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '0.75rem' }}>
               <div>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#111', margin: 0 }}>
                   Selamat Kembali, {userName} !
@@ -162,7 +157,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '1rem' }}>
               {stats.map((s) => (
                 <div key={s.label} style={{ background: s.bg, borderRadius: '16px', padding: '1.1rem', border: '1px solid rgba(0,0,0,0.05)' }}>
                   <span style={{ color: s.color }}>{s.icon}</span>
@@ -176,9 +171,9 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
             <div style={{ background: '#fff', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111', margin: '0 0 1rem' }}>Kemas Kini Terkini</h3>
               {[
-                { type: 'Hafazan',      msg: 'Diselesaikan Sabaq: Al-Baqarah 1-10',       time: '2 jam lalu',  dot: '#16a34a' },
+                { type: 'Hafazan',      msg: 'Diselesaikan Sabak: Al-Baqarah 1-10',       time: '2 jam lalu',  dot: '#16a34a' },
                 { type: 'Kehadiran',    msg: 'Hadir – Sesi Pagi',                          time: '4 jam lalu',  dot: '#3b82f6' },
-                { type: 'Pencapaian',   msg: 'Prestasi cemerlang dalam Sabaqi',            time: '1 hari lalu', dot: '#8b5cf6' },
+                { type: 'Pencapaian',   msg: 'Prestasi cemerlang dalam Sabki',            time: '1 hari lalu', dot: '#8b5cf6' },
               ].map((u, i) => (
                 <div key={i} style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem 0', borderBottom: i < 2 ? '1px solid #f3f4f6' : 'none' }}>
                   <span style={{ marginTop: '5px', flexShrink: 0, width: '10px', height: '10px', borderRadius: '50%', background: u.dot, display: 'inline-block' }} />
@@ -196,13 +191,23 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#f3f4f6', overflow: 'hidden' }}>
+      {/* ─── Mobile backdrop ─── */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 49 }} />
+      )}
+
       {/* ─── SIDEBAR ─── */}
-      {sidebarOpen && (
+      {(!isMobile ? sidebarOpen : true) && (
         <aside style={{
           width: '200px', flexShrink: 0,
           background: 'linear-gradient(180deg, #1A4D50 0%, #6FC7CB 100%)',
           display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',
           boxShadow: '8px 0 30px rgba(0,0,0,0.1)',
+          ...(isMobile ? {
+            position: 'fixed' as const, left: 0, top: 0, zIndex: 50,
+            transform: sidebarOpen ? 'translateX(0)' : 'translateX(-200px)',
+            transition: 'transform 0.25s ease',
+          } : {}),
         }}>
           <div style={{ padding: '1.5rem 1rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <img src="/images/logo.png" alt="Logo" style={{ height: '55px', marginBottom: '0.75rem' }} />
@@ -213,7 +218,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
             {navItemsWithBadge.map((item) => {
               const isActive = currentView === item.id;
               return (
-                <button key={item.id} onClick={() => setCurrentView(item.id)}
+                <button key={item.id} onClick={() => { setCurrentView(item.id); if (isMobile) setSidebarOpen(false); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.6rem',
                     padding: '0.6rem 0.8rem', borderRadius: '999px', border: 'none', cursor: 'pointer',
@@ -254,10 +259,10 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
       )}
 
       {/* ─── MAIN ─── */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem' }}>
+      <main style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '0.75rem 1rem' : '1.5rem 2rem' }}>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', padding: '0.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-          {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+          {sidebarOpen && !isMobile ? <X size={22} /> : <Menu size={22} />}
         </button>
         {renderContent()}
       </main>

@@ -118,7 +118,7 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
           <thead>
             <tr style={{ background: '#f0fdf4' }}>
-              {['Tarikh', 'Pelajar', 'Surah (Sabaq)', 'Ayat', 'Gred', 'Catatan'].map(h => (
+              {['Tarikh', 'Pelajar', 'Surah (Sabak)', 'Ayat', 'Gred', 'Catatan'].map(h => (
                 <th key={h} style={{ border: '1px solid #d1fae5', padding: '6px 8px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
               ))}
             </tr>

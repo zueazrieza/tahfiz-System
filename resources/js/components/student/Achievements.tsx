@@ -40,16 +40,24 @@ export function Achievements() {
   const rank = getStudentRank(dashboardData?.juzukCompleted ?? 0);
   // leaderboard is now state-based
 
-  // Badge definitions synced with backend
+  // Badge definitions — names must match achievement names in backend exactly
   const badges = [
-    { name: 'Juzuk Opener', icon: '📖', description: 'Tamat juzuk pertama', earnedName: 'Juzuk Opener' },
-    { name: 'Warrior', icon: '🛡️', description: 'Tamat 5 Juzuk', earnedName: 'Warrior' },
-    { name: 'Hafiz Junior', icon: '✨', description: 'Tamat 15 Juzuk', earnedName: 'Hafiz Junior' },
-    { name: 'Al-Hafiz', icon: '🏆', description: 'Tamat 30 Juzuk', earnedName: 'Al-Hafiz' },
+    { name: 'Tahsin',                   icon: '📖', img: '/images/logo/level_1.jpeg',       description: 'Mulakan perjalanan hafazan',    earnedName: 'Tahsin' },
+    { name: 'Warrior',                  icon: '🛡️', img: '/images/logo/warrior.jpeg',       description: 'Hafal ≥ 1 Juzuk',              earnedName: 'Warrior' },
+    { name: 'Elite',                    icon: '⚔️', img: '/images/logo/elite.jpeg',         description: 'Hafal ≥ 5 Juzuk',              earnedName: 'Elite' },
+    { name: 'Master',                   icon: '💎', img: '/images/logo/master.jpeg',        description: 'Hafal ≥ 10 Juzuk',             earnedName: 'Master' },
+    { name: 'Grandmaster',              icon: '👑', img: '/images/logo/Level_G.jpeg',       description: 'Hafal ≥ 15 Juzuk',             earnedName: 'Grandmaster' },
+    { name: 'Titan',                    icon: '⚡', img: '/images/logo/level_T.jpeg',       description: 'Hafal ≥ 20 Juzuk',             earnedName: 'Titan' },
+    { name: 'Gladiator',                icon: '🔥', img: '/images/logo/level2.jpeg',        description: 'Hafal ≥ 25 Juzuk',             earnedName: 'Gladiator' },
+    { name: 'Legend Al-Hafiz',          icon: '🏆', img: '/images/logo/level_1_hafiz.jpeg', description: 'Khatam 30 Juzuk Al-Quran',      earnedName: 'Legend Al-Hafiz' },
+    { name: 'Legend Amethyst',          icon: '🔮', img: '/images/logo/level3.jpeg',        description: 'Tasmik 5 Juzuk/hari tanpa salah', earnedName: 'Legend Al-Hafiz Amethyst' },
+    { name: 'Legend Ruby',              icon: '♦️', img: '/images/logo/level4.jpeg',        description: 'Lulus tebuk hafazan 60 soalan', earnedName: 'Legend Al-Hafiz Ruby' },
+    { name: 'Legend Sapphire',          icon: '💠', img: '/images/logo/level_S.jpeg',       description: 'Lulus tebuk hafazan 120 soalan', earnedName: 'Legend Al-Hafiz Sapphire' },
+    { name: 'Syahadah Emperor',         icon: '👸', img: '/images/logo/level_SE.jpeg',      description: 'Ranking tertinggi AKMAL',       earnedName: 'Syahadah Emperor' },
   ];
 
   const specialtyAchievements = [
-    { title: 'Raja Sabaq', description: 'Hafal 15+ ayat dalam sehari', icon: Award, color: 'green', earnedName: 'Raja Sabaq' },
+    { title: 'Raja Sabak', description: 'Hafal 15+ ayat dalam sehari', icon: Award, color: 'green', earnedName: 'Raja Sabaq' },
     { title: 'Istiqamah Hafiz', description: 'Hantar rekod 7 hari berturut-turut', icon: Trophy, color: 'purple', earnedName: 'Istiqamah Hafiz' },
     { title: 'Mumtaz Award', description: '5 gred Mumtaz berturutan', icon: Star, color: 'blue', earnedName: 'Mumtaz Award' },
   ];
@@ -114,25 +122,37 @@ export function Achievements() {
       {/* AKMAL Badges */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Sistem Lencana AKMAL</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {badges.map(badge => {
             const earned = isEarned(badge.earnedName);
             const date = getEarnedDate(badge.earnedName);
             const rawAchievement = earnedAchievements.find(a => a.name === badge.earnedName);
 
             return (
-              <div 
-                key={badge.name} 
+              <div
+                key={badge.name}
                 onClick={() => earned && setSelectedCert({ name: student.name, achievement: badge.name, date: rawAchievement?.earned_at || new Date().toISOString() })}
-                className={`p-6 rounded-xl border-2 text-center transition-all cursor-pointer ${earned ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-300 hover:scale-105 hover:shadow-lg' : 'bg-gray-50 border-gray-200 opacity-60 grayscale'}`}
+                className={`rounded-xl border-2 text-center transition-all cursor-pointer overflow-hidden ${earned ? 'border-yellow-300 hover:scale-105 hover:shadow-lg' : 'border-gray-200 opacity-50 grayscale'}`}
               >
-                <div className="text-5xl mb-3">{badge.icon}</div>
-                <h4 className="font-semibold text-gray-900 text-lg">{badge.name}</h4>
-                <p className="text-sm text-gray-600 mt-1">{badge.description}</p>
-                <div className="mt-3">
+                {/* Badge image */}
+                <div className="relative aspect-square bg-gray-100">
+                  <img src={badge.img} alt={badge.name} className="w-full h-full object-cover" />
+                  {!earned && (
+                    <div className="absolute inset-0 bg-gray-900/50 flex items-center justify-center">
+                      <span className="text-white text-2xl">🔒</span>
+                    </div>
+                  )}
+                  {earned && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">✓</div>
+                  )}
+                </div>
+                <div className={`p-3 ${earned ? 'bg-gradient-to-br from-yellow-50 to-orange-50' : 'bg-gray-50'}`}>
+                  <h4 className="font-bold text-gray-900 text-xs uppercase tracking-tight leading-tight">{badge.name}</h4>
+                  <p className="text-xs text-gray-500 mt-1">{badge.description}</p>
+                  {earned && date && <p className="text-xs text-green-600 font-semibold mt-1">{date}</p>}
                   {earned
-                    ? <div className="px-3 py-1 bg-green-600 text-white rounded-full text-xs font-medium inline-block">✓ LIHAT SIJIL</div>
-                    : <div className="px-3 py-1 bg-gray-300 text-gray-600 rounded-full text-xs font-medium inline-block">🔒 Terkunci</div>}
+                    ? <div className="mt-2 px-2 py-0.5 bg-green-600 text-white rounded-full text-xs font-medium inline-block">LIHAT SIJIL</div>
+                    : <div className="mt-2 px-2 py-0.5 bg-gray-300 text-gray-500 rounded-full text-xs inline-block">Terkunci</div>}
                 </div>
               </div>
             );

@@ -371,13 +371,38 @@ export function getStudentStreak(state: AppState, studentId: string): number {
   return streak;
 }
 
-export function getStudentRank(juzuk: number): { name: string; icon: string; image: string; level: number; nextRank: string; progressToNext: number } {
-  if (juzuk >= 30) return { name: 'Legend Al-Hafiz', icon: '🏆', image: '/images/logo/level_1_hafiz.jpeg', level: 3, nextRank: 'Completed!', progressToNext: 100 };
-  if (juzuk >= 20) return { name: 'Master', icon: '💎', image: '/images/logo/master.jpeg', level: 2.5, nextRank: 'Legend Al-Hafiz', progressToNext: Math.round((juzuk / 30) * 100) };
-  if (juzuk >= 10) return { name: 'Elite', icon: '🥈', image: '/images/logo/elite.jpeg', level: 2, nextRank: 'Master', progressToNext: Math.round((juzuk / 20) * 100) };
-  if (juzuk >= 5)  return { name: 'Warrior', icon: '🛡️', image: '/images/logo/warrior.jpeg', level: 1, nextRank: 'Elite', progressToNext: Math.round((juzuk / 10) * 100) };
-  if (juzuk >= 1)  return { name: 'Beginner', icon: '📖', image: '/images/logo/level_1.jpeg', level: 0.5, nextRank: 'Warrior', progressToNext: Math.round((juzuk / 5) * 100) };
-  return { name: 'Peringkat Asas', icon: '🌱', image: '/images/logo/level_1.jpeg', level: 0, nextRank: 'Beginner', progressToNext: 0 };
+const RANK_TABLE = [
+  { min: 0,  name: 'Tahsin',                    icon: '📖', image: '/images/logo/level_1.jpeg',        nextRank: 'Warrior',               nextMin: 1  },
+  { min: 1,  name: 'Warrior',                   icon: '🛡️', image: '/images/logo/warrior.jpeg',        nextRank: 'Elite',                 nextMin: 5  },
+  { min: 5,  name: 'Elite',                     icon: '⚔️', image: '/images/logo/elite.jpeg',          nextRank: 'Master',                nextMin: 10 },
+  { min: 10, name: 'Master',                    icon: '💎', image: '/images/logo/master.jpeg',         nextRank: 'Grandmaster',           nextMin: 15 },
+  { min: 15, name: 'Grandmaster',               icon: '👑', image: '/images/logo/Level_G.jpeg',        nextRank: 'Titan',                 nextMin: 20 },
+  { min: 20, name: 'Titan',                     icon: '⚡', image: '/images/logo/level_T.jpeg',        nextRank: 'Gladiator',             nextMin: 25 },
+  { min: 25, name: 'Gladiator',                 icon: '🔥', image: '/images/logo/level2.jpeg',         nextRank: 'Legend Al-Hafiz',       nextMin: 30 },
+  { min: 30, name: 'Legend Al-Hafiz',           icon: '🏆', image: '/images/logo/level_1_hafiz.jpeg',  nextRank: 'Legend Al-Hafiz Amethyst', nextMin: 30 },
+];
+
+export function getStudentRank(juzuk: number, dbRanking?: number | null): { name: string; icon: string; image: string; level: number; nextRank: string; progressToNext: number } {
+  // For Legend sub-ranks (dbRanking 8-11), use exact name from DB
+  const legendSubRanks: Record<number, { name: string; icon: string; image: string; nextRank: string }> = {
+    8:  { name: 'Legend Al-Hafiz Amethyst', icon: '🔮', image: '/images/logo/level3.jpeg',       nextRank: 'Legend Al-Hafiz Ruby' },
+    9:  { name: 'Legend Al-Hafiz Ruby',     icon: '♦️', image: '/images/logo/level4.jpeg',       nextRank: 'Legend Al-Hafiz Sapphire' },
+    10: { name: 'Legend Al-Hafiz Sapphire', icon: '💠', image: '/images/logo/level_S.jpeg',      nextRank: 'Syahadah Emperor' },
+    11: { name: 'Syahadah Emperor',         icon: '👸', image: '/images/logo/level_SE.jpeg',     nextRank: 'Completed!' },
+  };
+
+  if (dbRanking !== null && dbRanking !== undefined && legendSubRanks[dbRanking]) {
+    const s = legendSubRanks[dbRanking];
+    return { name: s.name, icon: s.icon, image: s.image, level: dbRanking, nextRank: s.nextRank, progressToNext: 100 };
+  }
+
+  // Juzuk-based rank for ranks 0–7
+  const rank = [...RANK_TABLE].reverse().find(r => juzuk >= r.min) ?? RANK_TABLE[0];
+  const progressToNext = rank.min === 30
+    ? 100
+    : Math.round(((juzuk - rank.min) / (rank.nextMin - rank.min)) * 100);
+
+  return { name: rank.name, icon: rank.icon, image: rank.image, level: RANK_TABLE.indexOf(rank), nextRank: rank.nextRank, progressToNext };
 }
 
 export function computeAIPrediction(state: AppState, studentId: string) {
@@ -441,7 +466,7 @@ export function computeAIPrediction(state: AppState, studentId: string) {
 
   // Output 3: AI Recommendations (Personalized actionable feedback)
   const recommendation =
-    qualityMultiplier < 0.85 ? 'Tumpukan kepada ulang kaji Sabaqi/Manzil untuk meningkatkan kualiti ingatan.' :
+    qualityMultiplier < 0.85 ? 'Tumpukan kepada ulang kaji Sabki/Manzil untuk meningkatkan kualiti ingatan.' :
     attendanceRate < 0.85 ? 'Kehadiran yang lebih konsisten diperlukan untuk ramalan yang stabil.' :
     paymentScore < 1.0 ? 'Yuran yang belum dijelaskan mungkin mempengaruhi trend kestabilan.' :
     'Progres konsisten dikekalkan. Dijangka tamat lebih awal.';

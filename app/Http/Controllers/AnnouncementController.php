@@ -10,7 +10,12 @@ class AnnouncementController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Announcement::with('author')->latest();
+        // Auto archive announcements older than 30 days
+        Announcement::where('is_active', true)
+            ->where('created_at', '<', now()->subDays(30))
+            ->update(['is_active' => false]);
+
+        $query = Announcement::with('author')->where('is_active', true)->latest();
 
         $user = auth()->user();
 

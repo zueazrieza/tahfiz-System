@@ -98,42 +98,45 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userId }) => {
       setTeacher(tData);
       setStudent(sData);
 
+      // ParentProfile sub-record
+      const pData = u.parent_data || null;
+
       setFormData({
         name: u.full_name || u.name || '',
         email: u.email || '',
-        phone: u.phone || tData?.phone || sData?.phone || '', 
-        address: u.address || '',
-        wage: u.wage || 0,
-        icNo: tData?.ic_no || sData?.icNo || '',
+        phone: u.phone || tData?.phone || sData?.phone || pData?.phone || '',
+        address: sData?.address || pData?.address || '',
+        wage: u.wage || pData?.income || 0,
+        icNo: tData?.ic_no || sData?.ic_no || pData?.ic_no || '',
         qualification: tData?.qualification || '',
         experience: tData?.experience || '',
-        educationBackground: sData?.educationBackground || '',
-        intakeDate: sData?.intakeDate || sData?.enrolledDate || '',
+        educationBackground: sData?.education_background || '',
+        intakeDate: sData?.intake || '',
         dob: sData?.dob || '',
         pob: sData?.pob || '',
         race: sData?.race || '',
         religion: sData?.religion || '',
-        gender: (sData?.gender as any) || 'M',
-        bloodType: sData?.bloodType || '',
-        maritalStatus: sData?.maritalStatus || '',
+        gender: ((sData?.gender || tData?.gender) as any) || 'M',
+        bloodType: sData?.blood_type || '',
+        maritalStatus: sData?.marital_status || '',
         citizenship: sData?.citizenship || 'MAL',
-        familyIncome: sData?.familyIncome || '',
-        medicalHistory: tData?.medical_history || sData?.medicalHistory || '',
-        emergencyContactName: tData?.emergency_contact_name || sData?.emergencyContactName || '',
-        emergencyContactPhone: tData?.emergency_contact_phone || sData?.emergencyContactPhone || '',
-        // Parent detailed profile logic
-        relation: u.relation || '',
-        postcode: u.postcode || '',
-        city: u.city || '',
-        district: u.district || '',
-        stateName: u.stateName || '',
-        country: u.country || 'MAL',
-        parliament: u.parliament || '',
-        job: u.job || '',
-        sector: u.sector || '',
-        officePhone: u.officePhone || '',
-        childCount: u.childCount || 0,
-        reference: u.reference || '',
+        familyIncome: sData?.family_income || '',
+        medicalHistory: tData?.medical_history || sData?.medical_history || '',
+        emergencyContactName: tData?.emergency_contact_name || sData?.emergency_contact_name || '',
+        emergencyContactPhone: tData?.emergency_contact_phone || sData?.emergency_contact_phone || '',
+        // Parent detailed profile
+        relation: pData?.relationship_type || '',
+        postcode: pData?.postcode || '',
+        city: pData?.city || '',
+        district: pData?.district || '',
+        stateName: pData?.state_name || '',
+        country: pData?.country || 'MAL',
+        parliament: pData?.parliament || '',
+        job: u.job || pData?.occupation || '',
+        sector: pData?.sector || '',
+        officePhone: pData?.office_phone || '',
+        childCount: pData?.child_count || 0,
+        reference: pData?.reference || '',
         // Murabbi
         serviceStartDate: tData?.service_start_date || '',
         residence: tData?.residence || '',
@@ -265,7 +268,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userId }) => {
             <div>
               <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{user.name}</h1>
               <p className="text-slate-400 font-semibold text-[13px] uppercase tracking-wider">
-                {user.role === 'teacher' ? 'Murabbi' : user.role} • ID: {user.linkedId || user.id}
+                {user.role === 'teacher' ? 'Murabbi' : user.role} • ID: {user.linked_id || user.id}
               </p>
             </div>
           </div>
@@ -302,7 +305,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userId }) => {
                </h2>
                
                <div className="space-y-1">
-                 {student && renderField('Student ID', user.linkedId || user.id, 'linkedId', 'text', true)}
+                 {student && renderField('Student ID', user.linked_id || user.id, 'linkedId', 'text', true)}
                  {user.role === 'parent' && user.children ? (
                     <div className="border-b border-slate-100 py-3.5 flex flex-col md:flex-row md:items-center">
                       <span className="w-full md:w-1/3 text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-loose">Nama Anak-anak</span>

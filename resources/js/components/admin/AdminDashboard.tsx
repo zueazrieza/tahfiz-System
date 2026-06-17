@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { Users, GraduationCap, DollarSign, FileText, Brain, LogOut, LayoutDashboard, X, UserPlus, Shield, Home, RefreshCw } from 'lucide-react';
+import { Users, GraduationCap, DollarSign, FileText, Brain, LogOut, LayoutDashboard, X, UserPlus, Shield, Home, RefreshCw, Menu } from 'lucide-react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { usePolling } from '../../hooks/usePolling';
 import { ManageStudents } from './ManageStudents';
 import { ManageTeachers } from './ManageTeachers';
@@ -52,8 +53,9 @@ interface LiveStats {
 }
 
 export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
+  const isMobile = useIsMobile();
   const [currentView, setCurrentView] = useState<AdminView>('home');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [liveStats, setLiveStats] = useState<LiveStats>({
     totalStudents: 0, activeStudents: 0, totalTeachers: 0, totalClasses: 0,
     monthlyRevenue: 0, pendingPayments: 0, todayPresent: 0, todayAbsent: 0,
@@ -129,7 +131,7 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Header with LIVE badge */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-start', gap: '0.75rem' }}>
               <div>
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#111', margin: 0 }}>
                   Selamat Kembali, {userName} !
@@ -151,7 +153,7 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
             </div>
 
             {/* Primary Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '1rem' }}>
               {stats.map((stat) => (
                 <div key={stat.label} style={{ background: stat.bg, borderRadius: '16px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid rgba(0,0,0,0.05)', transition: 'transform 0.2s' }}>
                   <span style={{ color: stat.color }}>{stat.icon}</span>
@@ -167,7 +169,7 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
                 <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#111', margin: 0 }}>Statistik Hari Ini</h3>
                 <span style={{ fontSize: '0.7rem', background: '#eff6ff', color: '#3b82f6', borderRadius: '999px', padding: '2px 8px', fontWeight: 600 }}>Dikemas kini setiap 30 saat</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: '0.75rem' }}>
                 {extraStats.map((s) => (
                   <div key={s.label} style={{ textAlign: 'center', padding: '0.75rem', background: '#f9fafb', borderRadius: '12px', border: '1px solid #f3f4f6' }}>
                     <p style={{ fontSize: '1.4rem', fontWeight: 800, color: s.color, margin: 0 }}>{s.value}</p>
@@ -231,19 +233,37 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
     }
   };
 
+  const sidebarBg = 'linear-gradient(180deg, #1A4D50 0%, #6FC7CB 100%)';
+
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', background: '#f3f4f6', overflow: 'hidden' }}>
+      {/* ─── Mobile backdrop ─── */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 49 }}
+        />
+      )}
+
       {/* ─── SIDEBAR ─── */}
-      {sidebarOpen && (
+      {(!isMobile ? sidebarOpen : true) && (
         <aside style={{
           width: '200px',
           flexShrink: 0,
-          background: 'linear-gradient(180deg, #1A4D50 0%, #6FC7CB 100%)',
+          background: sidebarBg,
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
           overflowY: 'auto',
           boxShadow: '8px 0 30px rgba(0,0,0,0.1)',
+          ...(isMobile ? {
+            position: 'fixed' as const,
+            left: 0,
+            top: 0,
+            zIndex: 50,
+            transform: sidebarOpen ? 'translateX(0)' : 'translateX(-200px)',
+            transition: 'transform 0.25s ease',
+          } : {}),
         }}>
           {/* Header */}
           <div style={{ padding: '1.5rem 1rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
@@ -259,7 +279,7 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setCurrentView(item.id)}
+                  onClick={() => { setCurrentView(item.id); if (isMobile) setSidebarOpen(false); }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -277,16 +297,8 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
                     width: '100%',
                     boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
                   }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                    }
-                  }}
+                  onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)'; }}
+                  onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                 >
                   <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{item.icon}</span>
                   {item.label}
@@ -300,19 +312,9 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
             <button
               onClick={onLogout}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                padding: '0.6rem 0.8rem',
-                borderRadius: '999px',
-                border: 'none',
-                cursor: 'pointer',
-                background: 'transparent',
-                color: '#f87171',
-                fontWeight: 600,
-                fontSize: '0.82rem',
-                width: '100%',
-                transition: 'background 0.15s',
+                display: 'flex', alignItems: 'center', gap: '0.6rem',
+                padding: '0.6rem 0.8rem', borderRadius: '999px', border: 'none', cursor: 'pointer',
+                background: 'transparent', color: '#f87171', fontWeight: 600, fontSize: '0.82rem', width: '100%',
               }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(248,113,113,0.12)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
@@ -325,23 +327,13 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
       )}
 
       {/* ─── MAIN CONTENT ─── */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 2rem' }}>
-        {/* Sidebar toggle / close */}
+      <main style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '0.75rem 1rem' : '1.5rem 2rem' }}>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#374151',
-            padding: '0.2rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-          }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#374151', padding: '0.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}
           title="Toggle sidebar"
         >
-          <X size={22} />
+          {sidebarOpen && !isMobile ? <X size={22} /> : <Menu size={22} />}
         </button>
 
         {renderContent()}

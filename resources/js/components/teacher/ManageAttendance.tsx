@@ -15,7 +15,7 @@ export function ManageAttendance() {
   const teacherClasses = state.classes.filter(c => teacher?.classIds.some(cid => String(cid) === String(c.id)));
   const [selectedClassId, setSelectedClassId] = useState(teacherClasses[0]?.id ?? '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [attendanceMap, setAttendanceMap] = useState<Record<string, { status: AttendanceStatus; remarks: string }>>({});
+  const [attendanceMap, setAttendanceMap] = useState<Record<string, { status: AttendanceStatus; remarks: string; reasonType: string }>>({});
   const [saved, setSaved] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<string | null>(null);
@@ -66,8 +66,11 @@ export function ManageAttendance() {
         const resp = await axios.get(`/api/attendance`, { params: { class_id: selectedClassId, date: date } });
         const data = resp.data;
         const map: Record<string, { status: AttendanceStatus; remarks: string }> = {};
+        const presetValues = ['Sakit','Kecemasan','Ponteng','Cuti Rasmi','Urusan Keluarga','Urusan Perubatan'];
         data.forEach((row: any) => {
-          map[row.student_id] = { status: row.status, remarks: row.remarks || '' };
+          const remarks = row.remarks || '';
+          const reasonType = presetValues.includes(remarks) ? remarks : (remarks ? 'Lain-lain' : '');
+          map[row.student_id] = { status: row.status, remarks, reasonType };
         });
         setAttendanceMap(map);
       } else {
@@ -87,8 +90,25 @@ export function ManageAttendance() {
     }
   }, [selectedClassId, viewMode, selectedMonth, selectedYear]);
 
+  const ABSENCE_REASONS = [
+    { value: 'Sakit',            label: '🤒 Sakit' },
+    { value: 'Kecemasan',        label: '🚨 Kecemasan' },
+    { value: 'Ponteng',          label: '🚫 Ponteng' },
+    { value: 'Cuti Rasmi',       label: '📅 Cuti Rasmi' },
+    { value: 'Urusan Keluarga',  label: '🏠 Urusan Keluarga' },
+    { value: 'Urusan Perubatan', label: '🏥 Urusan Perubatan' },
+    { value: 'Lain-lain',        label: '📝 Lain-lain' },
+  ];
+
   const toggle = (studentId: string, status: AttendanceStatus) => {
-    setAttendanceMap(prev => ({ ...prev, [studentId]: { status, remarks: prev[studentId]?.remarks ?? '' } }));
+    setAttendanceMap(prev => ({
+      ...prev,
+      [studentId]: {
+        status,
+        remarks: status === 'Tidak Hadir' ? (prev[studentId]?.remarks || '') : '',
+        reasonType: status === 'Tidak Hadir' ? (prev[studentId]?.reasonType || '') : '',
+      },
+    }));
   };
 
   const getStatusForStudent = (studentId: string): AttendanceStatus => {
@@ -114,6 +134,7 @@ export function ManageAttendance() {
       date,
       status: getStatusForStudent(s.id),
       remarks: attendanceMap[s.id]?.remarks ?? '',
+      reasonType: attendanceMap[s.id]?.reasonType ?? '',
     }));
 
     try {
@@ -271,13 +292,47 @@ export function ManageAttendance() {
                     {statusBtn(student.id, 'Tidak Hadir', 'Tidak Hadir', 'text-red-600 bg-red-50')}
                   </div>
                   {getStatusForStudent(student.id) === 'Tidak Hadir' && (
-                    <input
-                      type="text"
-                      placeholder="Sebab..."
-                      className="text-xs px-2 py-1 border border-gray-200 rounded w-32 focus:outline-none focus:ring-1 focus:ring-green-500"
-                      value={attendanceMap[student.id]?.remarks ?? ''}
-                      onChange={e => setAttendanceMap(prev => ({ ...prev, [student.id]: { ...prev[student.id], status: 'Tidak Hadir', remarks: e.target.value } }))}
-                    />
+                    <div className="flex flex-col gap-1.5 min-w-[170px]">
+                      <select
+                        value={attendanceMap[student.id]?.reasonType ?? ''}
+                        onChange={e => {
+                          const reasonType = e.target.value;
+                          setAttendanceMap(prev => ({
+                            ...prev,
+                            [student.id]: {
+                              status: 'Tidak Hadir',
+                              reasonType,
+                              remarks: reasonType === 'Lain-lain' ? '' : reasonType,
+                            },
+                          }));
+                        }}
+                        className={`text-xs px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
+                          attendanceMap[student.id]?.reasonType === 'Ponteng'
+                            ? 'border-red-400 bg-red-50 text-red-700 font-bold focus:ring-red-300'
+                            : 'border-gray-200 bg-white text-gray-700 focus:ring-teal-300'
+                        }`}
+                      >
+                        <option value="">-- Pilih Sebab --</option>
+                        {ABSENCE_REASONS.map(r => (
+                          <option key={r.value} value={r.value}>{r.label}</option>
+                        ))}
+                      </select>
+                      {attendanceMap[student.id]?.reasonType === 'Lain-lain' && (
+                        <input
+                          type="text"
+                          placeholder="Nyatakan sebab..."
+                          className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300"
+                          value={attendanceMap[student.id]?.remarks ?? ''}
+                          onChange={e => setAttendanceMap(prev => ({
+                            ...prev,
+                            [student.id]: { ...prev[student.id], remarks: e.target.value },
+                          }))}
+                        />
+                      )}
+                      {attendanceMap[student.id]?.reasonType === 'Ponteng' && (
+                        <p className="text-[10px] text-red-600 font-semibold">⚠️ Akan mempengaruhi skor AI</p>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}
@@ -330,17 +385,19 @@ export function ManageAttendance() {
                 <th className="px-6 py-3 text-[11px] font-bold text-green-600 uppercase tracking-wider text-center">Hadir</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-orange-600 uppercase tracking-wider text-center">Lewat</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-red-600 uppercase tracking-wider text-center">T. Hadir</th>
+                <th className="px-6 py-3 text-[11px] font-bold text-purple-600 uppercase tracking-wider text-center">Ponteng</th>
                 <th className="px-6 py-3 text-[11px] font-bold text-blue-600 uppercase tracking-wider text-right">Peratus (%)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 italic text-sm">
               {studentsInClass.map(s => {
-                const sData = monthlyData.filter(d => String(d.student_id) === String(s.id));
-                const hadir = sData.filter(d => d.status === 'Hadir').length;
-                const lewat = sData.filter(d => d.status === 'Lewat').length;
+                const sData    = monthlyData.filter(d => String(d.student_id) === String(s.id));
+                const hadir    = sData.filter(d => d.status === 'Hadir').length;
+                const lewat    = sData.filter(d => d.status === 'Lewat').length;
                 const takHadir = sData.filter(d => d.status === 'Tidak Hadir').length;
-                const total = hadir + lewat + takHadir;
-                const percent = total > 0 ? Math.round(((hadir + lewat) / total) * 100) : 0;
+                const ponteng  = sData.filter(d => d.status === 'Tidak Hadir' && d.remarks?.toLowerCase() === 'ponteng').length;
+                const total    = hadir + lewat + takHadir;
+                const percent  = total > 0 ? Math.round(((hadir + lewat) / total) * 100) : 0;
 
                 return (
                   <tr key={s.id} className="hover:bg-gray-50 transition-colors">
@@ -348,6 +405,15 @@ export function ManageAttendance() {
                     <td className="px-6 py-4 text-center font-bold text-green-600">{hadir}</td>
                     <td className="px-6 py-4 text-center font-bold text-orange-600">{lewat}</td>
                     <td className="px-6 py-4 text-center font-bold text-red-600">{takHadir}</td>
+                    <td className="px-6 py-4 text-center">
+                      {ponteng > 0 ? (
+                        <span className="px-2 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                          🚫 {ponteng}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <span className={`px-2 py-1 rounded-full text-xs font-bold ${percent >= 90 ? 'bg-green-100 text-green-700' : percent >= 70 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
                         {percent}%
@@ -357,7 +423,7 @@ export function ManageAttendance() {
                 );
               })}
               {studentsInClass.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-400">Tiada data untuk kelas ini.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400">Tiada data untuk kelas ini.</td></tr>
               )}
             </tbody>
           </table>
