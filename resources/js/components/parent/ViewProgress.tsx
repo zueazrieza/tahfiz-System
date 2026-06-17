@@ -97,17 +97,38 @@ export function ViewProgress({ childId }: ViewProgressProps) {
           <p className="text-slate-400 text-sm italic">Anak anda belum menerima lencana lagi. Teruskan menyokong hafazan mereka! 🌿</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {earnedAchievements.map((a) => (
-              <div key={a.id} className="bg-slate-50 p-4 rounded-2xl text-center border border-slate-100 hover:border-teal-200 transition-all group">
-                <div className="size-12 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                  {a.name.includes('Level') || a.name.includes('Warrior') || a.name.includes('Elite') || a.name.includes('Master') 
-                    ? <Award className="text-teal-600" size={24} /> 
-                    : <Trophy className="text-amber-500" size={24} />}
+            {earnedAchievements.map((a) => {
+              const RANK_IMAGES: Record<string, string> = {
+                'Tahsin':                    '/images/logo/level_1.jpeg',
+                'Warrior':                   '/images/logo/warrior.jpeg',
+                'Elite':                     '/images/logo/elite.jpeg',
+                'Master':                    '/images/logo/master.jpeg',
+                'Grandmaster':               '/images/logo/Level_G.jpeg',
+                'Titan':                     '/images/logo/level_T.jpeg',
+                'Gladiator':                 '/images/logo/level2.jpeg',
+                'Legend Al-Hafiz':           '/images/logo/level_1_hafiz.jpeg',
+                'Legend Al-Hafiz Amethyst':  '/images/logo/level3.jpeg',
+                'Legend Al-Hafiz Ruby':      '/images/logo/level4.jpeg',
+                'Legend Al-Hafiz Sapphire':  '/images/logo/level_S.jpeg',
+                'Syahadah Emperor':          '/images/logo/level_SE.jpeg',
+              };
+              const img = RANK_IMAGES[a.name];
+              return (
+                <div key={a.id} className="bg-slate-50 rounded-2xl text-center border border-slate-100 hover:border-teal-200 transition-all group overflow-hidden">
+                  {img ? (
+                    <img src={img} alt={a.name} className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300" />
+                  ) : (
+                    <div className="size-full aspect-square bg-white flex items-center justify-center">
+                      <Trophy className="text-amber-500" size={32} />
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <p className="text-xs font-black text-slate-800 uppercase tracking-tight leading-tight">{a.name}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">{new Date(a.earned_at || a.created_at).toLocaleDateString('ms-MY')}</p>
+                  </div>
                 </div>
-                <p className="text-xs font-black text-slate-800 uppercase tracking-tight">{a.name}</p>
-                <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Diberikan pada {new Date(a.earned_at || a.created_at).toLocaleDateString('ms-MY')}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

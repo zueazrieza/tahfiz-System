@@ -404,6 +404,7 @@ class StudentController extends Controller
             'streak'           => $streak,
             'streakMilestone'  => $streakMilestone,
             'rankName'         => $rankName,
+            'dbRanking'        => $student->ranking,
             'classRank'        => $classRank,
             'classTotal'       => $classTotal,
             'todayHafazan'     => $todayHafazan,

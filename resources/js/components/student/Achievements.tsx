@@ -1,43 +1,42 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Award, Star, Shield, Loader2 } from 'lucide-react';
+import { Trophy, Award, Star, Loader2 } from 'lucide-react';
 import axios from 'axios';
-import { useAppStore, getStudentRank, getClassLeaderboard } from '../../store/AppContext';
+import { getStudentRank } from '../../store/AppContext';
 import { CertificateModal } from '../shared/CertificateModal';
 
 export function Achievements() {
-  const { state } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [earnedAchievements, setEarnedAchievements] = useState<any[]>([]);
   const [selectedCert, setSelectedCert] = useState<any>(null);
   
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const studentUser = state.users.find(u => u.name === authUser.name && u.role === 'student') ?? state.users.find(u => u.role === 'student')!;
-  const student = state.students.find(s => s.id === studentUser?.linkedId) ?? state.students[0];
+  const realStudentId = authUser.linked_id;
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
 
   useEffect(() => {
-    if (student?.id) {
-      axios.get(`/api/achievements/student/${student.id}`)
-        .then(res => setEarnedAchievements(res.data))
-        .catch(err => console.error('Error fetching achievements', err));
+    if (!realStudentId) { setLoading(false); return; }
 
-      axios.get(`/api/students/leaderboard/${student.classId || 'c1'}`)
-        .then(res => setLeaderboard(res.data))
-        .catch(err => console.error('Error fetching leaderboard', err));
+    axios.get(`/api/achievements/student/${realStudentId}`)
+      .then(res => setEarnedAchievements(Array.isArray(res.data) ? res.data : []))
+      .catch(err => console.error('Error fetching achievements', err));
 
-      axios.get(`/api/students/dashboard/${student.id}`)
-        .then(res => setDashboardData(res.data))
-        .catch(err => {
-             console.error('Error fetching dashboard data', err);
-             setLoading(false);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [student?.id, student?.classId]);
+    axios.get(`/api/students/dashboard/${realStudentId}`)
+      .then(res => {
+        setDashboardData(res.data);
+        const classId = res.data?.student?.class_id;
+        if (classId) {
+          axios.get(`/api/students/leaderboard/${classId}`)
+            .then(r => setLeaderboard(r.data))
+            .catch(() => {});
+        }
+      })
+      .catch(err => console.error('Error fetching dashboard data', err))
+      .finally(() => setLoading(false));
+  }, [realStudentId]);
 
   const streak = dashboardData?.streak ?? 0;
-  const rank = getStudentRank(dashboardData?.juzukCompleted ?? 0);
+  const rank = getStudentRank(dashboardData?.juzukCompleted ?? 0, dashboardData?.dbRanking ?? null);
   // leaderboard is now state-based
 
   // Badge definitions — names must match achievement names in backend exactly
@@ -106,7 +105,7 @@ export function Achievements() {
           <div className="flex-1 text-center md:text-left">
             <p className="text-teal-600 font-black text-xs uppercase tracking-[0.3em] mb-2">PANGKAT SEMASA ANDA</p>
             <h3 className="text-4xl font-black text-slate-800 uppercase tracking-tight">{rank.name}</h3>
-            <p className="text-gray-700 mt-1">{student?.juzukCompleted ?? 0} Juzuk Diselesaikan · 🔥 {streak} hari berturutan</p>
+            <p className="text-gray-700 mt-1">{dashboardData?.juzukCompleted ?? 0} Juzuk Diselesaikan · 🔥 {streak} hari berturutan</p>
             <div className="mt-4">
               <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
                 <span>Kemajuan ke {rank.nextRank}</span><span>{rank.progressToNext}%</span>
@@ -131,7 +130,7 @@ export function Achievements() {
             return (
               <div
                 key={badge.name}
-                onClick={() => earned && setSelectedCert({ name: student.name, achievement: badge.name, date: rawAchievement?.earned_at || new Date().toISOString() })}
+                onClick={() => earned && setSelectedCert({ name: dashboardData?.student?.name ?? authUser.full_name ?? authUser.name, achievement: badge.name, date: rawAchievement?.earned_at || new Date().toISOString() })}
                 className={`rounded-xl border-2 text-center transition-all cursor-pointer overflow-hidden ${earned ? 'border-yellow-300 hover:scale-105 hover:shadow-lg' : 'border-gray-200 opacity-50 grayscale'}`}
               >
                 {/* Badge image */}
@@ -185,14 +184,14 @@ export function Achievements() {
 
       {/* Class Leaderboard */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Papan Leder Kelas — {state.classes.find(c => c.id === student?.classId)?.name}</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Papan Leder Kelas — {dashboardData?.student?.className ?? '—'}</h3>
         <div className="space-y-2">
           {leaderboard.map(entry => (
-            <div key={entry.rank} className={`flex items-center justify-between p-4 rounded-lg ${entry.id === student?.id ? 'bg-green-50 border-2 border-green-300' : 'bg-gray-50'}`}>
+            <div key={entry.rank} className={`flex items-center justify-between p-4 rounded-lg ${String(entry.id) === String(realStudentId) ? 'bg-green-50 border-2 border-green-300' : 'bg-gray-50'}`}>
               <div className="flex items-center gap-4">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${entry.rank === 1 ? 'bg-yellow-400 text-yellow-900' : entry.rank === 2 ? 'bg-gray-300 text-gray-700' : entry.rank === 3 ? 'bg-orange-400 text-orange-900' : 'bg-gray-200 text-gray-600'}`}>{entry.rank}</div>
                 <div>
-                  <p className="font-medium text-gray-900">{entry.name}{entry.id === student?.id ? ' (Anda)' : ''}</p>
+                  <p className="font-medium text-gray-900">{entry.name}{String(entry.id) === String(realStudentId) ? ' (Anda)' : ''}</p>
                   <p className="text-sm text-gray-600">{entry.progress}</p>
                 </div>
               </div>
@@ -207,9 +206,9 @@ export function Achievements() {
       <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-xl p-6 border-2 border-green-200">
         <h4 className="font-semibold text-green-900 mb-2">🌟 Anda Sangat Hebat!</h4>
         <p className="text-green-800">
-          {leaderboard.findIndex(e => e.id === student?.id) === 0
+          {leaderboard.findIndex(e => String(e.id) === String(realStudentId)) === 0
             ? "Anda #1 dalam kelas! Teruskan kepimpinan! 👑"
-            : `Anda #${leaderboard.findIndex(e => e.id === student?.id) + 1} dalam kelas! ${rank.progressToNext < 100 ? `Selesaikan ${Math.ceil((29 - (student?.juzukCompleted ?? 0)) * 0.3)} juzuk lagi untuk mencapai pangkat seterusnya!` : ''}`}
+            : `Anda #${leaderboard.findIndex(e => String(e.id) === String(realStudentId)) + 1 || '—'} dalam kelas! ${rank.progressToNext < 100 ? `Hafal ${rank.nextRank} seterusnya — teruskan perjuangan!` : 'Tahniah atas pencapaian tertinggi!'}`}
         </p>
       </div>
 
