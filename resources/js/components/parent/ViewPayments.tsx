@@ -108,9 +108,12 @@ export function ViewPayments({ childId, readOnly = false }: ViewPaymentsProps) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.paidDate ?? '—'}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {p.status !== 'Dibayar' && !readOnly && (
-                      <span className="px-3 py-1 bg-yellow-50 text-yellow-700 text-xs font-semibold rounded-lg border border-yellow-200">
-                        Sila hubungi pihak sekolah
-                      </span>
+                      <button
+                        onClick={() => window.open('https://asis.awfatech.com/main/appfee/adm/index.php?sysapp=asis0077', '_blank')}
+                        className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg cursor-pointer border-none transition-all shadow-sm"
+                      >
+                        Bayar Sekarang
+                      </button>
                     )}
                   </td>
                 </tr>
