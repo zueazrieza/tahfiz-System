@@ -204,14 +204,20 @@ export function TeacherAIPrediction() {
     }
   };
 
-  // UI Derived state
-  const myStudents = state.students.filter(s => String(s.teacherId) === String(teacher?.id));
+  // UI Derived state — use predictions (from API) not local state for accuracy
+  const totalStudents = predictions.length > 0
+    ? predictions.length
+    : state.students.filter(s => String(s.teacherId) === String(teacher?.id)).length;
+
   const avgConfidence = predictions.length
     ? Math.round(predictions.reduce((sum, p) => sum + parseInt(p.confidence), 0) / predictions.length)
     : 0;
 
-  const avgJuzuk = myStudents.length
-    ? Math.round(myStudents.reduce((sum, s) => sum + (s.juzukCompleted ?? 0), 0) / myStudents.length)
+  const avgJuzuk = predictions.length
+    ? Math.round(predictions.reduce((sum, p) => {
+        const juzuk = parseInt((p.currentProgress || '0 Juzuk').replace(/\D/g, '')) || 0;
+        return sum + juzuk;
+      }, 0) / predictions.length)
     : 0;
 
   const trendColor = (t: string) =>
@@ -248,7 +254,7 @@ export function TeacherAIPrediction() {
             </p>
             <div className="grid grid-cols-3 gap-4">
               {[
-                { label: 'Jumlah Pelajar', value: myStudents.length, icon: <Users className="w-5 h-5 text-purple-600" /> },
+                { label: 'Jumlah Pelajar', value: totalStudents, icon: <Users className="w-5 h-5 text-purple-600" /> },
                 { label: 'Purata Ketepatan AI', value: `${avgConfidence}%`, icon: <Brain className="w-5 h-5 text-blue-600" /> },
                 { label: 'Purata Juzuk Dihafal', value: `${avgJuzuk} / 30`, icon: <TrendingUp className="w-5 h-5 text-green-600" /> },
               ].map(m => (
@@ -275,10 +281,27 @@ export function TeacherAIPrediction() {
       {/* Individual predictions */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">Ramalan Individu Pelajar</h3>
-        {predictions.length === 0 && (
-          <p className="text-gray-400 text-sm">Tiada data pelajar untuk dianalisis.</p>
+        {isGenerating && (
+          <div className="flex items-center justify-center py-12 gap-3 text-purple-600">
+            <RefreshCw className="w-5 h-5 animate-spin" />
+            <span className="font-medium text-sm">Menganalisis data pelajar...</span>
+          </div>
         )}
-        {predictions.map((pred, index) => (
+        {!isGenerating && predictions.length === 0 && (
+          <div className="bg-purple-50 border-2 border-dashed border-purple-200 rounded-xl p-10 text-center">
+            <Brain className="w-10 h-10 text-purple-300 mx-auto mb-3" />
+            <p className="font-bold text-purple-800 mb-1">Tiada Ramalan Dijumpai</p>
+            <p className="text-sm text-purple-600 mb-4">Klik butang <strong>Jana Semula</strong> di atas untuk menjana ramalan AI berdasarkan rekod hafazan terkini.</p>
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-semibold text-sm hover:bg-purple-700 transition-colors"
+            >
+              Jana Ramalan Sekarang
+            </button>
+          </div>
+        )}
+        {!isGenerating && predictions.map((pred, index) => (
           <StudentPredictionCard key={index} pred={pred} trendColor={trendColor} />
         ))}
       </div>

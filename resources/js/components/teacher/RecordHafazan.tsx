@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { Save, RefreshCw, BookOpen, CheckCircle } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import { Grade } from '../../store/mockData';
+import { ConfirmModal } from '../shared/ConfirmModal';
 
 export function RecordHafazan() {
   const { state, dispatch } = useAppStore();
@@ -18,6 +19,7 @@ export function RecordHafazan() {
   const studentsInClass = state.students.filter(s => String(s.classId) === String(selectedClassId));
 
   const [selectedStudent, setSelectedStudent] = useState('');
+  const [recordDate, setRecordDate] = useState(new Date().toISOString().split('T')[0]);
   const [formData, setFormData] = useState({
     sabaq: '', sabaqFrom: '', sabaqTo: '', sabaqGrade: '' as Grade,
     sabaqi: '', sabaqiFrom: '', sabaqiTo: '', sabaqiGrade: '' as Grade,
@@ -25,15 +27,14 @@ export function RecordHafazan() {
     remarks: '',
   });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<any>(null);
 
   const reset = () => setFormData({ sabaq: '', sabaqFrom: '', sabaqTo: '', sabaqGrade: '', sabaqi: '', sabaqiFrom: '', sabaqiTo: '', sabaqiGrade: '', manzil: '', manzilFrom: '', manzilTo: '', manzilGrade: '', remarks: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudent) return;
-    if (!confirm('Adakah anda pasti ingin menyimpan rekod hafazan ini?')) {
-      return;
-    }
     
     const ayahCount =
       (formData.sabaqTo ? parseInt(formData.sabaqTo) - parseInt(formData.sabaqFrom || '0') : 0) +
@@ -43,7 +44,7 @@ export function RecordHafazan() {
     const payload = {
       studentId: selectedStudent,
       teacherId: teacher?.id ?? 1,
-      date: new Date().toISOString().split('T')[0],
+      date: recordDate,
       sabaq: { surah: formData.sabaq, from: parseInt(formData.sabaqFrom || '0'), to: parseInt(formData.sabaqTo || '0'), grade: formData.sabaqGrade },
       sabaqi: { surah: formData.sabaqi, from: parseInt(formData.sabaqiFrom || '0'), to: parseInt(formData.sabaqiTo || '0'), grade: formData.sabaqiGrade },
       manzil: { surah: formData.manzil, from: parseInt(formData.manzilFrom || '0'), to: parseInt(formData.manzilTo || '0'), grade: formData.manzilGrade },
@@ -51,16 +52,23 @@ export function RecordHafazan() {
       ayahCount: Math.max(0, ayahCount),
     };
 
-    try {
-      const resp = await axios.post('/api/hafazan-records', payload);
+    setPendingPayload(payload);
+    setShowConfirm(true);
+  };
 
+  const doSave = async () => {
+    setShowConfirm(false);
+    if (!pendingPayload) return;
+    try {
+      const resp = await axios.post('/api/hafazan-records', pendingPayload);
       if (resp.status === 201 || resp.status === 200) {
-        dispatch({ type: 'RECORD_HAFAZAN', payload });
+        dispatch({ type: 'RECORD_HAFAZAN', payload: pendingPayload });
         setShowSuccess(true);
-        setTimeout(() => { 
-          setShowSuccess(false); 
-          setSelectedStudent(''); 
-          reset(); 
+        setPendingPayload(null);
+        setTimeout(() => {
+          setShowSuccess(false);
+          setSelectedStudent('');
+          reset();
         }, 2000);
       }
     } catch (err: any) {
@@ -75,6 +83,16 @@ export function RecordHafazan() {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Simpan Rekod Hafazan"
+        message={`Adakah anda pasti ingin menyimpan rekod hafazan untuk tarikh ${recordDate}? Data ini akan dikemas kini dalam sistem dan ibu bapa akan dimaklumkan.`}
+        confirmLabel="Ya, Simpan"
+        confirmColor="green"
+        onConfirm={doSave}
+        onCancel={() => setShowConfirm(false)}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Rekod Hafazan</h2>
@@ -126,7 +144,7 @@ export function RecordHafazan() {
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Class & Student selection */}
+          {/* Class, Student & Date selection */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas *</label>
@@ -141,6 +159,20 @@ export function RecordHafazan() {
                 {studentsInClass.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
+          </div>
+
+          {/* Date field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tarikh Rekod *</label>
+            <input
+              type="date"
+              value={recordDate}
+              onChange={e => setRecordDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className={inCls}
+              required
+            />
+            <p className="text-xs text-gray-400 mt-1">Tarikh sesi hafazan berlaku. Lalai: hari ini.</p>
           </div>
 
           {/* SABAQ */}
@@ -200,7 +232,7 @@ export function RecordHafazan() {
           <div className="space-y-2">
             {state.hafazanRecords.filter(h => h.studentId === selectedStudent).slice(0, 3).map(h => (
               <div key={h.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
-                <span className="text-gray-600">{h.date}</span>
+                <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-xs">{h.date}</span>
                 <span className="font-medium">{h.sabaq.surah} {h.sabaq.from}–{h.sabaq.to}</span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${h.sabaq.grade === 'Mumtaz' ? 'bg-green-100 text-green-700' : h.sabaq.grade === 'Jayyid' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{h.sabaq.grade}</span>
                 <span className="text-gray-500">{h.ayahCount} ayah</span>

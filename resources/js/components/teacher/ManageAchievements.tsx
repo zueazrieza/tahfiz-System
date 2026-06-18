@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Trophy, Award, Star, Trash2, Plus, Users, Search, Loader2, BookOpen, CheckCircle2 } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
+import { ConfirmModal } from '../shared/ConfirmModal';
 
 const HAFAZAN_LEVELS = [
   'Tahsin',
@@ -29,8 +30,10 @@ export function ManageAchievements() {
 
   const [newAchievement, setNewAchievement] = useState({
     name: '',
-    type: 'achievement' // achievement or badge
+    type: 'achievement'
   });
+  const [confirmAdd, setConfirmAdd] = useState<{ name: string; type: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
   useEffect(() => {
     fetchStudents();
@@ -72,21 +75,21 @@ export function ManageAchievements() {
     }
   };
 
-  const handleAdd = async (e?: React.FormEvent, customName?: string) => {
+  const handleAdd = (e?: React.FormEvent, customName?: string) => {
     if (e) e.preventDefault();
     const name = customName || newAchievement.name;
     if (!selectedStudentId || !name) return;
+    setConfirmAdd({ name, type: customName ? 'badge' : newAchievement.type });
+  };
 
-    if (!confirm(`Adakah anda pasti ingin menganugerahkan "${name}" kepada pelajar ini?`)) {
-      return;
-    }
-
+  const doAdd = async () => {
+    if (!confirmAdd) return;
+    setConfirmAdd(null);
     try {
       await axios.post('/api/achievements', {
-
         student_id: selectedStudentId,
-        name: name,
-        type: customName ? 'badge' : newAchievement.type,
+        name: confirmAdd.name,
+        type: confirmAdd.type,
         earned_at: new Date().toISOString()
       });
       setNewAchievement({ name: '', type: 'achievement' });
@@ -96,10 +99,15 @@ export function ManageAchievements() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Hapus pencapaian ini?')) return;
+  const handleDelete = (id: number) => {
+    setConfirmDelete(id);
+  };
+
+  const doDelete = async () => {
+    if (confirmDelete === null) return;
+    setConfirmDelete(null);
     try {
-      await axios.delete(`/api/achievements/${id}`);
+      await axios.delete(`/api/achievements/${confirmDelete}`);
       fetchAchievements(selectedStudentId);
     } catch (err) {
       alert('Gagal memadam.');
@@ -108,6 +116,25 @@ export function ManageAchievements() {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={!!confirmAdd}
+        title="Anugerahkan Pencapaian"
+        message={`Adakah anda pasti ingin menganugerahkan "${confirmAdd?.name}" kepada pelajar ini? Tindakan ini akan disimpan dalam rekod pelajar.`}
+        confirmLabel="Ya, Anugerahkan"
+        confirmColor="green"
+        onConfirm={doAdd}
+        onCancel={() => setConfirmAdd(null)}
+      />
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        title="Padam Pencapaian"
+        message="Adakah anda pasti ingin memadamkan pencapaian ini? Tindakan ini tidak boleh dibatalkan."
+        confirmLabel="Ya, Padam"
+        confirmColor="red"
+        onConfirm={doDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
+
       <div className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100">
         <h2 className="text-2xl font-black text-slate-800 mb-2">Urus Pencapaian & Aras Pelajar</h2>
         <p className="text-slate-500 font-medium">Berikan lencana Aras (Level) atau anugerah khas kepada pelajar selepas penilaian.</p>

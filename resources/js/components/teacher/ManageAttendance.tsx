@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAppStore } from '../../store/AppContext';
 import { AttendanceStatus } from '../../store/mockData';
-import { CheckCircle2, XCircle, Clock, QrCode, User, Camera } from 'lucide-react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { CheckCircle2, XCircle, Clock, Camera } from 'lucide-react';
+import { ConfirmModal } from '../shared/ConfirmModal';
 
 export function ManageAttendance() {
   const { state, dispatch } = useAppStore();
@@ -17,40 +17,13 @@ export function ManageAttendance() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, { status: AttendanceStatus; remarks: string; reasonType: string }>>({});
   const [saved, setSaved] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily');
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [classImage, setClassImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  useEffect(() => {
-    let scanner: any = null;
-    if (isScanning) {
-      scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
-      scanner.render((decodedText: string) => {
-        try {
-          const data = JSON.parse(decodedText);
-          if (data.type === 'student_attendance' && data.id) {
-            toggle(data.id, 'Hadir');
-            setScanResult(`Berjaya: ${data.name}`);
-            setTimeout(() => setScanResult(null), 3000);
-          }
-        } catch (e) {
-          console.error('Invalid QR code');
-        }
-      }, (error: any) => {
-        // scan error, ignore
-      });
-    }
-    return () => {
-      if (scanner) {
-        scanner.clear().catch((error: any) => console.error("Failed to clear scanner", error));
-      }
-    };
-  }, [isScanning]);
 
   const studentsInClass = state.students.filter(s => String(s.classId) === String(selectedClassId));
 
@@ -122,12 +95,11 @@ export function ManageAttendance() {
       alert('Sila muat naik Wins Gambar (Gambar Kelas) terlebih dahulu sebelum menyimpan kehadiran.');
       return;
     }
+    setShowConfirm(true);
+  };
 
-    if (!confirm('Adakah anda pasti ingin menyimpan rekod kehadiran ini?')) {
-      return;
-    }
-
-
+  const doSave = async () => {
+    setShowConfirm(false);
     const records = studentsInClass.map(s => ({
       studentId: s.id,
       classId: selectedClassId,
@@ -138,7 +110,6 @@ export function ManageAttendance() {
     }));
 
     try {
-      // In real scenario, we would use FormData to upload image and records
       await axios.post('/api/attendance/bulk', { records });
       dispatch({ type: 'MARK_ATTENDANCE', payload: records });
       setSaved(true);
@@ -180,17 +151,27 @@ export function ManageAttendance() {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Simpan Rekod Kehadiran"
+        message="Adakah anda pasti ingin menyimpan rekod kehadiran ini? Data kehadiran akan dihantar dan ibu bapa akan dimaklumkan."
+        confirmLabel="Ya, Simpan"
+        confirmColor="green"
+        onConfirm={doSave}
+        onCancel={() => setShowConfirm(false)}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Urus Kehadiran</h2>
           <div className="flex gap-4 mt-2">
-            <button 
+            <button
               onClick={() => setViewMode('daily')}
               className={`text-sm font-bold pb-1 border-b-2 transition-all ${viewMode === 'daily' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-400'}`}
             >
               Tanda Kehadiran
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('monthly')}
               className={`text-sm font-bold pb-1 border-b-2 transition-all ${viewMode === 'monthly' ? 'border-teal-600 text-teal-600' : 'border-transparent text-gray-400'}`}
             >
@@ -198,26 +179,7 @@ export function ManageAttendance() {
             </button>
           </div>
         </div>
-        <button 
-          onClick={() => setIsScanning(!isScanning)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all ${isScanning ? 'bg-red-100 text-red-600' : 'bg-teal-600 text-white shadow-lg shadow-teal-900/20'}`}
-        >
-          {isScanning ? <Camera size={20} /> : <QrCode size={20} />}
-          {isScanning ? 'Tutup Scanner' : 'Imbas QR'}
-        </button>
       </div>
-
-      {isScanning && (
-        <div className="bg-white p-6 rounded-[2rem] border-2 border-teal-500/20 shadow-xl overflow-hidden animate-in zoom-in duration-300">
-          <div id="reader" className="overflow-hidden rounded-xl border border-gray-100"></div>
-          {scanResult && (
-            <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-xl border border-green-200 font-bold text-center animate-bounce">
-              {scanResult}
-            </div>
-          )}
-          <p className="mt-4 text-center text-gray-500 text-sm italic">Halakan kod QR pelajar ke arah kamera</p>
-        </div>
-      )}
 
       {saved && (
         <div className="bg-green-50 border-2 border-green-500 rounded-xl p-4 flex items-center gap-3">

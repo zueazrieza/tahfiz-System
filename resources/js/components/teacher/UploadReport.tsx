@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useAppStore } from '../../store/AppContext';
 import { Upload, FileText, CheckCircle, Target, Award, Plus } from 'lucide-react';
+import { ConfirmModal } from '../shared/ConfirmModal';
 
 export function UploadReport() {
   const { state } = useAppStore();
@@ -37,16 +38,19 @@ export function UploadReport() {
   const [targetM2, setTargetM2] = useState('');
   const [targetM3, setTargetM3] = useState('');
   const [targetSaved, setTargetSaved] = useState(false);
+  const [confirmReport, setConfirmReport] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState(false);
 
   const inCls = 'w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm';
 
   const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!confirm('Adakah anda pasti ingin menghantar laporan mingguan ini?')) {
-      return;
-    }
+    setConfirmReport(true);
+  };
+
+  const doReportSubmit = async () => {
+    setConfirmReport(false);
     try {
-      // Logic for saving weekly report to be viewed by Admin
       await axios.post('/api/reports/weekly', {
         teacher_id: teacher?.id,
         content,
@@ -65,12 +69,14 @@ export function UploadReport() {
   const handleTargetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudent) {
-       alert('Sila pilih pelajar.');
-       return;
-    }
-    if (!confirm('Adakah anda pasti ingin menetapkan sasaran hafazan pelajar ini?')) {
+      alert('Sila pilih pelajar.');
       return;
     }
+    setConfirmTarget(true);
+  };
+
+  const doTargetSubmit = async () => {
+    setConfirmTarget(false);
     try {
       const combinedTarget = `${targetM1} | ${targetM2} | ${targetM3}`;
       await axios.post('/api/students/set-target', {
@@ -88,6 +94,25 @@ export function UploadReport() {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={confirmReport}
+        title="Hantar Laporan Mingguan"
+        message="Adakah anda pasti ingin menghantar laporan mingguan ini kepada Admin? Laporan yang dihantar tidak boleh dipadam."
+        confirmLabel="Ya, Hantar"
+        confirmColor="blue"
+        onConfirm={doReportSubmit}
+        onCancel={() => setConfirmReport(false)}
+      />
+      <ConfirmModal
+        isOpen={confirmTarget}
+        title="Kemaskini Sasaran Pelajar"
+        message="Adakah anda pasti ingin menetapkan sasaran hafazan 3 bulan untuk pelajar ini? Pastikan sasaran ini telah dibincangkan bersama pelajar."
+        confirmLabel="Ya, Tetapkan"
+        confirmColor="purple"
+        onConfirm={doTargetSubmit}
+        onCancel={() => setConfirmTarget(false)}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-black text-slate-800">Laporan & Sasaran</h2>

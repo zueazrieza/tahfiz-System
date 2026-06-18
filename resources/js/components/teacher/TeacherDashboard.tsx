@@ -53,23 +53,14 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
   ).length;
   const todayName = new Date().toLocaleDateString('ms-MY', { weekday: 'long' });
 
-  const todaySchedule = teacherClasses.flatMap(cls =>
-    (cls.schedule ?? []).filter(s => s.day === todayName).map(s => ({
-      class: cls.name,
-      time: s.time,
-      students: cls.studentIds.length,
-      topic: s.topic,
-    }))
-  );
-
   const pendingRecords = new Set(
     state.students.filter(s => s.teacherId === teacher?.id).map(s => s.id)
   ).size - new Set(state.hafazanRecords.filter(h => h.date === new Date().toISOString().split('T')[0]).map(h => h.studentId)).size;
 
   const stats = [
-    { label: 'Pelajar Saya',     value: String(myStudentCount),                icon: <Users size={28} />,    color: '#3b82f6', bg: '#eff6ff' },
-    { label: 'Kelas Hari Ini',   value: String(todaySchedule.length || teacherClasses.length), icon: <Calendar size={28} />, color: '#10b981', bg: '#f0fdf4' },
-    { label: 'Rekod Tertunggak', value: String(Math.max(0, pendingRecords)),   icon: <FileText size={28} />, color: '#f59e0b', bg: '#fffbeb' },
+    { label: 'Pelajar Saya',     value: String(myStudentCount),              icon: <Users size={28} />,    color: '#3b82f6', bg: '#eff6ff' },
+    { label: 'Jumlah Kelas',     value: String(teacherClasses.length),       icon: <Calendar size={28} />, color: '#10b981', bg: '#f0fdf4' },
+    { label: 'Rekod Tertunggak', value: String(Math.max(0, pendingRecords)), icon: <FileText size={28} />, color: '#f59e0b', bg: '#fffbeb' },
   ];
 
   const renderContent = () => {
@@ -105,25 +96,6 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
                   <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: 0 }}>{s.label}</p>
                 </div>
               ))}
-            </div>
-
-            {/* Today's Schedule */}
-            <div style={{ background: '#fff', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111', margin: '0 0 1rem' }}>Jadual Hari Ini</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {todaySchedule.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.9rem 1rem', background: '#f9fafb', borderRadius: '12px' }}>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem', color: '#111' }}>{s.class}</p>
-                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>{s.topic}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#374151' }}>{s.time}</p>
-                      <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af' }}>{s.students} students</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Quick Actions */}
