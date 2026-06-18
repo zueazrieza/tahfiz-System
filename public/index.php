@@ -1,11 +1,5 @@
 <?php
 
-file_put_contents(
-    __DIR__ . '/../storage/logs/request_debug.log',
-    date('Y-m-d H:i:s') . " | " . $_SERVER['REQUEST_METHOD'] . " | " . $_SERVER['REQUEST_URI'] . " | Cookie: " . ($_SERVER['HTTP_COOKIE'] ?? 'None') . "\n",
-    FILE_APPEND
-);
-
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
