@@ -104,22 +104,55 @@ class AIPredictionController extends Controller
      */
     public function generateClass($classId)
     {
-        $students = Student::where('class_id', $classId)->get();
-        
+        $students = Student::with(['hafazanRecords', 'attendanceRecords'])->where('class_id', $classId)->get();
+
         foreach ($students as $student) {
-            // reuse logic above or similar
             $juzuk = $student->juzuk_completed ?? 0;
-            $trend = $juzuk > 15 ? 'Cemerlang' : ($juzuk > 5 ? 'Baik' : 'Perlu Perhatian');
-            $prediction = AIPrediction::updateOrCreate(
+            $records = $student->hafazanRecords;
+            $totalAyah = $records->sum('ayah_count');
+
+            $avgAyah = $records->count() > 0
+                ? round($totalAyah / $records->count(), 1)
+                : ($student->purata_sabaq_sehari > 0 ? (float)$student->purata_sabaq_sehari : null);
+
+            $attendance = $student->attendanceRecords;
+            $attendanceRate = 'N/A';
+            if ($attendance->count() > 0) {
+                $present = $attendance->whereIn('status', ['Hadir', 'Lewat'])->count();
+                $attendanceRate = round(($present / $attendance->count()) * 100) . '%';
+            }
+
+            $trend = ($juzuk >= 15 || ($avgAyah !== null && $avgAyah >= 10))
+                ? 'Cemerlang'
+                : (($juzuk >= 5 || ($avgAyah !== null && $avgAyah >= 5)) ? 'Baik' : 'Perlu Perhatian');
+
+            $juzukScore  = min(30, round(($juzuk / 30) * 30));
+            $recordScore = min(18, $records->count() * 2);
+            $confidence  = min(98, 50 + $juzukScore + $recordScore) . '%';
+
+            $remainingAyat = (30 - $juzuk) * 208;
+            if ($avgAyah !== null && $avgAyah > 0) {
+                $daysNeeded = ceil($remainingAyat / $avgAyah);
+                $completionDate = now()->addDays($daysNeeded)->format('Y-m-d');
+            } else {
+                $completionDate = now()->addMonths(max(1, 30 - $juzuk))->format('Y-m-d');
+            }
+
+            $rec = 'Teruskan momentum anda.';
+            if ($juzuk < 10) $rec = 'Tumpukan pada memantapkan bacaan juzuk awal.';
+            if ($avgAyah === null) $rec = 'Mula rekodkan hafazan harian supaya AI dapat membuat analisis yang lebih tepat.';
+            if ($attendanceRate !== 'N/A' && intval($attendanceRate) < 80) $rec = 'Kehadiran yang lebih baik akan mempercepatkan hafazan.';
+
+            AIPrediction::updateOrCreate(
                 ['student_id' => $student->id],
                 [
-                    'current_progress' => $juzuk . ' Juzuk',
-                    'estimated_completion' => now()->addMonths(max(1, 30 - $juzuk))->format('Y-m-d'),
-                    'performance_trend' => $trend,
-                    'confidence' => rand(80, 98) . '%',
-                    'recommendation' => 'Analisis AI mencadangkan fokus pada pengulangan juzuk yang telah dihafal.',
-                    'attendance_rate' => '95%',
-                    'avg_ayah_per_day' => rand(5, 12),
+                    'current_progress'     => $juzuk . ' Juzuk',
+                    'estimated_completion' => $completionDate,
+                    'performance_trend'    => $trend,
+                    'confidence'           => $confidence,
+                    'recommendation'       => $rec,
+                    'attendance_rate'      => ($attendanceRate === 'N/A') ? null : $attendanceRate,
+                    'avg_ayah_per_day'     => $avgAyah,
                 ]
             );
         }

@@ -109,19 +109,20 @@ class AchievementController extends Controller
 
     private function checkStreakAchievement($student, $records)
     {
-        // Simple 7-day streak check
         $uniqueDates = $records->pluck('date')->unique()->sortDesc();
         if ($uniqueDates->count() < 7) return;
 
         $streak = 0;
         $prevDate = null;
-        
+
         foreach ($uniqueDates as $d) {
             $current = Carbon::parse($d);
             if (!$prevDate) {
                 $streak = 1;
             } else {
-                if ($prevDate->diffInDays($current) <= 1) {
+                $diff = $prevDate->diffInDays($current);
+                // Allow gaps of up to 3 days to skip weekends (e.g. Friday → Monday = 3 days)
+                if ($diff <= 3) {
                     $streak++;
                 } else {
                     break;

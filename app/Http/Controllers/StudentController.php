@@ -423,18 +423,29 @@ class StudentController extends Controller
     }
     public function leaderboard($classId)
     {
-        $students = Student::where('class_id', $classId)
+        $students = Student::withCount('hafazanRecords')
+            ->where('class_id', $classId)
             ->orderBy('juzuk_completed', 'desc')
-            ->orderBy('ranking', 'asc')
+            ->orderBy('hafazan_records_count', 'desc')
+            ->orderBy('name', 'asc')
             ->get();
 
-        return $students->map(function ($s, $index) {
+        // Assign dense ranks (tied students get same rank)
+        $rank = 0;
+        $prevJuzuk = -1;
+        $prevCount = -1;
+        return $students->map(function ($s) use (&$rank, &$prevJuzuk, &$prevCount) {
+            if ($s->juzuk_completed !== $prevJuzuk || $s->hafazan_records_count !== $prevCount) {
+                $rank++;
+                $prevJuzuk = $s->juzuk_completed;
+                $prevCount = $s->hafazan_records_count;
+            }
             return [
-                'rank' => $index + 1,
-                'id' => $s->id,
-                'name' => $s->name,
+                'rank'     => $rank,
+                'id'       => $s->id,
+                'name'     => $s->name,
                 'progress' => $s->juzuk_completed . ' Juzuk',
-                'badge' => ($index === 0) ? '🏆' : (($index === 1) ? '🥈' : (($index === 2) ? '🥉' : ''))
+                'badge'    => ($rank === 1) ? '🏆' : (($rank === 2) ? '🥈' : (($rank === 3) ? '🥉' : '')),
             ];
         });
     }
@@ -511,13 +522,13 @@ class StudentController extends Controller
         $totalClasses   = \App\Models\ClassRoom::count();
 
         // Monthly revenue: sum of paid payments for current month
-        $monthlyRevenue = \App\Models\Payment::where('status', 'paid')
-            ->whereYear('payment_date', now()->year)
-            ->whereMonth('payment_date', now()->month)
+        $monthlyRevenue = \App\Models\Payment::where('status', 'Dibayar')
+            ->whereYear('paid_date', now()->year)
+            ->whereMonth('paid_date', now()->month)
             ->sum('amount');
 
         // Pending payments this month
-        $pendingPayments = \App\Models\Payment::where('status', 'pending')
+        $pendingPayments = \App\Models\Payment::whereIn('status', ['Belum Bayar', 'Tertunggak'])
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->count();

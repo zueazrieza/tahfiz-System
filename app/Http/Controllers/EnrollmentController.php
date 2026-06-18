@@ -144,9 +144,33 @@ class EnrollmentController extends Controller
         }
 
         $student->update($updateData);
+        $student->refresh();
 
-        // Send confirmation email to parent if status becomes Aktif / ENROLLED
+        // When student is activated, create their login account if it doesn't exist
         if ($student->status === 'Aktif') {
+            $existingUser = User::where('linked_id', $student->id)->where('role', 'student')->first();
+            if (!$existingUser) {
+                // Build email from name: slugify name + @tahfiz.com
+                $emailSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($student->name)));
+                $email = $emailSlug . '@tahfiz.com';
+                // Ensure email uniqueness
+                $base = $email;
+                $counter = 1;
+                while (User::where('email', $email)->exists()) {
+                    $email = str_replace('@', $counter . '@', $base);
+                    $counter++;
+                }
+                // Default password is IC number (or fallback to 'password')
+                $defaultPassword = $student->ic_no ?? 'password';
+                User::create([
+                    'name'      => $student->name,
+                    'email'     => $email,
+                    'password'  => Hash::make($defaultPassword),
+                    'role'      => 'student',
+                    'linked_id' => $student->id,
+                ]);
+            }
+
             $parent = User::find($student->parent_id);
             if ($parent && $parent->email) {
                 Mail::to($parent->email)->queue(new \App\Mail\StatusNotificationMail($student, 'Aktif'));

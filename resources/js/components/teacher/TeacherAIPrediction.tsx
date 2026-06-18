@@ -3,6 +3,7 @@ import { Brain, TrendingUp, Calendar, RefreshCw, Users, Download } from 'lucide-
 import { useAppStore } from '../../store/AppContext';
 import axios from 'axios';
 import { ScoreKomponen } from '../shared/ScoreKomponen';
+import { ConfirmModal } from '../shared/ConfirmModal';
 import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 
@@ -127,6 +128,8 @@ export function TeacherAIPrediction() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generated, setGenerated] = useState(false);
   const [predictions, setPredictions] = useState<any[]>([]);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
+  const [generateResult, setGenerateResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // Resolve teacher
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
@@ -180,25 +183,23 @@ export function TeacherAIPrediction() {
     }
   };
 
-  const handleGenerate = async () => {
-    if (!confirm('Adakah anda pasti ingin menjana semula ramalan AI untuk kelas anda?')) {
-      return;
-    }
-    setIsGenerating(true);
+  const handleGenerate = () => {
+    setShowGenerateConfirm(true);
+  };
 
+  const doGenerate = async () => {
+    setShowGenerateConfirm(false);
+    setIsGenerating(true);
     try {
       const classIds = (teacher?.classIds || []).map(id => String(id));
-      
       for (const cid of classIds) {
         await axios.post(`/api/ai-predictions/generate/class/${cid}`);
       }
-      
-      // After generating, fetch updated results
       await fetchPredictions();
-      alert('Ramalan AI telah dijana semula dan disimpan ke pangkalan data.');
+      setGenerateResult({ ok: true, msg: 'Ramalan AI telah dijana semula dan disimpan ke pangkalan data.' });
     } catch (err: any) {
       console.error('Failed to generate AI predictions', err);
-      alert('Gagal menjana ramalan AI: ' + (err.response?.data?.message || 'Ralat sambungan.'));
+      setGenerateResult({ ok: false, msg: 'Gagal menjana ramalan AI: ' + (err.response?.data?.message || 'Ralat sambungan.') });
     } finally {
       setIsGenerating(false);
     }
@@ -227,6 +228,23 @@ export function TeacherAIPrediction() {
 
   return (
     <div className="space-y-6">
+      <ConfirmModal
+        isOpen={showGenerateConfirm}
+        title="Jana Semula Ramalan AI"
+        message="Adakah anda pasti ingin menjana semula ramalan AI untuk semua pelajar dalam kelas anda? Proses ini akan mengambil masa beberapa saat."
+        confirmLabel="Ya, Jana Sekarang"
+        confirmColor="purple"
+        onConfirm={doGenerate}
+        onCancel={() => setShowGenerateConfirm(false)}
+      />
+
+      {generateResult && (
+        <div className={`rounded-xl p-4 text-sm font-medium flex items-center justify-between ${generateResult.ok ? 'bg-green-50 border border-green-300 text-green-800' : 'bg-red-50 border border-red-300 text-red-800'}`}>
+          <span>{generateResult.ok ? '✅' : '❌'} {generateResult.msg}</span>
+          <button onClick={() => setGenerateResult(null)} className="text-xs opacity-60 hover:opacity-100 ml-4">✕</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

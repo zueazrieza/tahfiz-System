@@ -40,7 +40,7 @@ class FinancialAnalyticsController extends Controller
 
         // Current Month Stats
         $activeStudentsCount = Student::where('status', 'Aktif')->count();
-        $monthlyFee = 200; // Assumption based on existing data
+        $monthlyFee = Payment::avg('amount') ?? 1112.50;
         $forecast = $activeStudentsCount * $monthlyFee;
 
         // Overall stats

@@ -103,24 +103,33 @@ class PaymentController extends Controller
     {
         $now = \Carbon\Carbon::now();
         $startYear = $now->year;
-        
+
+        // Use actual average fee from DB, fall back to 1112.50
+        $monthlyFee = \App\Models\Payment::where('student_id', $studentId)->avg('amount') ?? 1112.50;
+
         // Generate bills for each month of the current year up to now
         for ($m = 1; $m <= $now->month; $m++) {
             $exists = \App\Models\Payment::where('student_id', $studentId)
                 ->where('month', $m)
                 ->where('year', $startYear)
                 ->exists();
-            
+
             if (!$exists) {
                 \App\Models\Payment::create([
                     'student_id' => $studentId,
                     'month'      => $m,
                     'year'       => $startYear,
-                    'amount'     => 1112.50,
+                    'amount'     => $monthlyFee,
                     'status'     => 'Belum Bayar',
                     'due_date'   => \Carbon\Carbon::create($startYear, $m, 7)->toDateString(),
                 ]);
             }
         }
+
+        // Auto-mark unpaid past-due payments as Tertunggak
+        \App\Models\Payment::where('student_id', $studentId)
+            ->where('status', 'Belum Bayar')
+            ->where('due_date', '<', $now->toDateString())
+            ->update(['status' => 'Tertunggak']);
     }
 }

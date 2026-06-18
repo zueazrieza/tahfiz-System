@@ -65,6 +65,10 @@ class MudirEvaluationController extends Controller
             $student = Student::find($request->student_id);
             if ($student && $request->juzuk > $student->juzuk_completed) {
                 $student->juzuk_completed = $request->juzuk;
+                // Mark as KHATAM when all 30 juzuk are completed
+                if ($request->juzuk >= 30) {
+                    $student->status = 'KHATAM';
+                }
                 $student->save();
             }
         }

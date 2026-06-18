@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Models\HafazanRecord;
 use App\Models\Student;
 use App\Models\AppNotification;
@@ -125,6 +126,13 @@ class HafazanRecordController extends Controller
                 $parentUser = User::where('linked_id', $parent->id)->where('role', 'parent')->first();
                 if ($parentUser) AppNotification::send($parentUser->id, "Rekod Hafazan {$student->name}", $content, 'hafazan');
             }
+        }
+
+        // Sync achievements (milestones, streaks, quality badges)
+        try {
+            (new AchievementController())->syncStudentAchievements($record->student_id);
+        } catch (\Exception $e) {
+            Log::warning('Achievement sync failed: ' . $e->getMessage());
         }
 
         return response()->json($record, 201);

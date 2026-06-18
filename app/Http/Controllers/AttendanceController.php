@@ -22,21 +22,28 @@ class AttendanceController extends Controller
             'records.*.remarks' => 'nullable|string',
         ]);
 
+        // Resolve teacher_id: from request body, individual record, or auth user's linked_id
+        $resolvedTeacherId = $request->teacherId ?? $request->input('records.0.teacherId') ?? null;
+        if (!$resolvedTeacherId && auth()->check() && auth()->user()->role === 'teacher') {
+            $teacher = \App\Models\Teacher::where('id', auth()->user()->linked_id)->first();
+            $resolvedTeacherId = $teacher?->id;
+        }
+
         try {
             DB::beginTransaction();
 
             foreach ($request->records as $record) {
-                // Update or create attendance for the student on that date
+                $teacherId = $record['teacherId'] ?? $resolvedTeacherId;
                 Attendance::updateOrCreate(
                     [
                         'student_id' => $record['studentId'],
                         'date' => $record['date'],
                     ],
                     [
-                        'class_id' => $record['classId'],
-                        'teacher_id' => $request->teacherId ?? $record['teacherId'] ?? null,
-                        'status' => $record['status'],
-                        'remarks' => $record['remarks'] ?? null,
+                        'class_id'   => $record['classId'],
+                        'teacher_id' => $teacherId,
+                        'status'     => $record['status'],
+                        'remarks'    => $record['remarks'] ?? null,
                     ]
                 );
             }
