@@ -298,7 +298,7 @@ class StudentController extends Controller
         });
     }
 
-    public function dashboard($id)
+    public function studentDashboard($id)
     {
         $student = Student::with(['classRoom.primaryTeacher', 'teacher'])->findOrFail($id);
         
