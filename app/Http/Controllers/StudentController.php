@@ -399,7 +399,7 @@ class StudentController extends Controller
             default        => null,
         };
 
-        return response()->json([
+        $resData = [
             'juzukCompleted'   => $juzuk,
             'streak'           => $streak,
             'streakMilestone'  => $streakMilestone,
@@ -415,7 +415,11 @@ class StudentController extends Controller
                 'teacherName' => $student->classRoom?->primaryTeacher?->name ?? $student->teacher?->name ?? 'Tiada Murabbi',
                 'class_id'    => $student->class_id,
             ],
-        ]);
+        ];
+
+        Log::info("studentDashboard ID {$id} API response: " . json_encode($resData));
+
+        return response()->json($resData);
     }
     public function leaderboard($classId)
     {
