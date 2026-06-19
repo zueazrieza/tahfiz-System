@@ -2,17 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import axios from 'axios';
 import { usePolling } from '../../hooks/usePolling';
-import { 
-  Calendar, 
-  Target, 
-  Trophy, 
-  Brain, 
-  LogOut, 
-  BookOpen, 
-  LayoutDashboard, 
-  Mic2, 
-  Users, 
-  Layers, 
+import {
+  Target,
+  Trophy,
+  Brain,
+  LogOut,
+  BookOpen,
+  LayoutDashboard,
+  Mic2,
+  Mic,
+  Users,
+  Layers,
   X,
   Menu,
   DollarSign,
@@ -21,9 +21,10 @@ import {
   MessageSquare,
   Award
 } from 'lucide-react';
-import { LearningSchedule } from './LearningSchedule';
+import { SkeletonProfileCard, SkeletonStatCards, SkeletonTable } from '../shared/Skeleton';
 import { HafazanTarget } from './HafazanTarget';
 import { Achievements } from './Achievements';
+import { MyRecordings } from './MyRecordings';
 import { StudentAIPrediction } from './StudentAIPrediction';
 import { HafazanAI } from '../hafazan/HafazanAI';
 import { QuranExplorer } from '../hafazan/QuranExplorer';
@@ -39,16 +40,16 @@ interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-export type StudentView = 'home' | 'schedule' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'info-center' | 'level-selection' | 'quran-explorer';
+export type StudentView = 'home' | 'target' | 'achievements' | 'ai' | 'penilaian-ai' | 'pembelajaran' | 'profile' | 'info-center' | 'level-selection' | 'quran-explorer' | 'rakaman';
 
 const navItems: { id: StudentView; label: string; icon: React.ReactNode }[] = [
   { id: 'home',           label: 'Papan Pemuka',        icon: <LayoutDashboard size={20} /> },
-  { id: 'schedule',       label: 'Jadual Pelajaran',    icon: <Calendar size={20} /> },
   { id: 'target',         label: 'Sasaran Hafazan',     icon: <Target size={20} /> },
   { id: 'info-center',    label: 'Pusat Maklumat',      icon: <Bell size={20} /> },
   { id: 'pembelajaran',   label: 'Pelan Pengajian',     icon: <Layers size={20} /> },
   { id: 'quran-explorer', label: 'Penjelajah Quran',    icon: <BookOpen size={20} /> },
-  { id: 'penilaian-ai',   label: 'Penilaian AI (Beta)', icon: <Mic2 size={20} /> },
+  { id: 'rakaman',        label: 'Rakaman Suara',       icon: <Mic size={20} /> },
+  { id: 'penilaian-ai',   label: 'Latihan Hafazan',     icon: <Mic2 size={20} /> },
   { id: 'achievements',   label: 'Pencapaian',          icon: <Trophy size={20} /> },
   { id: 'ai',             label: 'Ramalan AI',          icon: <Brain size={20} /> },
   { id: 'level-selection',label: 'Peringkat Hafazan',   icon: <Award size={20} /> },
@@ -114,26 +115,24 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
     },
   ];
 
-  const studentClass = state.classes.find(c => c.id === student?.class_id);
-  const todayName = new Date().toLocaleDateString('ms-MY', { weekday: 'long' });
-  const todaySchedule = (studentClass?.schedule ?? []).filter(s => s.day === todayName);
-
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mb-4" />
-          <p className="text-gray-500">Memuatkan data papan pemuka anda...</p>
+        <div className="space-y-6" aria-busy="true" aria-label="Memuatkan papan pemuka...">
+          <div className="h-8 bg-slate-200 rounded-lg w-56 animate-pulse" />
+          <SkeletonProfileCard />
+          <SkeletonStatCards count={3} />
+          <SkeletonTable rows={3} cols={4} />
         </div>
       );
     }
 
     switch (currentView) {
-      case 'schedule':     return <LearningSchedule />;
       case 'target':       return <HafazanTarget />;
       case 'achievements': return <Achievements />;
       case 'ai':           return <StudentAIPrediction onNavigate={setCurrentView} />;
       case 'quran-explorer': return <QuranExplorer onNavigate={setCurrentView} />;
+      case 'rakaman':      return <MyRecordings studentId={String(authUser.linked_id)} />;
       case 'penilaian-ai': return <HafazanAI />;
       case 'pembelajaran': return <StudyRoadmap />;
       case 'profile':      return <ProfileView userId={authUser?.id || ''} />;
@@ -249,25 +248,6 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
                 </div>
               );
             })()}
-
-            {/* Today's Schedule */}
-            <div style={{ background: '#fff', borderRadius: '16px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111', margin: '0 0 1rem' }}>Jadual Hari Ini</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {todaySchedule.length === 0 && (
-                  <p style={{ color: '#9ca3af', fontSize: '0.85rem', margin: 0 }}>Tiada sesi dijadualkan hari ini — berehat sejenak! 🌿</p>
-                )}
-                {todaySchedule.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.9rem 1rem', background: '#f9fafb', borderRadius: '12px' }}>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#16a34a', minWidth: '75px' }}>{item.time}</span>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 600, fontSize: '0.88rem', color: '#111' }}>{item.topic}</p>
-                      <p style={{ margin: 0, fontSize: '0.78rem', color: '#6b7280' }}>{studentClass?.name}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Motivation */}
             <div style={{ background: 'linear-gradient(135deg,#ede9fe,#dbeafe)', borderRadius: '16px', padding: '1.25rem', border: '2px solid #c4b5fd' }}>
