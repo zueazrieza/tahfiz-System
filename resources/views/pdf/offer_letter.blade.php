@@ -72,11 +72,11 @@
         /* ── Bismillah ── */
         .lh-bismillah {
             text-align: center;
-            font-size: 17px;
-            padding: 6px 0 4px;
-            direction: rtl;
-            letter-spacing: 0.04em;
-            color: #1a1a1a;
+            font-size: 13px;
+            padding: 8px 0 4px;
+            font-style: italic;
+            color: #444;
+            letter-spacing: 0.06em;
         }
 
         /* ── Document title ── */
@@ -149,8 +149,8 @@
         <div>
             <div class="lh-org-name">AKADEMI AL-QURAN AMALILLAH</div>
             <div class="lh-address">
-                &#128205; Lot 2121, Jalan Tebakang, Kampung Tebakang, 21400 Bukit Payong, Terengganu<br>
-                &#128222; 013-9482698 &nbsp;&nbsp; &#9993; akademiakmal@gmail.com
+                Lot 2121, Jalan Tebakang, Kampung Tebakang, 21400 Bukit Payong, Terengganu<br>
+                Tel: 013-9482698 &nbsp;&nbsp; E-mel: akademiakmal@gmail.com
             </div>
         </div>
         <div class="lh-logo-col">
@@ -168,7 +168,7 @@
         Tarikh: <strong>{{ date('j') }} {{ config('app.hijri_months', ['', 'Muharam','Safar','Rabiulawal','Rabiulakhir','Jamadilawal','Jamadilakhir','Rejab','Syaaban','Ramadan','Syawal','Zulkaedah','Zulhijah'])[intval(date('n'))] ?? date('F') }} {{ date('Y') }}H / {{ date('j M Y') }}</strong>
     </div>
 
-    <div class="lh-bismillah">&#1576;&#1616;&#1587;&#1618;&#1605;&#1616; &#1575;&#1604;&#1604;&#1617;&#1614;&#1607;&#1616; &#1575;&#1604;&#1585;&#1617;&#1614;&#1581;&#1618;&#1605;&#1614;&#1606;&#1616; &#1575;&#1604;&#1585;&#1617;&#1614;&#1581;&#1616;&#1610;&#1618;&#1605;&#1616;</div>
+    <div class="lh-bismillah">- Bismillahirrahmanirrahim -</div>
     <div class="lh-doc-title">Surat Tawaran Rasmi Kemasukan Pelajar</div>
     <div class="lh-rule"></div>
 
@@ -213,7 +213,7 @@
     <!-- ── Footer ── -->
     <div class="lh-footer">
         <div class="lh-footer-bar">
-            <div class="lh-footer-tagline">Setahun Menempa Sejarah &#10022;</div>
+            <div class="lh-footer-tagline">Setahun Menempa Sejarah *</div>
             <div class="lh-footer-brand">
                 <strong>AKMAL — Sistem Pengurusan Tahfiz</strong><br>
                 Dokumen ini dijana secara elektronik dan sah.
