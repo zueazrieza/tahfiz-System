@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import axios from 'axios';
 import { usePolling } from '../../hooks/usePolling';
@@ -65,18 +65,23 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   
-  // ── Live polling: refetch student dashboard every 30 s ──────────────────
+  // ── Initial load + silent background polling every 30 s ─────────────────
+  const initializedRef = useRef(false);
   usePolling(async () => {
     try {
       const id = authUser.linked_id;
       if (!id) return;
-      setLoading(true);
+      // Show spinner on first load only — background refreshes are silent
+      if (!initializedRef.current) setLoading(true);
       const res = await axios.get(`/api/students/dashboard/${id}`);
       setDashboardData(res.data);
     } catch (err) {
       console.error('Error fetching dashboard data', err);
     } finally {
-      setLoading(false);
+      if (!initializedRef.current) {
+        setLoading(false);
+        initializedRef.current = true;
+      }
     }
   }, 30_000);
 
