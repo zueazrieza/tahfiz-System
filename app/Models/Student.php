@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'user_id', 'name', 'phone', 'ic_no', 'matric_no', 'intake', 'gender', 'dob', 'age', 'address',
         'marital_status', 'blood_type', 'pob', 'citizenship', 'race', 'religion',
@@ -15,7 +17,8 @@ class Student extends Model
         'status', 'status_khatam', 'medical_history', 'admission_type', 'ranking',
         'juzuk_semasa', 'purata_sabaq_sehari', 'jenis_bacaan', 'target_bil_juzuk', 'target_ranking',
         'tarikh_tamat', 'batch',
-        'interview_date', 'interview_type', 'interview_time', 'interview_location', 'hafazan_mark', 'tajwid_mark', 'akhlaq_mark', 'notes'
+        'interview_date', 'interview_type', 'interview_time', 'interview_location', 'hafazan_mark', 'tajwid_mark', 'akhlaq_mark', 'notes',
+        'target_hafazan'
     ];
 
     /**

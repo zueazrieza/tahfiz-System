@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\AppNotification;
 
 class PaymentController extends Controller
 {
@@ -96,6 +97,27 @@ class PaymentController extends Controller
     {
         $payment = \App\Models\Payment::findOrFail($id);
         $payment->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function notifyPaid(Request $request, string $id)
+    {
+        $payment = \App\Models\Payment::findOrFail($id);
+        $studentName = $request->input('student_name', 'Pelajar');
+        $period      = $request->input('period', 'bulan berkenaan');
+
+        $parentName = $request->user()->name;
+
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            AppNotification::send(
+                $admin->id,
+                'Pengesahan Bayaran Diperlukan',
+                "Ibu bapa/penjaga {$parentName} melaporkan bahawa bayaran yuran {$studentName} bagi tempoh {$period} telah dijelaskan. Sila semak dan kemaskini status invois.",
+                'payment'
+            );
+        }
+
         return response()->json(['success' => true]);
     }
 

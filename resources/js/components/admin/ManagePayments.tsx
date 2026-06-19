@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Pagination } from '../shared/Pagination';
 import { DollarSign, FileText, CheckCircle, Clock, AlertCircle, Printer, X } from 'lucide-react';
 import { useAppStore, getMonthlyRevenue, getTotalRevenue, getPendingRevenue } from '../../store/AppContext';
 import axios from 'axios';
+import { AKMALLetterhead } from '../shared/AKMALLetterhead';
 
 const MONTHS = ['','Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
 
@@ -16,6 +18,8 @@ export function ManagePayments() {
   const [filterFeeType, setFilterFeeType] = useState<string>('semua');
   const [filterMonth, setFilterMonth] = useState<string>('semua');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const PAYMENTS_PER_PAGE = 20;
 
 
   const feeTypes = [
@@ -84,6 +88,9 @@ export function ManagePayments() {
 
     return true;
   });
+
+  const totalPaymentPages = Math.ceil(filteredPayments.length / PAYMENTS_PER_PAGE);
+  const paginatedPayments = filteredPayments.slice((paymentsPage - 1) * PAYMENTS_PER_PAGE, paymentsPage * PAYMENTS_PER_PAGE);
 
   const total = filteredPayments.reduce((acc, curr) => acc + Number(curr.amount), 0);
   const paid = filteredPayments.filter(p => p.status === 'Dibayar').reduce((acc, curr) => acc + Number(curr.amount), 0);
@@ -157,7 +164,7 @@ export function ManagePayments() {
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => { setActiveTab(tab.id as any); setPaymentsPage(1); }}
             className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
               activeTab === tab.id
                 ? 'bg-white text-green-700 shadow-sm font-bold'
@@ -177,7 +184,7 @@ export function ManagePayments() {
             type="text"
             placeholder="Cari nama pelajar..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => { setSearchQuery(e.target.value); setPaymentsPage(1); }}
             className="w-full pl-4 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm"
           />
         </div>
@@ -186,7 +193,7 @@ export function ManagePayments() {
         <div>
           <select
             value={filterFeeType}
-            onChange={e => setFilterFeeType(e.target.value)}
+            onChange={e => { setFilterFeeType(e.target.value); setPaymentsPage(1); }}
             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm"
           >
             {feeTypes.map(ft => (
@@ -199,7 +206,7 @@ export function ManagePayments() {
         <div>
           <select
             value={filterMonth}
-            onChange={e => setFilterMonth(e.target.value)}
+            onChange={e => { setFilterMonth(e.target.value); setPaymentsPage(1); }}
             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm"
           >
             {monthsFilter.map(m => (
@@ -255,7 +262,7 @@ export function ManagePayments() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredPayments.map(p => (
+              {paginatedPayments.map(p => (
                 <tr key={p.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{getStudentName(p.studentId)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{MONTHS[p.month]} {p.year}</td>
@@ -293,8 +300,10 @@ export function ManagePayments() {
             </tbody>
           </table>
         </div>
+        <div className="px-6 pb-4 bg-white rounded-b-xl border-t border-gray-100">
+          <Pagination currentPage={paymentsPage} totalPages={totalPaymentPages} onPageChange={setPaymentsPage} totalItems={filteredPayments.length} itemsPerPage={PAYMENTS_PER_PAGE} />
+        </div>
       </div>
-
 
       {/* Invoice Modal */}
       {showInvoiceModal && (
@@ -413,35 +422,13 @@ function InvoiceViewModal({ payment, onClose, getClassName }: { payment: any; on
 
         <div className="p-8 max-h-[70vh] overflow-y-auto">
           {/* Invoice Page Container */}
-          <div id="printable-invoice" className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm text-slate-800">
-            {/* Invoice Header */}
-            <div className="flex justify-between items-start gap-4 border-b border-slate-100 pb-6 mb-6">
-              <div className="flex items-center gap-3">
-                <img src="/images/logo.png" alt="AKMAL Logo" className="h-16 w-auto object-contain" onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }} />
-                <div>
-                  <h1 className="text-lg font-black text-emerald-800 tracking-tight">AKMAL HQ</h1>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Akademi Al-Quran Amalillah Terengganu</p>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                    Lot 2123, Kampung Tebakang Bukit Payung,<br />
-                    21400 Marang, Terengganu<br />
-                    Tel: 011-1987 4963 | E-mel: info@akmal.edu.my
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className={`inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full mb-3 ${
-                  payment.status === 'Dibayar' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                }`}>
-                  {payment.status}
-                </span>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">No. Invois</p>
-                <p className="text-sm font-bold text-slate-800 mb-2">{invoiceNo}</p>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tarikh</p>
-                <p className="text-xs font-bold text-slate-800">{invoiceDate}</p>
-              </div>
-            </div>
+          <div id="printable-invoice" className="bg-white border border-slate-100 rounded-2xl shadow-sm text-slate-800 overflow-hidden">
+            {/* AKMAL Letterhead */}
+            <AKMALLetterhead
+              docType={`Invois ${invoiceNo}`}
+              meta={`Status: ${payment.status} · Tarikh: ${invoiceDate}`}
+            />
+            <div className="p-6">
 
             {/* Bill To Info */}
             <div className="grid grid-cols-2 gap-8 mb-8">
@@ -500,36 +487,19 @@ function InvoiceViewModal({ payment, onClose, getClassName }: { payment: any; on
               </ul>
             </div>
           </div>
+          </div>
         </div>
       </div>
 
       {/* Off-screen duplicate strictly for clean system-level printing */}
-      <div className="hidden print:block" style={{ width: '100%' }}>
-        <div id="printable-invoice" className="bg-white p-8 text-slate-800" style={{ width: '100%', fontFamily: 'sans-serif' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #e2e8f0', paddingBottom: '16px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '64px', objectFit: 'contain' }} />
-              <div>
-                <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#065f46' }}>AKMAL HQ</h1>
-                <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#0f766e', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Akademi Al-Quran Amalillah Terengganu</p>
-                <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#64748b', lineHeight: 1.4 }}>
-                  Lot 2123, Kampung Tebakang Bukit Payung,<br />
-                  21400 Marang, Terengganu<br />
-                  Tel: 011-1987 4963 | E-mel: info@akmal.edu.my
-                </p>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ display: 'inline-block', padding: '4px 12px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', borderRadius: '9999px', background: payment.status === 'Dibayar' ? '#dcfce7' : '#fee2e2', color: payment.status === 'Dibayar' ? '#15803d' : '#b91c1c', marginBottom: '8px' }}>
-                {payment.status}
-              </span>
-              <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>No. Invois</p>
-              <p style={{ margin: '2px 0 8px', fontSize: '14px', fontWeight: 'bold', color: '#1e293b' }}>{invoiceNo}</p>
-              <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Tarikh</p>
-              <p style={{ margin: '2px 0 0', fontSize: '11px', fontWeight: 'bold', color: '#1e293b' }}>{invoiceDate}</p>
-            </div>
-          </div>
+      <div className="hidden print:block" style={{ width: '100%', fontFamily: 'sans-serif' }}>
+        <div id="printable-invoice" className="bg-white text-slate-800" style={{ width: '100%' }}>
+          {/* AKMAL Letterhead */}
+          <AKMALLetterhead
+            docType={`Invois ${invoiceNo}`}
+            meta={`Status: ${payment.status} · Tarikh: ${invoiceDate}`}
+          />
+          <div style={{ padding: '0 24px 24px' }}>
 
           {/* Bill to */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
@@ -586,6 +556,7 @@ function InvoiceViewModal({ payment, onClose, getClassName }: { payment: any; on
               <li>Sila simpan invois/resit ini untuk rujukan masa hadapan.</li>
               <li>Sebarang pertanyaan mengenai yuran, sila hubungi pejabat pentadbiran AKMAL.</li>
             </ul>
+          </div>
           </div>
         </div>
       </div>

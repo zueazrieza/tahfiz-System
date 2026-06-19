@@ -194,6 +194,35 @@ class TeacherController extends Controller
     {
         $teacher = Teacher::findOrFail($id);
         $teacher->delete();
+        \App\Models\ActivityLog::log('Guru Dipadam (Boleh Dipulihkan)', $teacher->name);
         return response()->json(null, 204);
+    }
+
+    public function trashed()
+    {
+        return Teacher::onlyTrashed()->get()->map(fn($t) => [
+            'id'        => $t->id,
+            'name'      => $t->name,
+            'email'     => $t->email,
+            'phone'     => $t->phone,
+            'deletedAt' => $t->deleted_at?->format('d/m/Y H:i'),
+        ]);
+    }
+
+    public function restore(string $id)
+    {
+        $teacher = Teacher::onlyTrashed()->findOrFail($id);
+        $teacher->restore();
+        \App\Models\ActivityLog::log('Guru Dipulihkan', $teacher->name);
+        return response()->json(['success' => true, 'message' => "Guru {$teacher->name} berjaya dipulihkan."]);
+    }
+
+    public function forceDelete(string $id)
+    {
+        $teacher = Teacher::onlyTrashed()->findOrFail($id);
+        $name = $teacher->name;
+        $teacher->forceDelete();
+        \App\Models\ActivityLog::log('Guru Dipadam Kekal', $name);
+        return response()->json(['success' => true]);
     }
 }

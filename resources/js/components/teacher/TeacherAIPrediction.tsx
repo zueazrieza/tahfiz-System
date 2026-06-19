@@ -6,6 +6,7 @@ import { ScoreKomponen } from '../shared/ScoreKomponen';
 import { ConfirmModal } from '../shared/ConfirmModal';
 import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
+import { AKMALLetterhead, AKMALLetterFooter } from '../shared/AKMALLetterhead';
 
 function StudentPredictionCard({ pred, trendColor }: { pred: any; trendColor: (t: string) => string }) {
   const printRef = useRef<HTMLDivElement>(null);
@@ -89,11 +90,9 @@ function StudentPredictionCard({ pred, trendColor }: { pred: any; trendColor: (t
 
       {/* Hidden print view */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '680px', opacity: 0, pointerEvents: 'none', zIndex: -9999, overflow: 'hidden', height: '1px' }}>
-        <div ref={printRef} style={{ width: '680px', background: '#fff', padding: '24px', fontFamily: 'Arial, sans-serif', color: '#111' }}>
-          <div style={{ borderBottom: '3px solid #7c3aed', paddingBottom: '12px', marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '16px', color: '#7c3aed', fontWeight: 900 }}>AKMAL — Laporan Ramalan AI Pelajar</h2>
-            <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#555' }}>Dijana: {new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-          </div>
+        <div ref={printRef} style={{ width: '680px', background: '#fff', fontFamily: 'Arial, sans-serif', color: '#111' }}>
+          <AKMALLetterhead docType="Laporan Ramalan AI Pelajar" />
+          <div style={{ padding: '0 20px' }}>
           <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '4px' }}>{pred.studentName}</h3>
           <p style={{ fontSize: '12px', color: '#555', marginBottom: '16px' }}>{pred.currentProgress} · Trend: {pred.performanceTrend}</p>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '16px' }}>
@@ -116,6 +115,8 @@ function StudentPredictionCard({ pred, trendColor }: { pred: any; trendColor: (t
           <div style={{ background: '#f5f3ff', borderRadius: '8px', padding: '12px' }}>
             <p style={{ fontWeight: 700, fontSize: '11px', marginBottom: '6px', color: '#5b21b6' }}>Cadangan AI:</p>
             <p style={{ fontSize: '10px', color: '#374151', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{pred.recommendation}</p>
+          </div>
+          <AKMALLetterFooter />
           </div>
         </div>
       </div>

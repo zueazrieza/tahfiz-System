@@ -18,6 +18,7 @@ use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AIAssessmentController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\MudirEvaluationController;
+use App\Http\Controllers\HafazanRecordingController;
 use App\Http\Controllers\WeeklyReportController;
 use App\Http\Controllers\AchievementController as AchCtrl;
 use App\Http\Controllers\AnnouncementController;
@@ -77,9 +78,12 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::get('/teacher/students',           [StudentController::class, 'getTeacherStudents']);
         Route::get('/admin/stats',                [StudentController::class, 'adminStats']);
         Route::get('/admin/activities',           [StudentController::class, 'adminActivities']);
+        // Explicit named routes BEFORE apiResource to prevent wildcard shadowing
+        Route::get('/students/trashed',           [StudentController::class, 'trashed']);
         Route::apiResource('students', StudentController::class);
 
-        // Teachers
+        // Teachers — same ordering rule
+        Route::get('/teachers/trashed',           [TeacherController::class, 'trashed']);
         Route::apiResource('teachers', TeacherController::class);
 
         // Classes
@@ -87,6 +91,12 @@ Route::prefix('api')->middleware(['web'])->group(function () {
 
         // Payments
         Route::apiResource('payments', PaymentController::class);
+        Route::post('/payments/{id}/notify-paid', [PaymentController::class, 'notifyPaid']);
+
+        // Voice Recordings
+        Route::get('/recordings', [HafazanRecordingController::class, 'index']);
+        Route::post('/recordings', [HafazanRecordingController::class, 'store']);
+        Route::delete('/recordings/{id}', [HafazanRecordingController::class, 'destroy']);
 
         // Attendance
         Route::get('/attendance',          [AttendanceController::class, 'index']);
@@ -104,6 +114,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::post('/ai/import-alumni',                    [AIController::class, 'importAlumni']);
         Route::get('/ai/benchmarks',                        [AIController::class, 'getAIBenchmarks']);
         Route::get('/quran/verses/{chapter}',               [AIController::class, 'getQuranVerses']);
+        Route::get('/quran/translation/{chapter}',          [AIController::class, 'getQuranTranslation']);
         Route::apiResource('ai-assessments', AIAssessmentController::class);
 
         // Achievements
@@ -158,6 +169,12 @@ Route::prefix('api')->middleware(['web'])->group(function () {
             Route::post('/users/{id}/reject',         [UserController::class, 'rejectUser']);
             Route::get('/users/students-no-account',  [UserController::class, 'studentsWithoutAccounts']);
             Route::post('/users/student-account',     [UserController::class, 'createStudentAccount']);
+
+            // Restore / permanent-delete — admin only
+            Route::post('/students/{id}/restore',     [StudentController::class, 'restore']);
+            Route::delete('/students/{id}/force',     [StudentController::class, 'forceDelete']);
+            Route::post('/teachers/{id}/restore',     [TeacherController::class, 'restore']);
+            Route::delete('/teachers/{id}/force',     [TeacherController::class, 'forceDelete']);
         });
     });
 });

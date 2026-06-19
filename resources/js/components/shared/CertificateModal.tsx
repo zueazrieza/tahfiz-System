@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Download, Share2, Award, CheckCircle } from 'lucide-react';
+import { AKMALLetterhead } from './AKMALLetterhead';
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -40,8 +41,12 @@ export function CertificateModal({ isOpen, onClose, studentName, achievementName
         </div>
 
         {/* Certificate Body (Printable Area) */}
-        <div className="p-12 md:p-20 overflow-y-auto max-h-[80vh] bg-slate-50 flex justify-center">
-          <div id="printable-certificate" className="certificate-paper bg-white relative shadow-xl p-1 bg-gradient-to-br from-amber-200 via-amber-100 to-amber-200">
+        <div className="overflow-y-auto max-h-[80vh] bg-slate-50">
+          {/* AKMAL letterhead – visible on print */}
+          <div id="printable-certificate" className="certificate-paper bg-white relative shadow-xl mx-auto">
+          <AKMALLetterhead docType="Sijil Penghargaan" />
+          <div className="flex justify-center p-8 pt-4">
+          <div className="p-1 bg-gradient-to-br from-amber-200 via-amber-100 to-amber-200 w-full max-w-2xl">
              <div className="bg-white p-12 md:p-16 border-[12px] border-double border-amber-300 relative h-full flex flex-col items-center text-center">
                 
                 {/* Decorative Corners */}
@@ -87,6 +92,8 @@ export function CertificateModal({ isOpen, onClose, studentName, achievementName
                 </div>
 
              </div>
+          </div>
+          </div>
           </div>
         </div>
 

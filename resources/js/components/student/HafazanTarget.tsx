@@ -119,7 +119,7 @@ export function HafazanTarget() {
             </div>
             <div className="ml-auto text-right">
               <p className={`text-2xl font-bold ${textMap[t.color]}`}>{t.current}</p>
-              <p className="text-sm text-gray-500">/ {t.target} ayah</p>
+              <p className="text-sm text-gray-500">/ {t.target} ayat</p>
             </div>
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Pagination } from '../shared/Pagination';
 import { Search, Eye, FileSpreadsheet, User, Phone, Briefcase, DollarSign, Users, Upload, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import axios from 'axios';
@@ -7,6 +8,8 @@ export function ManageParents() {
   const { state, dispatch } = useAppStore();
   const [parents, setParents] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [parentsPage, setParentsPage] = useState(1);
+  const PARENTS_PER_PAGE = 15;
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedParent, setSelectedParent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -82,6 +85,9 @@ export function ManageParents() {
     p.icNo?.includes(searchTerm)
   );
 
+  const totalParentPages = Math.ceil(filtered.length / PARENTS_PER_PAGE);
+  const paginatedParents = filtered.slice((parentsPage - 1) * PARENTS_PER_PAGE, parentsPage * PARENTS_PER_PAGE);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -111,7 +117,7 @@ export function ManageParents() {
           <input 
             type="text" 
             value={searchTerm} 
-            onChange={e => setSearchTerm(e.target.value)} 
+            onChange={e => { setSearchTerm(e.target.value); setParentsPage(1); }}
             placeholder="Cari nama, IC, atau emel..." 
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#6FC7CB] outline-none" 
           />
@@ -131,7 +137,7 @@ export function ManageParents() {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                  <tr><td colSpan={6} className="px-6 py-20 text-center text-slate-400">Memuatkan data...</td></tr>
-              ) : filtered.map(parent => (
+              ) : paginatedParents.map(parent => (
                 <tr key={parent.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1.5">
@@ -189,6 +195,9 @@ export function ManageParents() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="px-6 pb-4">
+          <Pagination currentPage={parentsPage} totalPages={totalParentPages} onPageChange={setParentsPage} totalItems={filtered.length} itemsPerPage={PARENTS_PER_PAGE} />
         </div>
       </div>
 

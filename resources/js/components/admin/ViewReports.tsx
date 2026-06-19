@@ -8,6 +8,7 @@ import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 import axios from 'axios';
 import { useAppStore, getStudentAttendanceRate } from '../../store/AppContext';
+import { AKMALLetterhead, AKMALLetterFooter } from '../shared/AKMALLetterhead';
 
 /* ─── helper: render a hidden "print-ready" div, capture it as PDF ─────────── */
 async function captureElementAsPDF(
@@ -49,26 +50,12 @@ async function captureElementAsPDF(
 
 /* ─── Printable Hafazan Report ─────────────────────────────────────────────── */
 function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any[] }) {
-  const now = new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' });
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '24px', background: '#fff', color: '#111', width: '780px' }}>
-      {/* Header */}
-      <div style={{ borderBottom: '3px solid #16a34a', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '56px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
-          <div>
-            <h1 style={{ margin: 0, fontSize: '20px', color: '#16a34a', fontWeight: 900 }}>AKMAL — Laporan Hafazan</h1>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555', fontWeight: 'bold' }}>Akademi Al-Quran Amalillah Terengganu</p>
-            <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#777' }}>Lot 2123, Kampung Tebakang Bukit Payung, 21400 Marang, Terengganu</p>
-          </div>
-        </div>
-        <div style={{ textAlign: 'right', fontSize: '11px', color: '#555' }}>
-          <div>Dijana: {now}</div>
-          <div>Jumlah Rekod: {state.hafazanRecords.length}</div>
-        </div>
-      </div>
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', width: '780px' }}>
+      <AKMALLetterhead docType="Laporan Hafazan" meta={`Jumlah Rekod: ${state.hafazanRecords.length}`} />
 
       {/* Summary */}
+      <div style={{ padding: '0 20px' }}>
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
         {[
           { label: 'Jumlah Sesi', value: state.hafazanRecords.length, color: '#16a34a' },
@@ -151,9 +138,7 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
         )}
       </div>
 
-      {/* Footer */}
-      <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '20px', paddingTop: '10px', fontSize: '10px', color: '#aaa', textAlign: 'center' }}>
-        AKMAL Sistem Pengurusan Tahfiz — Laporan Sulit — {now}
+      <AKMALLetterFooter />
       </div>
     </div>
   );
@@ -161,28 +146,13 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
 
 /* ─── Printable Payment Report ─────────────────────────────────────────────── */
 function PaymentPrintView({ state }: { state: any }) {
-  const now = new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' });
   const total = state.payments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   const paid = state.payments.filter((p: any) => p.status === 'Dibayar').reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   const pending = total - paid;
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '24px', background: '#fff', color: '#111', width: '780px' }}>
-      {/* Header */}
-      <div style={{ borderBottom: '3px solid #2563eb', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '56px', objectFit: 'contain' }} onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
-          <div>
-            <h1 style={{ margin: 0, fontSize: '20px', color: '#2563eb', fontWeight: 900 }}>AKMAL — Laporan Pembayaran</h1>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555', fontWeight: 'bold' }}>Akademi Al-Quran Amalillah Terengganu</p>
-            <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#777' }}>Lot 2123, Kampung Tebakang Bukit Payung, 21400 Marang, Terengganu</p>
-          </div>
-        </div>
-        <div style={{ textAlign: 'right', fontSize: '11px', color: '#555' }}>
-          <div>Dijana: {now}</div>
-          <div>Jumlah Invois: {state.payments.length}</div>
-        </div>
-      </div>
-
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', width: '780px' }}>
+      <AKMALLetterhead docType="Laporan Pembayaran" meta={`Jumlah Invois: ${state.payments.length}`} />
+      <div style={{ padding: '0 20px' }}>
       {/* Summary */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
         {[
@@ -241,9 +211,7 @@ function PaymentPrintView({ state }: { state: any }) {
         </table>
       </div>
 
-      {/* Footer */}
-      <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '20px', paddingTop: '10px', fontSize: '10px', color: '#aaa', textAlign: 'center' }}>
-        AKMAL Sistem Pengurusan Tahfiz — Laporan Sulit — {now}
+      <AKMALLetterFooter />
       </div>
     </div>
   );

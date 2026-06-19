@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import axios from 'axios';
 import { usePolling } from '../../hooks/usePolling';
@@ -38,6 +38,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [notifCount, setNotifCount] = useState(0);
   const { state } = useAppStore();
+  const initializedRef = useRef(false);
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
@@ -65,16 +66,19 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
 
   const fetchChildren = async () => {
     try {
-      setLoading(true);
+      if (!initializedRef.current) setLoading(true);
       const resp = await axios.get('/api/parent/children');
       setChildren(resp.data);
-      if (resp.data.length > 0) {
+      if (resp.data.length > 0 && !selectedChildId) {
         setSelectedChildId(String(resp.data[0].id));
       }
     } catch (err) {
       console.error('Failed to fetch children', err);
     } finally {
-      setLoading(false);
+      if (!initializedRef.current) {
+        setLoading(false);
+        initializedRef.current = true;
+      }
     }
   };
 
@@ -105,9 +109,9 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
 
   const renderContent = () => {
     switch (currentView) {
-      case 'progress':      return <ViewProgress childId={String(child?.id || '')} />;
-      case 'attendance':    return <ViewAttendance childId={String(child?.id || '')} />;
-      case 'payment':       return <ViewPayments childId={String(child?.id || '')} />;
+      case 'progress':      return <ViewProgress childId={String(child?.id || '')} childData={child ? { name: child.name, juzukCompleted: child.juzuk_completed ?? child.juzukCompleted, className: child.class_name, teacherName: child.teacher_name } : undefined} />;
+      case 'attendance':    return <ViewAttendance childId={String(child?.id || '')} childData={child ? { name: child.name } : undefined} />;
+      case 'payment':       return <ViewPayments childId={String(child?.id || '')} childData={child ? { name: child.name } : undefined} />;
       case 'inbox':         return <InfoCenter />;
       case 'ai':            return <ParentAIPrediction childId={String(child?.id || '')} />;
       case 'profile':       return <ProfileView userId={parentUser?.id || ''} />;

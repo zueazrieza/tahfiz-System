@@ -266,6 +266,37 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($id);
         $student->delete();
+        \App\Models\ActivityLog::log('Pelajar Dipadam (Boleh Dipulihkan)', $student->name);
+        return response()->json(['success' => true]);
+    }
+
+    public function trashed()
+    {
+        $students = Student::onlyTrashed()->get();
+        return $students->map(fn($s) => [
+            'id'          => $s->id,
+            'name'        => $s->name,
+            'icNo'        => $s->ic_no,
+            'matricNo'    => $s->matric_no,
+            'status'      => $s->status,
+            'deletedAt'   => $s->deleted_at?->format('d/m/Y H:i'),
+        ]);
+    }
+
+    public function restore(string $id)
+    {
+        $student = Student::onlyTrashed()->findOrFail($id);
+        $student->restore();
+        \App\Models\ActivityLog::log('Pelajar Dipulihkan', $student->name);
+        return response()->json(['success' => true, 'message' => "Pelajar {$student->name} berjaya dipulihkan."]);
+    }
+
+    public function forceDelete(string $id)
+    {
+        $student = Student::onlyTrashed()->findOrFail($id);
+        $name = $student->name;
+        $student->forceDelete();
+        \App\Models\ActivityLog::log('Pelajar Dipadam Kekal', $name);
         return response()->json(['success' => true]);
     }
 

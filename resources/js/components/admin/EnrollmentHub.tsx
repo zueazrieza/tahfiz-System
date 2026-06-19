@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Pagination } from '../shared/Pagination';
 import axios from 'axios';
 
 import {
@@ -8,14 +9,11 @@ import {
   XCircle,
   FileText,
   MessageCircle,
-  ArrowRight,
   Clock,
-  Filter,
   Search,
   Download,
   Mail,
   ExternalLink,
-  ChevronRight,
   ShieldCheck,
   Zap
 } from 'lucide-react';
@@ -29,6 +27,7 @@ interface Applicant {
   name: string;
   gender: 'Lelaki' | 'Perempuan';
   parentName: string;
+  parentEmail?: string;
   phone: string;
   icNo: string;
   dateApplied: string;
@@ -109,6 +108,9 @@ export function EnrollmentHub() {
 
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [applicantsPage, setApplicantsPage] = useState(1);
+  const APPLICANTS_PER_PAGE = 12;
+  const [searchTerm, setSearchTerm] = useState('');
 
   // ── Tambah Pelajar modal ──────────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
@@ -130,10 +132,11 @@ export function EnrollmentHub() {
         name: s.name,
         gender: s.gender,
         parentName: s.parent_name,
+        parentEmail: s.parent_email,
         phone: s.parent_phone,
         icNo: s.ic_no,
         dateApplied: s.created_at.split('T')[0],
-        status: s.status === 'Aktif' ? 'ENROLLED' : s.status,
+        status: (s.status === 'Aktif' || s.status === 'ENROLLED') ? 'ENROLLED' : s.status as EnrollmentStatus,
         interviewDate: s.interview_date,
         interviewTime: s.interview_time,
         interviewLocation: s.interview_location,
@@ -141,9 +144,9 @@ export function EnrollmentHub() {
         marks: (s.hafazan_mark || s.tajwid_mark || s.akhlaq_mark) ? {
           hafazan: s.hafazan_mark,
           tajwid: s.tajwid_mark,
-          akhlaq: s.akhlaq_mark
+          akhlaq: s.akhlaq_mark,
         } : undefined,
-        notes: s.notes
+        notes: s.notes,
       }));
       setApplicants(mapped);
     } catch (err) {
@@ -203,7 +206,12 @@ export function EnrollmentHub() {
     const dbId = selectedApplicant.dbId;
     if (!dbId) return;
 
-    if (!confirm('Adakah anda pasti ingin menjadualkan temuduga ini?')) {
+    if (!scheduleForm.date || !scheduleForm.time || !scheduleForm.location.trim()) {
+      alert('Sila lengkapkan semua maklumat temuduga (tarikh, masa, dan lokasi/pautan).');
+      return;
+    }
+
+    if (!confirm('Adakah anda pasti ingin menjadualkan temuduga ini? Emel jemputan akan dihantar kepada penjaga.')) {
       return;
     }
 
@@ -212,14 +220,14 @@ export function EnrollmentHub() {
         interview_date: scheduleForm.date,
         interview_time: scheduleForm.time,
         interview_type: scheduleForm.type,
-        interview_location: scheduleForm.location
+        interview_location: scheduleForm.location,
       });
 
-      alert('Berjaya! Jadual telah ditetapkan dan emel jemputan telah dihantar.');
+      alert(response.data.message || 'Berjaya! Jadual telah ditetapkan dan emel jemputan telah dihantar.');
       setShowScheduleModal(false);
-      fetchApplicants(); // Refresh list
-    } catch (err) {
-      alert('Gagal menetapkan jadual temuduga.');
+      fetchApplicants();
+    } catch (err: any) {
+      alert('Gagal menetapkan jadual temuduga: ' + (err.response?.data?.message || 'Ralat sambungan.'));
     }
   };
 
@@ -388,11 +396,25 @@ export function EnrollmentHub() {
         ))}
       </div>
 
+      <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm">
+        <Search className="size-4 text-slate-400 shrink-0" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={e => { setSearchTerm(e.target.value); setApplicantsPage(1); }}
+          placeholder="Cari nama pelajar, penjaga, atau IC..."
+          className="flex-1 text-sm outline-none bg-transparent placeholder:text-slate-300 text-slate-700"
+        />
+        {searchTerm && (
+          <button onClick={() => { setSearchTerm(''); setApplicantsPage(1); }} className="text-slate-300 hover:text-slate-500 text-lg leading-none">✕</button>
+        )}
+      </div>
+
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
         {['ALL', 'PROSPECT', 'SCHEDULED', 'INTERVIEW', 'ACCEPTED', 'OFFERED'].map((t) => (
           <button
             key={t}
-            onClick={() => setActiveTab(t as any)}
+            onClick={() => { setActiveTab(t as any); setApplicantsPage(1); }}
             className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border ${activeTab === t ? 'bg-[#1A4D50] text-[#6FC7CB] border-[#1A4D50] shadow-lg' : 'bg-white text-slate-400 border-slate-200 hover:border-[#6FC7CB]'
               }`}
           >
@@ -403,7 +425,16 @@ export function EnrollmentHub() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
-          {applicants.filter(a => activeTab === 'ALL' || a.status === activeTab).map((a) => (
+          {(() => {
+            const q = searchTerm.toLowerCase();
+            const filtered = applicants.filter(a =>
+              (activeTab === 'ALL' || a.status === activeTab) &&
+              (!q || a.name.toLowerCase().includes(q) || a.parentName.toLowerCase().includes(q) || a.icNo?.toLowerCase().includes(q) || a.parentEmail?.toLowerCase().includes(q))
+            );
+            const paginated = filtered.slice((applicantsPage - 1) * APPLICANTS_PER_PAGE, applicantsPage * APPLICANTS_PER_PAGE);
+            const totalPages = Math.ceil(filtered.length / APPLICANTS_PER_PAGE);
+            return (<>
+              {paginated.map((a) => (
             <div
               key={a.id}
               onClick={() => {
@@ -435,7 +466,10 @@ export function EnrollmentHub() {
                 </div>
               </div>
             </div>
-          ))}
+              ))}
+              <Pagination currentPage={applicantsPage} totalPages={totalPages} onPageChange={setApplicantsPage} totalItems={filtered.length} itemsPerPage={APPLICANTS_PER_PAGE} />
+            </>);
+          })()}
         </div>
 
         <div className="lg:col-span-1">
@@ -454,7 +488,7 @@ export function EnrollmentHub() {
                   <div className="flex items-center gap-3">
                     <MessageCircle className="size-5 text-emerald-500" />
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase">Telefon</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Telefon Penjaga</p>
                       <p className="text-sm font-bold text-slate-700">{selectedApplicant.phone}</p>
                     </div>
                   </div>
@@ -462,6 +496,24 @@ export function EnrollmentHub() {
                     <ExternalLink className="size-4" />
                   </button>
                 </div>
+
+                {selectedApplicant.parentEmail && (
+                  <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <Mail className="size-5 text-blue-500" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-slate-400 uppercase">E-mel Penjaga</p>
+                      <p className="text-sm font-bold text-slate-700 truncate">{selectedApplicant.parentEmail}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedApplicant.interviewDate && (
+                  <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl">
+                    <p className="text-[10px] font-black text-amber-600 uppercase mb-2">Jadual Temuduga</p>
+                    <p className="text-sm font-bold text-slate-700">{selectedApplicant.interviewDate} • {selectedApplicant.interviewTime}</p>
+                    <p className="text-xs text-slate-500 mt-1">{selectedApplicant.interviewType} — {selectedApplicant.interviewLocation}</p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-3">
                   {selectedApplicant.status === 'PROSPECT' && (
@@ -478,15 +530,15 @@ export function EnrollmentHub() {
                     </button>
                   )}
 
-                  {selectedApplicant.status === 'SCHEDULED' && (
-                    <button onClick={() => updateStatus(selectedApplicant.id, 'INTERVIEW')} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2">
-                       <Zap className="size-4" /> ISI MARKAH TEMUDUGA
-                    </button>
-                  )}
-
-                  {selectedApplicant.status === 'INTERVIEW' && (
-                    <button 
-                      onClick={() => {
+                  {(selectedApplicant.status === 'SCHEDULED' || selectedApplicant.status === 'INTERVIEW') && (
+                    <button
+                      onClick={async () => {
+                        // If still SCHEDULED, silently move to INTERVIEW first
+                        if (selectedApplicant.status === 'SCHEDULED' && selectedApplicant.dbId) {
+                          await axios.patch(`/api/enrollment/status/${selectedApplicant.dbId}`, { status: 'INTERVIEW' });
+                          setApplicants(prev => prev.map(a => a.id === selectedApplicant.id ? { ...a, status: 'INTERVIEW' } : a));
+                          setSelectedApplicant(prev => prev ? { ...prev, status: 'INTERVIEW' } : null);
+                        }
                         setAspectScores({ 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3 });
                         setEvaluationComments('');
                         setPanelName('');
@@ -497,7 +549,7 @@ export function EnrollmentHub() {
                       }}
                       className="w-full py-4 bg-amber-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-lg shadow-amber-100 transition-all flex items-center justify-center gap-2"
                     >
-                      <Zap className="size-4" /> BUKA BORANG PENILAIAN
+                      <Zap className="size-4" /> ISI BORANG PENILAIAN
                     </button>
                   )}
                   {selectedApplicant.status === 'ACCEPTED' && (
@@ -710,10 +762,10 @@ export function EnrollmentHub() {
       )}
       {/* Digitized Hardcopy Interview Evaluation Modal */}
       {showEvaluationModal && selectedApplicant && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4 z-[80] overflow-y-auto">
-          <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col my-8 border border-slate-100">
-            {/* Hardcopy-like Header */}
-            <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/50">
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4 z-[80]">
+          <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in duration-300 flex flex-col border border-slate-100" style={{ maxHeight: '95vh' }}>
+            {/* Hardcopy-like Header — always visible, never scrolls away */}
+            <div className="shrink-0 p-6 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50">
               <div className="flex items-center gap-4">
                 <img src="/images/logo.png" alt="Logo" className="h-14 object-contain" />
                 <div>
@@ -723,32 +775,35 @@ export function EnrollmentHub() {
               </div>
               
               {/* Max/Pass Box */}
-              <div className="flex items-center gap-6 border-2 border-slate-200/80 rounded-2xl p-4 bg-white shrink-0">
-                <div className="text-xs font-bold text-slate-500 uppercase space-y-1">
-                  <div>Maksimum : <span className="text-slate-800 font-extrabold">40</span></div>
-                  <div>Markah lulus : <span className="text-slate-800 font-extrabold">50 %</span></div>
+              <div className="flex items-center gap-4 border-2 border-slate-200/80 rounded-2xl px-4 py-3 bg-white shrink-0">
+                <div className="text-xs font-bold text-slate-500 uppercase space-y-0.5">
+                  <div>Maks: <span className="text-slate-800 font-extrabold">40</span></div>
+                  <div>Lulus: <span className="text-slate-800 font-extrabold">50%</span></div>
                 </div>
-                <div className="h-10 w-px bg-slate-200" />
+                <div className="h-8 w-px bg-slate-200" />
                 <div className="text-center">
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Pencapaian</div>
-                  <div className="text-2xl font-black text-[#1A4D50]">{totalScore} / 40 = {calculatedPercentage}%</div>
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Pencapaian</div>
+                  <div className="text-xl font-black text-[#1A4D50]">{totalScore}/40 = {calculatedPercentage}%</div>
                 </div>
               </div>
             </div>
 
+            {/* Scrollable body — everything between header and footer buttons scrolls here */}
+            <div className="flex-1 overflow-y-auto">
+
             {/* Candidate Info */}
-            <div className="px-8 py-6 border-b border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-6 bg-white">
+            <div className="px-8 py-5 border-b border-slate-100 grid grid-cols-3 gap-6 bg-white shrink-0">
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">NAMA CALON</p>
-                <p className="text-base font-black text-slate-700 uppercase mt-1">{selectedApplicant.name}</p>
+                <p className="text-sm font-black text-slate-700 uppercase mt-1">{selectedApplicant.name}</p>
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UMUR CALON</p>
-                <p className="text-base font-black text-slate-700 uppercase mt-1">{selectedApplicant.studentAge || 9} Tahun</p>
+                <p className="text-sm font-black text-slate-700 uppercase mt-1">{selectedApplicant.icNo ? (() => { const yr = parseInt(selectedApplicant.icNo.substring(0,2)); const full = yr > 30 ? 1900+yr : 2000+yr; return new Date().getFullYear()-full; })() + ' Tahun' : '—'}</p>
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TARIKH TEMUDUGA</p>
-                <p className="text-base font-black text-slate-700 uppercase mt-1">{new Date().toLocaleDateString('ms-MY')}</p>
+                <p className="text-sm font-black text-slate-700 uppercase mt-1">{new Date().toLocaleDateString('ms-MY')}</p>
               </div>
             </div>
 
@@ -897,8 +952,10 @@ export function EnrollmentHub() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="p-8 border-t border-slate-100 flex gap-4 bg-white justify-end">
+            </div>{/* end scrollable body */}
+
+            {/* Action Buttons — always pinned at bottom, never scrolls away */}
+            <div className="shrink-0 p-6 border-t border-slate-100 flex gap-4 bg-white justify-end">
               <button
                 type="button"
                 onClick={() => setShowEvaluationModal(false)}

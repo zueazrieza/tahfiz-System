@@ -2,21 +2,24 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAppStore } from '../../store/AppContext';
 import { BookOpen, TrendingUp, Star, Award, Trophy } from 'lucide-react';
+import { SkeletonProfileCard, SkeletonStatCards, SkeletonTable } from '../shared/Skeleton';
 import { HafazanRecord } from '../../store/mockData';
 
 interface ViewProgressProps {
   childId: string;
+  childData?: { name?: string; juzukCompleted?: number; className?: string; teacherName?: string };
 }
 
-export function ViewProgress({ childId }: ViewProgressProps) {
+export function ViewProgress({ childId, childData }: ViewProgressProps) {
   const { state } = useAppStore();
   const [records, setRecords] = useState<HafazanRecord[]>([]);
   const [earnedAchievements, setEarnedAchievements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Identify child from global state for static details
-  const child = state.students.find(s => String(s.id) === String(childId));
-  const progressPct = child ? Math.round((child.juzukCompleted / 30) * 100) : 0;
+  // Prefer data passed from parent dashboard; fall back to global store
+  const storeChild = state.students.find(s => String(s.id) === String(childId));
+  const child = childData?.name ? childData : storeChild;
+  const progressPct = child ? Math.round(((child.juzukCompleted ?? 0) / 30) * 100) : 0;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +50,14 @@ export function ViewProgress({ childId }: ViewProgressProps) {
   const monthRecords = records.filter(r => new Date(r.date).getMonth() === now.getMonth());
   const monthAyah = monthRecords.reduce((sum, r) => sum + (r.ayahCount ?? 0), 0);
 
-  if (loading) return <div className="p-8 text-slate-500">Memuatkan rekod hafazan...</div>;
+  if (loading) return (
+    <div className="space-y-8 pb-10" aria-busy="true" aria-label="Memuatkan rekod hafazan...">
+      <div className="h-7 bg-slate-200 rounded-lg w-48 animate-pulse" />
+      <SkeletonProfileCard />
+      <SkeletonStatCards count={3} />
+      <SkeletonTable rows={4} cols={3} />
+    </div>
+  );
 
   return (
     <div className="space-y-8 pb-10">

@@ -2,17 +2,20 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAppStore, getStudentAttendanceRate } from '../../store/AppContext';
 import { AttendanceRecord } from '../../store/mockData';
+import { SkeletonStatCards, SkeletonTable } from '../shared/Skeleton';
 
 interface ViewAttendanceProps {
   childId: string;
+  childData?: { name?: string };
 }
 
-export function ViewAttendance({ childId }: ViewAttendanceProps) {
+export function ViewAttendance({ childId, childData }: ViewAttendanceProps) {
   const { state } = useAppStore();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const child = state.students.find(s => String(s.id) === String(childId));
+  const storeChild = state.students.find(s => String(s.id) === String(childId));
+  const child = childData?.name ? childData : storeChild;
   const total = records.length;
   const present = records.filter(r => r.status === 'Hadir' || r.status === 'Lewat').length;
   const rate = total > 0 ? Math.round((present / total) * 100) : 0;
@@ -41,7 +44,13 @@ export function ViewAttendance({ childId }: ViewAttendanceProps) {
   const absentCount = records.filter(r => r.status === 'Tidak Hadir').length;
   const lateCount = records.filter(r => r.status === 'Lewat').length;
 
-  if (loading) return <div className="p-8 text-slate-500">Memuatkan sejarah kehadiran...</div>;
+  if (loading) return (
+    <div className="space-y-6" aria-busy="true" aria-label="Memuatkan kehadiran...">
+      <div className="h-7 bg-slate-200 rounded-lg w-48 animate-pulse" />
+      <SkeletonStatCards count={4} />
+      <SkeletonTable rows={6} cols={3} />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

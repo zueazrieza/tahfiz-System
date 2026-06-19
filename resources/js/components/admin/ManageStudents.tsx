@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Edit, Trash2, Eye, User, Shield, BookOpen, HeartPulse, ChevronRight, ChevronLeft, Check, CreditCard, Upload, FileSpreadsheet, X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Pagination } from '../shared/Pagination';
+import { Plus, Search, Edit, Trash2, Eye, User, Shield, BookOpen, HeartPulse, ChevronRight, ChevronLeft, Check, CreditCard, Upload, FileSpreadsheet, X, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import axios from 'axios';
 
@@ -30,6 +31,8 @@ export function ManageStudents() {
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [classFilter, setClassFilter] = useState('');
+  const [studentsPage, setStudentsPage] = useState(1);
+  const STUDENTS_PER_PAGE = 15;
 
   // Import state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -66,7 +69,9 @@ export function ManageStudents() {
   });
 
   const [editForm, setEditForm] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'tetap' | 'interview'>('tetap');
+  const [activeTab, setActiveTab] = useState<'tetap' | 'interview' | 'trash'>('tetap');
+  const [trashedStudents, setTrashedStudents] = useState<any[]>([]);
+  const [trashedLoading, setTrashedLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,6 +141,9 @@ export function ManageStudents() {
 
     return matchesSearch && matchesClass && matchesTab;
   });
+
+  const totalStudentPages = Math.ceil(filtered.length / STUDENTS_PER_PAGE);
+  const paginatedStudents = filtered.slice((studentsPage - 1) * STUDENTS_PER_PAGE, studentsPage * STUDENTS_PER_PAGE);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,14 +220,48 @@ export function ManageStudents() {
     }
   };
 
+  const fetchTrashed = async () => {
+    setTrashedLoading(true);
+    try {
+      const res = await axios.get('/api/students/trashed');
+      setTrashedStudents(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTrashedLoading(false);
+    }
+  };
+
   const handleDelete = async (student: any) => {
-    if (confirm(`Adakah anda pasti mahu memadam ${student.name}?`)) {
+    if (confirm(`Pelajar ${student.name} akan dipindahkan ke Tong Sampah dan boleh dipulihkan kemudian. Teruskan?`)) {
       try {
         await axios.delete(`/api/students/${student.id}`);
         dispatch({ type: 'DELETE_STUDENT', payload: { id: student.id } });
+        alert(`${student.name} dipadam dan boleh dipulihkan melalui tab Tong Sampah.`);
       } catch (error) {
         console.error('Error deleting student:', error);
         alert('Gagal memadam pelajar.');
+      }
+    }
+  };
+
+  const handleRestore = async (student: any) => {
+    try {
+      const res = await axios.post(`/api/students/${student.id}/restore`);
+      alert(res.data.message);
+      fetchTrashed();
+    } catch (e) {
+      alert('Gagal memulihkan pelajar.');
+    }
+  };
+
+  const handleForceDelete = async (student: any) => {
+    if (confirm(`AMARAN: ${student.name} akan dipadam KEKAL dan TIDAK boleh dipulihkan. Teruskan?`)) {
+      try {
+        await axios.delete(`/api/students/${student.id}/force`);
+        fetchTrashed();
+      } catch (e) {
+        alert('Gagal memadam rekod.');
       }
     }
   };
@@ -341,15 +383,70 @@ export function ManageStudents() {
         >
           Pelajar Interview
         </button>
+        <button
+          onClick={() => { setActiveTab('trash'); fetchTrashed(); }}
+          className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'trash' ? 'border-red-400 text-red-500' : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Trash2 className="w-4 h-4" /> Tong Sampah
+        </button>
       </div>
 
-      {/* Search & Filter */}
+      {/* ── TONG SAMPAH VIEW ── */}
+      {activeTab === 'trash' && (
+        <div className="bg-white rounded-3xl border border-red-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 bg-red-50 border-b border-red-100 flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-red-400" />
+            <h3 className="font-bold text-red-600 text-sm uppercase tracking-wider">Rekod Dipadam — Boleh Dipulihkan</h3>
+          </div>
+          {trashedLoading ? (
+            <div className="p-12 text-center text-slate-400">Memuatkan...</div>
+          ) : trashedStudents.length === 0 ? (
+            <div className="p-12 text-center text-slate-400">Tiada rekod dalam tong sampah.</div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>
+                  {['Nama','No. IC','Matrik','Status','Tarikh Dipadam','Tindakan'].map(h => (
+                    <th key={h} className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {trashedStudents.map(s => (
+                  <tr key={s.id} className="hover:bg-red-50/30">
+                    <td className="px-6 py-4 font-semibold text-slate-700">{s.name}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{s.icNo ?? '—'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{s.matricNo ?? '—'}</td>
+                    <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full font-semibold">{s.status}</span></td>
+                    <td className="px-6 py-4 text-sm text-red-400">{s.deletedAt}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleRestore(s)} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 rounded-lg text-xs font-bold transition-all">
+                          <RotateCcw className="w-3 h-3" /> Pulihkan
+                        </button>
+                        <button onClick={() => handleForceDelete(s)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-bold transition-all">
+                          <Trash2 className="w-3 h-3" /> Padam Kekal
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Search & Filter + Table — only show on active/interview tabs */}
+      {activeTab !== 'trash' && (<>
       <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex-1 relative">
           <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Cari nama pelajar atau ID..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#6FC7CB] outline-none" />
+          <input type="text" value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setStudentsPage(1); }} placeholder="Cari nama pelajar atau ID..." className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#6FC7CB] outline-none" />
         </div>
-        <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#6FC7CB] outline-none font-medium text-slate-600">
+        <select value={classFilter} onChange={e => { setClassFilter(e.target.value); setStudentsPage(1); }} className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#6FC7CB] outline-none font-medium text-slate-600">
           <option value="">Semua Kelas</option>
           {state.classes.map(c => <option key={c.id} value={c.id}>{c.name} - {getTeacherName(c.teacherId)}</option>)}
         </select>
@@ -367,7 +464,7 @@ export function ManageStudents() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map(student => (
+              {paginatedStudents.map(student => (
                 <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     {(() => {
@@ -447,9 +544,9 @@ export function ManageStudents() {
                           <CreditCard className="w-3.5 h-3.5" /> SAHKAN BAYARAN
                         </button>
                       )}
-                      <button onClick={() => { setSelectedStudent(student); setShowViewModal(true); }} className="p-2 bg-slate-50 text-slate-400 hover:text-[#6FC7CB] rounded-xl transition-all"><Eye className="w-4 h-4" /></button>
-                      <button onClick={() => { setEditForm({ ...student }); setShowEditModal(true); }} className="p-2 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all"><Edit className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(student)} className="p-2 bg-slate-50 text-slate-400 hover:text-red-600 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                      <button onClick={() => { setSelectedStudent(student); setShowViewModal(true); }} className="p-2 bg-slate-50 text-slate-400 hover:text-[#6FC7CB] rounded-xl transition-all" aria-label={`Lihat profil ${student.name}`}><Eye className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditForm({ ...student }); setShowEditModal(true); }} className="p-2 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all" aria-label={`Edit ${student.name}`}><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(student)} className="p-2 bg-slate-50 text-slate-400 hover:text-red-600 rounded-xl transition-all" aria-label={`Padam ${student.name}`}><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>
@@ -465,7 +562,11 @@ export function ManageStudents() {
             </tbody>
           </table>
         </div>
+        <div className="px-6 pb-4">
+          <Pagination currentPage={studentsPage} totalPages={totalStudentPages} onPageChange={setStudentsPage} totalItems={filtered.length} itemsPerPage={STUDENTS_PER_PAGE} />
+        </div>
       </div>
+      </>)}
 
       {/* Add Modal Wizrd */}
       {showAddModal && (

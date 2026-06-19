@@ -346,10 +346,37 @@ class AIController extends Controller
     }
 
     /**
+     * Proxy to fetch Malay (Basmeih) translation for a surah.
+     */
+    public function getQuranTranslation(string $chapter)
+    {
+        $chapterInt = (int) $chapter;
+        if ($chapterInt < 1 || $chapterInt > 114) {
+            return response()->json(['error' => 'Invalid chapter number'], 422);
+        }
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(10)
+                ->get("https://api.alquran.cloud/v1/surah/{$chapterInt}/ms.basmeih");
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+            throw new \Exception("alquran.cloud translation returned status " . $response->status());
+        } catch (\Exception $e) {
+            Log::warning("Translation proxy failed for chapter {$chapter}: " . $e->getMessage());
+            return response()->json(['data' => ['ayahs' => []]], 200);
+        }
+    }
+
+    /**
      * Proxy to fetch Quran verses of a given surah/chapter with robust multi-API fallback.
      */
     public function getQuranVerses(string $chapter)
     {
+        $chapterInt = (int) $chapter;
+        if ($chapterInt < 1 || $chapterInt > 114) {
+            return response()->json(['error' => 'Invalid chapter number'], 422);
+        }
+        $chapter = (string) $chapterInt;
         Log::info('Fetching Quran verses for chapter', ['chapter' => $chapter]);
 
         try {

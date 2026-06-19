@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use App\Models\HafazanRecord;
 use App\Models\Student;
 use App\Models\AppNotification;
 use App\Models\User;
+use App\Mail\HafazanRecordedMail;
 
 class HafazanRecordController extends Controller
 {
@@ -70,7 +72,7 @@ class HafazanRecordController extends Controller
     {
         $validated = $request->validate([
             'studentId' => 'required|exists:students,id',
-            'teacherId' => 'required|exists:teachers,id',
+            'teacherId' => 'nullable|integer',
             'date' => 'required|date',
             'sabaq.surah' => 'nullable|string',
             'sabaq.from' => 'nullable|integer',
@@ -88,9 +90,20 @@ class HafazanRecordController extends Controller
             'ayahCount' => 'integer',
         ]);
 
+        // Resolve teacher: use provided ID if valid, else auto-resolve from student or auth user
+        $teacherId = $validated['teacherId'] ?? null;
+        if (!$teacherId || !\App\Models\Teacher::find($teacherId)) {
+            $student = \App\Models\Student::find($validated['studentId']);
+            $teacherId = $student?->teacher_id;
+            if (!$teacherId && auth()->check()) {
+                $teacher = \App\Models\Teacher::where('id', auth()->user()->linked_id)->first();
+                $teacherId = $teacher?->id ?? \App\Models\Teacher::min('id');
+            }
+        }
+
         $record = HafazanRecord::create([
             'student_id' => $validated['studentId'],
-            'teacher_id' => $validated['teacherId'],
+            'teacher_id' => $teacherId,
             'date' => $validated['date'],
             'sabaq_surah' => $validated['sabaq']['surah'] ?? null,
             'sabaq_from' => $validated['sabaq']['from'] ?? null,
@@ -121,10 +134,47 @@ class HafazanRecordController extends Controller
             $studentUser = User::where('linked_id', $student->id)->where('role', 'student')->first();
             if ($studentUser) AppNotification::send($studentUser->id, $title, $content, 'hafazan');
 
-            // Notify parent user accounts
+            // Notify parent user accounts (in-app + email)
+            $notifiedParentIds = [];
             foreach ($student->parents as $parent) {
                 $parentUser = User::where('linked_id', $parent->id)->where('role', 'parent')->first();
-                if ($parentUser) AppNotification::send($parentUser->id, "Rekod Hafazan {$student->name}", $content, 'hafazan');
+                if ($parentUser) {
+                    AppNotification::send($parentUser->id, "Rekod Hafazan {$student->name}", $content, 'hafazan');
+                    if ($parentUser->email && !in_array($parentUser->id, $notifiedParentIds)) {
+                        $notifiedParentIds[] = $parentUser->id;
+                        try {
+                            Mail::to($parentUser->email)->send(new HafazanRecordedMail($student, $record, $parentUser->name));
+                        } catch (\Exception $e) {
+                            Log::warning('Hafazan email failed: ' . $e->getMessage());
+                        }
+                    }
+                }
+            }
+
+            // Fallback: find parent via student.parent_id if no parents relationship resolved
+            if (empty($notifiedParentIds) && $student->parent_id) {
+                $parentUser = User::where('role', 'parent')
+                    ->where(function($q) use ($student) {
+                        $q->where('linked_id', $student->parent_id)
+                          ->orWhere('id', $student->parent_id);
+                    })->first();
+                if (!$parentUser && ($student->parent_name || $student->parent_phone)) {
+                    $parentUser = User::where('role', 'parent')
+                        ->where(function($q) use ($student) {
+                            if ($student->parent_name)  $q->orWhere('name',  $student->parent_name);
+                            if ($student->parent_phone) $q->orWhere('phone', $student->parent_phone);
+                        })->first();
+                }
+                if ($parentUser) {
+                    AppNotification::send($parentUser->id, "Rekod Hafazan {$student->name}", $content, 'hafazan');
+                    if ($parentUser->email) {
+                        try {
+                            Mail::to($parentUser->email)->send(new HafazanRecordedMail($student, $record, $parentUser->name));
+                        } catch (\Exception $e) {
+                            Log::warning('Hafazan email fallback failed: ' . $e->getMessage());
+                        }
+                    }
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileSpreadsheet, Eye, User, Briefcase, Phone, BookOpen, HeartPulse } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileSpreadsheet, Eye, User, Briefcase, Phone, BookOpen, HeartPulse, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import axios from 'axios';
 
@@ -22,6 +22,9 @@ export function ManageTeachers() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [paginationInfo, setPaginationInfo] = useState({ total: 0, last_page: 1, from: 0, to: 0 });
+  const [showTrash, setShowTrash] = useState(false);
+  const [trashedTeachers, setTrashedTeachers] = useState<any[]>([]);
+  const [trashedLoading, setTrashedLoading] = useState(false);
 
   const inputCls = 'w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500';
 
@@ -100,14 +103,48 @@ export function ManageTeachers() {
     }
   };
 
+  const fetchTrashedTeachers = async () => {
+    setTrashedLoading(true);
+    try {
+      const res = await axios.get('/api/teachers/trashed');
+      setTrashedTeachers(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTrashedLoading(false);
+    }
+  };
+
   const handleDelete = async (teacher: any) => {
-    if (confirm(`Padam ${teacher.name} daripada sistem?`)) {
+    if (confirm(`Guru ${teacher.name} akan dipindahkan ke Tong Sampah dan boleh dipulihkan kemudian. Teruskan?`)) {
       try {
         await axios.delete(`/api/teachers/${teacher.id}`);
         dispatch({ type: 'DELETE_TEACHER', payload: { id: teacher.id } });
+        alert(`${teacher.name} dipadam dan boleh dipulihkan melalui Tong Sampah.`);
       } catch (error) {
         console.error('Error deleting teacher:', error);
         alert('Gagal memadam guru.');
+      }
+    }
+  };
+
+  const handleRestoreTeacher = async (teacher: any) => {
+    try {
+      const res = await axios.post(`/api/teachers/${teacher.id}/restore`);
+      alert(res.data.message);
+      fetchTrashedTeachers();
+    } catch (e) {
+      alert('Gagal memulihkan guru.');
+    }
+  };
+
+  const handleForceDeleteTeacher = async (teacher: any) => {
+    if (confirm(`AMARAN: ${teacher.name} akan dipadam KEKAL. Teruskan?`)) {
+      try {
+        await axios.delete(`/api/teachers/${teacher.id}/force`);
+        fetchTrashedTeachers();
+      } catch (e) {
+        alert('Gagal memadam rekod.');
       }
     }
   };
@@ -188,8 +225,8 @@ export function ManageTeachers() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Manage Teachers & Classes</h2>
-          <p className="text-gray-600 mt-1">Manage teachers and assign classes ({paginationInfo.total} total)</p>
+          <h2 className="text-2xl font-semibold text-gray-900">Urus Guru & Kelas</h2>
+          <p className="text-gray-600 mt-1">Pengurusan guru dan kelas halaqah ({paginationInfo.total} jumlah)</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -219,8 +256,57 @@ export function ManageTeachers() {
           >
             <FileSpreadsheet className="w-5 h-5" /> Export Excel
           </a>
+          <button
+            onClick={() => { setShowTrash(!showTrash); if (!showTrash) fetchTrashedTeachers(); }}
+            className={`flex items-center gap-2 px-4 py-2 border rounded-lg font-semibold transition-all ${showTrash ? 'bg-red-50 border-red-300 text-red-600' : 'bg-white border-gray-200 text-gray-500 hover:text-red-500'}`}
+          >
+            <Trash2 className="w-4 h-4" /> Tong Sampah
+          </button>
         </div>
       </div>
+
+      {/* Trash panel */}
+      {showTrash && (
+        <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-3 bg-red-50 border-b border-red-100 flex items-center gap-2">
+            <Trash2 className="w-4 h-4 text-red-400" />
+            <h3 className="font-bold text-red-600 text-sm uppercase tracking-wider">Guru Dipadam — Boleh Dipulihkan</h3>
+          </div>
+          {trashedLoading ? (
+            <div className="p-8 text-center text-slate-400">Memuatkan...</div>
+          ) : trashedTeachers.length === 0 ? (
+            <div className="p-8 text-center text-slate-400">Tiada rekod dalam tong sampah.</div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-100">
+                <tr>{['Nama','Emel','Telefon','Tarikh Dipadam','Tindakan'].map(h => (
+                  <th key={h} className="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {trashedTeachers.map(t => (
+                  <tr key={t.id} className="hover:bg-red-50/30">
+                    <td className="px-6 py-3 font-semibold text-slate-700">{t.name}</td>
+                    <td className="px-6 py-3 text-sm text-slate-500">{t.email}</td>
+                    <td className="px-6 py-3 text-sm text-slate-500">{t.phone ?? '—'}</td>
+                    <td className="px-6 py-3 text-sm text-red-400">{t.deletedAt}</td>
+                    <td className="px-6 py-3">
+                      <div className="flex gap-2">
+                        <button onClick={() => handleRestoreTeacher(t)} className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 rounded-lg text-xs font-bold">
+                          <RotateCcw className="w-3 h-3" /> Pulihkan
+                        </button>
+                        <button onClick={() => handleForceDeleteTeacher(t)} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-bold">
+                          <Trash2 className="w-3 h-3" /> Padam Kekal
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
       {/* Teachers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -237,8 +323,8 @@ export function ManageTeachers() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { setSelectedTeacher(teacher); setShowViewModal(true); }} className="p-1 text-gray-400 hover:text-[#6FC7CB]"><Eye className="w-4 h-4" /></button>
-                <button onClick={() => handleDelete(teacher)} className="p-1 text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => { setSelectedTeacher(teacher); setShowViewModal(true); }} className="p-1 text-gray-400 hover:text-[#6FC7CB]" aria-label={`Lihat profil ${teacher.name}`}><Eye className="w-4 h-4" /></button>
+                <button onClick={() => handleDelete(teacher)} className="p-1 text-gray-400 hover:text-red-600" aria-label={`Padam ${teacher.name}`}><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
             <div className="space-y-2 text-sm">

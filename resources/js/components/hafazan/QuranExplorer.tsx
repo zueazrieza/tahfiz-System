@@ -190,12 +190,30 @@ export function QuranExplorer({ onNavigate }: Props) {
 
     try {
       const [arRes, msRes] = await Promise.allSettled([
-        axios.get(`https://api.alquran.cloud/v1/surah/${surah.id}/quran-uthmani`),
-        axios.get(`https://api.alquran.cloud/v1/surah/${surah.id}/ms.basmeih`),
+        axios.get(`/api/quran/verses/${surah.id}`),
+        axios.get(`/api/quran/translation/${surah.id}`),
       ]);
 
-      const arAyahs = arRes.status === 'fulfilled' ? arRes.value.data.data.ayahs : [];
-      const msAyahs = msRes.status === 'fulfilled' ? msRes.value.data.data.ayahs : [];
+      // Arabic: backend proxy returns { verses: [...] } from quran.com format
+      // or { data: { ayahs: [...] } } from alquran.cloud format
+      let arAyahs: any[] = [];
+      if (arRes.status === 'fulfilled') {
+        const d = arRes.value.data;
+        if (d.verses) {
+          arAyahs = d.verses.map((v: any) => ({
+            numberInSurah: parseInt(v.verse_key?.split(':')[1] ?? '0'),
+            text: v.text_uthmani ?? v.text ?? '',
+          }));
+        } else if (d.data?.ayahs) {
+          arAyahs = d.data.ayahs.map((a: any) => ({
+            numberInSurah: a.numberInSurah,
+            text: a.text,
+          }));
+        }
+      }
+
+      // Translation: backend returns alquran.cloud format { data: { ayahs: [...] } }
+      const msAyahs = msRes.status === 'fulfilled' ? (msRes.value.data.data?.ayahs ?? []) : [];
 
       setAyahs(arAyahs.map((a: any, i: number) => ({
         numberInSurah: a.numberInSurah,

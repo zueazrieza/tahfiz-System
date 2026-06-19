@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { Save, RefreshCw, BookOpen, CheckCircle } from 'lucide-react';
+import { Save, RefreshCw, BookOpen, CheckCircle, Mic } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import { Grade } from '../../store/mockData';
 import { ConfirmModal } from '../shared/ConfirmModal';
+import { VoiceRecorder } from '../shared/VoiceRecorder';
 
 export function RecordHafazan() {
   const { state, dispatch } = useAppStore();
@@ -29,12 +30,27 @@ export function RecordHafazan() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<any>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const reset = () => setFormData({ sabaq: '', sabaqFrom: '', sabaqTo: '', sabaqGrade: '', sabaqi: '', sabaqiFrom: '', sabaqiTo: '', sabaqiGrade: '', manzil: '', manzilFrom: '', manzilTo: '', manzilGrade: '', remarks: '' });
+  const reset = () => { setFormData({ sabaq: '', sabaqFrom: '', sabaqTo: '', sabaqGrade: '', sabaqi: '', sabaqiFrom: '', sabaqiTo: '', sabaqiGrade: '', manzil: '', manzilFrom: '', manzilTo: '', manzilGrade: '', remarks: '' }); setFieldErrors({}); };
+
+  const validateRange = (key: string, from: string, to: string) => {
+    const f = parseInt(from), t = parseInt(to);
+    if (from && to && !isNaN(f) && !isNaN(t) && f > t) {
+      setFieldErrors(prev => ({ ...prev, [key]: `Ayat mula (${f}) tidak boleh lebih besar daripada ayat akhir (${t})` }));
+    } else {
+      setFieldErrors(prev => { const next = { ...prev }; delete next[key]; return next; });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent) return;
+    if (!selectedStudent) { alert('Sila pilih pelajar terlebih dahulu.'); return; }
+    if (Object.keys(fieldErrors).length > 0) { alert('Sila betulkan ralat dalam borang sebelum menyimpan.'); return; }
+    if (!teacher?.id) {
+      alert('Ralat: Profil murabbi tidak dijumpai. Sila log masuk semula.');
+      return;
+    }
     
     const ayahCount =
       (formData.sabaqTo ? parseInt(formData.sabaqTo) - parseInt(formData.sabaqFrom || '0') : 0) +
@@ -43,7 +59,7 @@ export function RecordHafazan() {
 
     const payload = {
       studentId: selectedStudent,
-      teacherId: teacher?.id ?? 1,
+      teacherId: teacher?.id,
       date: recordDate,
       sabaq: { surah: formData.sabaq, from: parseInt(formData.sabaqFrom || '0'), to: parseInt(formData.sabaqTo || '0'), grade: formData.sabaqGrade },
       sabaqi: { surah: formData.sabaqi, from: parseInt(formData.sabaqiFrom || '0'), to: parseInt(formData.sabaqiTo || '0'), grade: formData.sabaqiGrade },
@@ -79,7 +95,7 @@ export function RecordHafazan() {
 
   const gradeOptions: Grade[] = ['Mumtaz', 'Jayyid', 'Maqbul', 'Perlu Penambahbaikan'];
   const gradeLabels: Record<Grade, string> = { 'Mumtaz': 'Mumtaz (ممتاز)', 'Jayyid': 'Jayyid (جيد)', 'Maqbul': 'Maqbul (مقبول)', 'Perlu Penambahbaikan': 'Perlu Penambahbaikan', '': '' };
-  const inCls = 'w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500';
+  const inCls = (err?: string) => `w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${err ? 'border-red-400 focus:ring-red-400 bg-red-50' : 'border-gray-200 focus:ring-green-500'}`;
 
   return (
     <div className="space-y-6">
@@ -147,30 +163,33 @@ export function RecordHafazan() {
           {/* Class, Student & Date selection */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas *</label>
-              <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedStudent(''); }} className={inCls}>
+              <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="classSelect">Pilih Kelas *</label>
+              <select id="classSelect" value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedStudent(''); }} className={inCls()} aria-required="true">
                 {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name} - {state.teachers.find(t => String(t.id) === String(c.teacherId))?.name ?? 'Tiada Murabbi'}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Pilih Pelajar *</label>
-              <select value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)} className={inCls} required>
-                <option value="">Pilih pelajar...</option>
+              <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="studentSelect">Pilih Pelajar *</label>
+              <select id="studentSelect" value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)} className={inCls(!selectedStudent && false ? 'err' : '')} required aria-required="true">
+                <option value="">-- Pilih pelajar --</option>
                 {studentsInClass.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
+              {!selectedStudent && <p className="text-xs text-amber-600 mt-1">Sila pilih pelajar untuk meneruskan.</p>}
             </div>
           </div>
 
           {/* Date field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tarikh Rekod *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="recordDate">Tarikh Rekod *</label>
             <input
+              id="recordDate"
               type="date"
               value={recordDate}
               onChange={e => setRecordDate(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
-              className={inCls}
+              className={inCls()}
               required
+              aria-required="true"
             />
             <p className="text-xs text-gray-400 mt-1">Tarikh sesi hafazan berlaku. Lalai: hari ini.</p>
           </div>
@@ -188,25 +207,47 @@ export function RecordHafazan() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Surah</label>
-                  <input type="text" value={(formData as any)[section.key]} onChange={e => setFormData({ ...formData, [section.key]: e.target.value })} placeholder="e.g., Al-Baqarah" className={inCls} />
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor={`${section.key}-surah`}>Surah</label>
+                  <input id={`${section.key}-surah`} type="text" value={(formData as any)[section.key]} onChange={e => setFormData({ ...formData, [section.key]: e.target.value })} placeholder="cth: Al-Baqarah" className={inCls()} aria-label={`Surah untuk ${section.label}`} />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">From Ayah</label>
-                    <input type="number" value={(formData as any)[`${section.key}From`]} onChange={e => setFormData({ ...formData, [`${section.key}From`]: e.target.value })} placeholder="1" className={inCls} />
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor={`${section.key}-from`}>Dari Ayat</label>
+                    <input
+                      id={`${section.key}-from`}
+                      type="number" min="1"
+                      value={(formData as any)[`${section.key}From`]}
+                      onChange={e => { setFormData({ ...formData, [`${section.key}From`]: e.target.value }); validateRange(`${section.key}Range`, e.target.value, (formData as any)[`${section.key}To`]); }}
+                      placeholder="1"
+                      className={inCls(fieldErrors[`${section.key}Range`])}
+                      aria-describedby={fieldErrors[`${section.key}Range`] ? `${section.key}-range-err` : undefined}
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">To Ayah</label>
-                    <input type="number" value={(formData as any)[`${section.key}To`]} onChange={e => setFormData({ ...formData, [`${section.key}To`]: e.target.value })} placeholder="10" className={inCls} />
+                    <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor={`${section.key}-to`}>Hingga Ayat</label>
+                    <input
+                      id={`${section.key}-to`}
+                      type="number" min="1"
+                      value={(formData as any)[`${section.key}To`]}
+                      onChange={e => { setFormData({ ...formData, [`${section.key}To`]: e.target.value }); validateRange(`${section.key}Range`, (formData as any)[`${section.key}From`], e.target.value); }}
+                      placeholder="10"
+                      className={inCls(fieldErrors[`${section.key}Range`])}
+                      aria-describedby={fieldErrors[`${section.key}Range`] ? `${section.key}-range-err` : undefined}
+                    />
                   </div>
+                  {fieldErrors[`${section.key}Range`] && (
+                    <p id={`${section.key}-range-err`} className="col-span-2 text-xs text-red-600 mt-1" role="alert">{fieldErrors[`${section.key}Range`]}</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Gred Prestasi</label>
-                  <select value={(formData as any)[`${section.key}Grade`]} onChange={e => setFormData({ ...formData, [`${section.key}Grade`]: e.target.value as Grade })} className={inCls}>
-                    <option value="">Pilih gred</option>
+                  <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor={`${section.key}-grade`}>Gred Prestasi</label>
+                  <select id={`${section.key}-grade`} value={(formData as any)[`${section.key}Grade`]} onChange={e => setFormData({ ...formData, [`${section.key}Grade`]: e.target.value as Grade })} className={inCls()} aria-label={`Gred untuk ${section.label}`}>
+                    <option value="">-- Pilih gred --</option>
                     {gradeOptions.map(g => <option key={g} value={g}>{gradeLabels[g]}</option>)}
                   </select>
+                  {(formData as any)[section.key] && !(formData as any)[`${section.key}Grade`] && (
+                    <p className="text-xs text-amber-600 mt-1" role="alert">Sila pilih gred untuk sesi ini.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -214,8 +255,9 @@ export function RecordHafazan() {
 
           {/* Remarks */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Catatan Murabbi / Murabbiah</label>
-            <textarea value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} rows={4} placeholder="Tambah sebarang ulasan atau pemerhatian..." className={inCls} />
+            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="remarks">Catatan Murabbi / Murabbiah</label>
+            <textarea id="remarks" value={formData.remarks} onChange={e => setFormData({ ...formData, remarks: e.target.value })} rows={4} placeholder="Tambah sebarang ulasan atau pemerhatian..." className={inCls()} maxLength={500} aria-label="Catatan tambahan murabbi" />
+            <p className="text-xs text-gray-400 mt-1 text-right">{formData.remarks.length}/500</p>
           </div>
 
           <div className="flex gap-3">
@@ -224,6 +266,23 @@ export function RecordHafazan() {
           </div>
         </form>
       </div>
+
+      {/* Voice Recorder — per-student session recording */}
+      {selectedStudent && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h4 className="font-semibold text-gray-900 mb-1 flex items-center gap-2">
+            <Mic className="w-4 h-4 text-[#1A4D50]" /> Rakaman Suara Sesi Ini
+          </h4>
+          <p className="text-xs text-gray-500 mb-4">Rekod bacaan pelajar semasa sesi untuk rujukan dan semakan kemudian hari.</p>
+          <VoiceRecorder
+            studentId={selectedStudent}
+            surah={formData.sabaq}
+            ayatFrom={formData.sabaqFrom}
+            ayatTo={formData.sabaqTo}
+            recordedBy="teacher"
+          />
+        </div>
+      )}
 
       {/* Recent Records */}
       {selectedStudent && (

@@ -48,7 +48,7 @@ class AIAssessmentController extends Controller
     {
         $validated = $request->validate([
             'studentId' => 'required|exists:students,id',
-            'teacherId' => 'required|exists:teachers,id',
+            'teacherId' => 'nullable|integer',
             'surah' => 'required|string',
             'score' => 'required|integer',
             'date' => 'required|date',
@@ -57,9 +57,19 @@ class AIAssessmentController extends Controller
             'feedback' => 'nullable|string',
         ]);
 
+        // Resolve teacher: use provided ID if valid, otherwise use student's assigned teacher
+        $teacherId = $validated['teacherId'] ?? null;
+        if (!$teacherId || !\App\Models\Teacher::find($teacherId)) {
+            $student   = \App\Models\Student::find($validated['studentId']);
+            $teacherId = $student?->teacher_id;
+        }
+        if (!$teacherId) {
+            return response()->json(['error' => 'No teacher assigned to this student.'], 422);
+        }
+
         $assessment = AIAssessment::create([
             'student_id' => $validated['studentId'],
-            'teacher_id' => $validated['teacherId'],
+            'teacher_id' => $teacherId,
             'surah' => $validated['surah'],
             'score' => $validated['score'],
             'date' => $validated['date'],

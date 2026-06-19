@@ -27,7 +27,7 @@ class Payment extends Model
         static::updated(function ($payment) {
             if ($payment->isDirty('status')) {
                 $studentName = $payment->student?->name ?? 'Pelajar';
-                $statusText = $payment->status === 'paid' ? 'Dibayar' : 'Belum Bayar';
+                $statusText = $payment->status === 'Dibayar' ? 'Dibayar' : ($payment->status === 'Tertunggak' ? 'Tertunggak' : 'Belum Bayar');
                 \App\Models\ActivityLog::log("Status Bayaran Terkini: {$statusText}", "{$studentName} (RM {$payment->amount})");
             }
         });

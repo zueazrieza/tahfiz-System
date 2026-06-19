@@ -5,6 +5,7 @@ import axios from 'axios';
 import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 import { ScoreKomponen } from '../shared/ScoreKomponen';
+import { AKMALLetterhead, AKMALLetterFooter } from '../shared/AKMALLetterhead';
 
 async function captureElementAsPDF(element: HTMLElement, filename: string): Promise<void> {
   const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
@@ -30,26 +31,14 @@ async function captureElementAsPDF(element: HTMLElement, filename: string): Prom
 }
 
 function PrintView({ predictions }: { predictions: any[] }) {
-  const now = new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' });
   const avgConf = predictions.length
     ? Math.round(predictions.reduce((s, p) => s + parseInt(p.confidence ?? '0'), 0) / predictions.length)
     : 0;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', padding: '24px', background: '#fff', color: '#111', width: '780px' }}>
-      <div style={{ borderBottom: '3px solid #7c3aed', paddingBottom: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/images/logo.png" alt="AKMAL Logo" style={{ height: '56px', objectFit: 'contain' }} onError={e => ((e.target as HTMLElement).style.display = 'none')} />
-          <div>
-            <h1 style={{ margin: 0, fontSize: '20px', color: '#7c3aed', fontWeight: 900 }}>AKMAL — Laporan Ramalan AI</h1>
-            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#555', fontWeight: 'bold' }}>Akademi Al-Quran Amalillah Terengganu</p>
-          </div>
-        </div>
-        <div style={{ textAlign: 'right', fontSize: '11px', color: '#555' }}>
-          <div>Dijana: {now}</div>
-          <div>Pelajar Dipantau: {predictions.length}</div>
-        </div>
-      </div>
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', width: '780px' }}>
+      <AKMALLetterhead docType="Laporan Ramalan AI" meta={`Pelajar Dipantau: ${predictions.length}`} />
+      <div style={{ padding: '0 20px' }}>
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
         {[
           { label: 'Purata Ketepatan', value: `${avgConf}%`, color: '#2563eb' },
@@ -84,8 +73,7 @@ function PrintView({ predictions }: { predictions: any[] }) {
           ))}
         </tbody>
       </table>
-      <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '20px', paddingTop: '10px', fontSize: '10px', color: '#aaa', textAlign: 'center' }}>
-        AKMAL Sistem Pengurusan Tahfiz — Laporan AI Rasmi — {now}
+      <AKMALLetterFooter />
       </div>
     </div>
   );

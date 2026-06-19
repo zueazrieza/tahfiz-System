@@ -203,7 +203,8 @@ export function HafazanAI() {
   const [searchTerm, setSearchTerm] = useState('');
   const [savedCount, setSavedCount] = useState(0);
 
-  const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+  const authUser  = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+  const isStudent = authUser.role === 'student' && !!authUser.linked_id;
   const studentId = String(authUser.linked_id || '');
 
   useEffect(() => { fetchVerses(selectedSurah); }, [selectedSurah]);
@@ -414,18 +415,20 @@ export function HafazanAI() {
             </div>
           </div>
 
-          {/* Voice Recorder */}
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Rakam Bacaan Anda</p>
-            <VoiceRecorder
-              studentId={studentId}
-              surah={currentChapter?.name_simple}
-              ayatFrom={firstAyat}
-              ayatTo={lastAyat}
-              recordedBy="student"
-              onSaved={() => setSavedCount(c => c + 1)}
-            />
-          </div>
+          {/* Voice Recorder — students only */}
+          {isStudent && (
+            <div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Rakam Bacaan Anda</p>
+              <VoiceRecorder
+                studentId={studentId}
+                surah={currentChapter?.name_simple}
+                ayatFrom={firstAyat}
+                ayatTo={lastAyat}
+                recordedBy="student"
+                onSaved={() => setSavedCount(c => c + 1)}
+              />
+            </div>
+          )}
 
           {/* CABARAN HARIAN */}
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-[40px] p-8 border border-amber-100 shadow-sm">
