@@ -196,20 +196,34 @@ export function ManageStudents() {
     }
     try {
       const res = await axios.put(`/api/students/${editForm.id}`, {
-        name: editForm.name,
-        ic_no: editForm.icNo,
-        gender: editForm.gender,
-        age: editForm.age,
-        class_id: editForm.classId,
-        teacher_id: editForm.teacherId,
-        status: editForm.status,
-        juzuk_completed: editForm.juzukCompleted,
-        parent_name: editForm.parentName,
-        parent_phone: editForm.parentPhone,
-        address: editForm.address,
-        medical_history: editForm.medicalHistory,
-        matric_no: editForm.matric_no || editForm.matricNo,
-        intake: editForm.intake
+        name:                    editForm.name,
+        icNo:                    editForm.icNo,
+        gender:                  editForm.gender,
+        dob:                     editForm.dob,
+        age:                     editForm.age,
+        phone:                   editForm.phone,
+        address:                 editForm.address,
+        maritalStatus:           editForm.maritalStatus,
+        bloodType:               editForm.bloodType,
+        pob:                     editForm.pob,
+        citizenship:             editForm.citizenship,
+        race:                    editForm.race,
+        religion:                editForm.religion,
+        educationBackground:     editForm.educationBackground,
+        emergencyContactName:    editForm.emergencyContactName,
+        emergencyContactPhone:   editForm.emergencyContactPhone,
+        familyIncome:            editForm.familyIncome,
+        classId:                 editForm.classId,
+        teacherId:               editForm.teacherId,
+        status:                  editForm.status,
+        juzukCompleted:          editForm.juzukCompleted,
+        parentName:              editForm.parentName,
+        parentPhone:             editForm.parentPhone,
+        medicalHistory:          editForm.medicalHistory,
+        matricNo:                editForm.matric_no || editForm.matricNo,
+        intake:                  editForm.intake,
+        enrolledDate:            editForm.enrolledDate,
+        intakeJuzuk:             editForm.intakeJuzuk,
       });
       dispatch({ type: 'EDIT_STUDENT', payload: res.data });
       setShowEditModal(false);
@@ -765,8 +779,8 @@ export function ManageStudents() {
                   <div className="col-span-2"><label className={labelCls}>No. IC / MyKid</label><input className={inputCls} value={editForm.icNo} onChange={e => setEditForm({ ...editForm, icNo: e.target.value })} /></div>
                   <div><label className={labelCls}>Jantina</label>
                     <select className={inputCls} value={editForm.gender} onChange={e => setEditForm({ ...editForm, gender: e.target.value })}>
-                      <option value="Lelaki">Lelaki</option>
-                      <option value="Perempuan">Perempuan</option>
+                      <option value="M">Lelaki</option>
+                      <option value="F">Perempuan</option>
                     </select>
                   </div>
                   <div><label className={labelCls}>Umur</label><input type="number" required className={inputCls} value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} /></div>

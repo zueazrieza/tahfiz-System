@@ -170,6 +170,7 @@ class TeacherController extends Controller
         if (isset($data['email'])) $updateData['email'] = $data['email'];
         if (isset($data['phone'])) $updateData['phone'] = $data['phone'];
         if (isset($data['icNo'])) $updateData['ic_no'] = $data['icNo'];
+        if (isset($data['gender'])) $updateData['gender'] = $data['gender'];
         if (isset($data['specialization'])) $updateData['specialization'] = $data['specialization'];
         if (isset($data['status'])) $updateData['status'] = $data['status'];
         if (isset($data['joinedDate'])) $updateData['joined_date'] = $data['joinedDate'];
@@ -183,8 +184,31 @@ class TeacherController extends Controller
         if (isset($data['serviceStartDate'])) $updateData['service_start_date'] = $data['serviceStartDate'];
 
         $teacher->update($updateData);
+        $teacher->refresh();
 
-        return response()->json($teacher);
+        // Return camelCase so frontend dispatch updates state correctly
+        $classIds = \App\Models\ClassRoom::where('teacher_id', $teacher->id)->pluck('id');
+        return response()->json([
+            'id'                   => $teacher->id,
+            'name'                 => $teacher->name,
+            'gender'               => $teacher->gender,
+            'email'                => $teacher->email,
+            'phone'                => $teacher->phone,
+            'icNo'                 => $teacher->ic_no,
+            'specialization'       => $teacher->specialization,
+            'status'               => $teacher->status,
+            'joinedDate'           => $teacher->joined_date,
+            'qualification'        => $teacher->qualification,
+            'experience'           => $teacher->experience,
+            'medicalHistory'       => $teacher->medical_history,
+            'emergencyContactName' => $teacher->emergency_contact_name,
+            'emergencyContactPhone'=> $teacher->emergency_contact_phone,
+            'dependentsCount'      => $teacher->dependents_count,
+            'residence'            => $teacher->residence,
+            'serviceStartDate'     => $teacher->service_start_date,
+            'userId'               => $teacher->user_id,
+            'classIds'             => $classIds,
+        ]);
     }
 
     /**

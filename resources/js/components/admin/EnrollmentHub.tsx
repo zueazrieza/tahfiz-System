@@ -190,11 +190,13 @@ export function EnrollmentHub() {
 
     try {
       await axios.patch(`/api/enrollment/status/${dbId}`, { status: newStatus });
-      setApplicants(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
-      if (selectedApplicant?.id === id) setSelectedApplicant(prev => prev ? { ...prev, status: newStatus } : null);
-      
+
       if (newStatus === 'ENROLLED') {
         alert('Tahniah! Pelajar telah disahkan dan dipindahkan ke senarai Pelajar Tetap.');
+        fetchApplicants();
+      } else {
+        setApplicants(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+        if (selectedApplicant?.id === id) setSelectedApplicant(prev => prev ? { ...prev, status: newStatus } : null);
       }
     } catch (err) {
       alert('Gagal mengemaskini status');
@@ -241,7 +243,6 @@ export function EnrollmentHub() {
         tajwid_mark: interviewMarks.tajwid,
         akhlaq_mark: interviewMarks.akhlaq,
         status: 'ACCEPTED',
-        notes: selectedApplicant?.notes
       });
       setApplicants(prev => prev.map(a => a.id === id ? { ...a, marks: interviewMarks, status: 'ACCEPTED' } : a));
       if (selectedApplicant?.id === id) setSelectedApplicant(prev => prev ? { ...prev, marks: interviewMarks, status: 'ACCEPTED' } : null);
