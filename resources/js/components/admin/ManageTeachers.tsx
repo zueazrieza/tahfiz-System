@@ -84,8 +84,16 @@ export function ManageTeachers() {
     fetchTeachers();
   }, [dispatch, page, debouncedSearch]);
 
-  const getStudentCount = (teacherId: string | number) =>
-    state.students.filter(s => String(s.teacherId) === String(teacherId)).length;
+  const getStudentCount = (teacherId: string | number) => {
+    // Students link to teachers via class: student.classId → class.teacherId
+    const classIds = state.classes
+      .filter(c => String(c.teacherId) === String(teacherId))
+      .map(c => String(c.id));
+    return state.students.filter(s =>
+      classIds.includes(String(s.classId ?? s.class_id)) ||
+      String(s.teacherId ?? s.teacher_id) === String(teacherId)
+    ).length;
+  };
 
   const getClassNames = (classIds: any) => {
     if (!classIds) return '—';
