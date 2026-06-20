@@ -125,7 +125,7 @@ export function VoiceRecorder({ studentId, surah, ayatFrom, ayatTo, recordedBy =
 
   const reset = () => { discard(); setPhase('idle'); setErrorMsg(''); setNotes(''); };
 
-  if (!navigator.mediaDevices) {
+  if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
     return (
       <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl text-red-600 text-sm">
         <AlertCircle className="w-4 h-4 shrink-0" />

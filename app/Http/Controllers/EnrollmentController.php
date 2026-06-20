@@ -204,7 +204,13 @@ class EnrollmentController extends Controller
         if ($student->status === 'Aktif') {
             $existingUser = User::where('linked_id', $student->id)->where('role', 'student')->first();
             if (!$existingUser) {
-                $emailSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($student->name)));
+                // Use matric number if available (e.g. 25-ABB-00299@tahfiz.com), else fallback to first name
+                if (!empty($student->matric_no)) {
+                    $emailSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($student->matric_no)));
+                } else {
+                    $nameParts = preg_split('/\s+/', trim($student->name));
+                    $emailSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '', $nameParts[0]));
+                }
                 $email = $emailSlug . '@tahfiz.com';
                 $base = $email;
                 $counter = 1;

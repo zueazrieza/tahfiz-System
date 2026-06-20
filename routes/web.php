@@ -7,7 +7,6 @@ use App\Http\Controllers\ClassRoomController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\HafazanRecordController;
-use App\Http\Controllers\AIPredictionController;
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ParentController;
@@ -110,7 +109,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::post('/ai-predictions/generate',                       [AIController::class, 'generateForStudent']);
         Route::get('/ai-predictions/student/{studentId}',            [AIController::class, 'getPrediction']);
         Route::get('/ai-predictions/class/{classId}',                [AIController::class, 'getClassPredictions']);
-        Route::post('/ai-predictions/generate/class/{classId}',      [AIController::class, 'getClassPredictions']);
+        Route::get('/ai-predictions/generate/class/{classId}',       [AIController::class, 'getClassPredictions']);
         Route::post('/ai/import-alumni',                    [AIController::class, 'importAlumni']);
         Route::get('/ai/benchmarks',                        [AIController::class, 'getAIBenchmarks']);
         Route::get('/quran/verses/{chapter}',               [AIController::class, 'getQuranVerses']);
@@ -142,12 +141,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::get('/enrollment/applicants',                [EnrollmentController::class, 'index']);
         Route::post('/enrollment/applicants',               [EnrollmentController::class, 'adminCreate']);
         Route::get('/enrollment/schedules',                 [EnrollmentController::class, 'getInterviewSchedules']);
-        Route::patch('/enrollment/status/{id}',             [EnrollmentController::class, 'updateStatus']);
-        Route::post('/enrollment/schedule-interview/{id}',  [EnrollmentController::class, 'scheduleInterview']);
-        Route::post('/enrollment/update-interview/{id}',    [EnrollmentController::class, 'updateInterview']);
         Route::post('/enrollment/parent-decide/{id}',       [EnrollmentController::class, 'parentDecide']);
-        Route::get('/enrollment/offer-letter/{id}',         [EnrollmentController::class, 'generateOfferLetter']);
-        Route::post('/enrollment/send-offer-email/{id}',    [EnrollmentController::class, 'sendOfferEmail']);
 
         // Mudir & Reports
         Route::apiResource('mudir-evaluations', MudirEvaluationController::class)->only(['index', 'store']);
@@ -156,11 +150,6 @@ Route::prefix('api')->middleware(['web'])->group(function () {
 
         // Analytics
         Route::get('/analytics/financial', [FinancialAnalyticsController::class, 'index']);
-
-        // Export
-        Route::get('/export/students', [ExportController::class, 'exportStudents']);
-        Route::get('/export/teachers', [ExportController::class, 'exportTeachers']);
-        Route::get('/export/parents',  [ExportController::class, 'exportParents']);
 
         // ── Admin-only ────────────────────────────────────────────────────────
         Route::middleware('can:admin-only')->group(function () {
@@ -175,6 +164,18 @@ Route::prefix('api')->middleware(['web'])->group(function () {
             Route::delete('/students/{id}/force',     [StudentController::class, 'forceDelete']);
             Route::post('/teachers/{id}/restore',     [TeacherController::class, 'restore']);
             Route::delete('/teachers/{id}/force',     [TeacherController::class, 'forceDelete']);
+
+            // Export — admin only
+            Route::get('/export/students', [ExportController::class, 'exportStudents']);
+            Route::get('/export/teachers', [ExportController::class, 'exportTeachers']);
+            Route::get('/export/parents',  [ExportController::class, 'exportParents']);
+
+            // Enrollment state-change routes — admin only
+            Route::patch('/enrollment/status/{id}',             [EnrollmentController::class, 'updateStatus']);
+            Route::post('/enrollment/schedule-interview/{id}',  [EnrollmentController::class, 'scheduleInterview']);
+            Route::post('/enrollment/update-interview/{id}',    [EnrollmentController::class, 'updateInterview']);
+            Route::get('/enrollment/offer-letter/{id}',         [EnrollmentController::class, 'generateOfferLetter']);
+            Route::post('/enrollment/send-offer-email/{id}',    [EnrollmentController::class, 'sendOfferEmail']);
         });
     });
 });

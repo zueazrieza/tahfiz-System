@@ -181,6 +181,8 @@ class AchievementController extends Controller
      */
     public function destroy($id)
     {
+        abort_if(!in_array(auth()->user()?->role, ['admin', 'teacher']), 403, 'Akses ditolak.');
+
         $achievement = Achievement::findOrFail($id);
         $achievement->delete();
 

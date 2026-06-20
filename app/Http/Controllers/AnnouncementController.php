@@ -35,11 +35,13 @@ class AnnouncementController extends Controller
             $query->whereIn('target_audience', ['All', $request->target_audience]);
         }
 
-        return response()->json($query->get());
+        return response()->json($query->limit(100)->get());
     }
 
     public function store(Request $request)
     {
+        abort_if(!in_array(auth()->user()?->role, ['admin', 'teacher']), 403, 'Akses ditolak.');
+
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -47,15 +49,12 @@ class AnnouncementController extends Controller
             'target_audience' => 'required|string',
         ]);
 
-        // Assumes user is authenticated via API token, but since this might be called from React, we need the author_id
-        $author_id = $request->input('author_id') ?? 1; // Fallback to 1 if not provided
-
         $announcement = Announcement::create([
             'title' => $request->title,
             'content' => $request->content,
             'type' => $request->type,
             'target_audience' => $request->target_audience,
-            'author_id' => $author_id,
+            'author_id' => auth()->id(),
             'is_active' => true,
         ]);
 
@@ -64,6 +63,8 @@ class AnnouncementController extends Controller
 
     public function update(Request $request, $id)
     {
+        abort_if(!in_array(auth()->user()?->role, ['admin', 'teacher']), 403, 'Akses ditolak.');
+
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -84,6 +85,8 @@ class AnnouncementController extends Controller
 
     public function destroy($id)
     {
+        abort_if(!in_array(auth()->user()?->role, ['admin', 'teacher']), 403, 'Akses ditolak.');
+
         $announcement = Announcement::findOrFail($id);
         $announcement->delete();
 

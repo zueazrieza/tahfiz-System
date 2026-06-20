@@ -81,7 +81,7 @@ class AttendanceController extends Controller
                   ->whereMonth('date', $request->month);
         }
 
-        $attendances = $query->latest('date')->get();
+        $attendances = $query->with(['student', 'classRoom'])->latest('date')->get();
 
         return response()->json($attendances);
     }

@@ -42,12 +42,7 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
-  useEffect(() => {
-    fetchChildren();
-    fetchUnreadCount();
-  }, []);
-
-  // ── Live polling: refresh children data & notif count every 30 s ────────
+  // ── Live polling: refresh children data & notif count every 30 s (also fires on mount) ────────
   usePolling(() => {
     fetchChildren();
     fetchUnreadCount();

@@ -21,6 +21,25 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
     public int   $skipped  = 0;
 
     /** Try multiple heading-key variants and return first non-empty value */
+    /** Generate a clean email slug from parent name: first word lowercase, no special chars.
+     *  Falls back to "wali" + last 6 digits of IC if name is unusable. */
+    private function makeParentEmailSlug(string $name, string $ic): string
+    {
+        $parts = preg_split('/\s+/', trim($name));
+        $first = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $parts[0] ?? ''));
+        if (strlen($first) < 3) {
+            $first = 'wali' . substr($ic, -6);
+        }
+        // Avoid collision: append number if slug already used
+        $slug = $first;
+        $i = 2;
+        while (\App\Models\User::where('email', $slug . '@tahfiz.com')->exists()) {
+            $slug = $first . $i;
+            $i++;
+        }
+        return $slug;
+    }
+
     private function pick($row, array $keys, string $default = ''): string
     {
         foreach ($keys as $key) {
@@ -311,12 +330,13 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
                 // Handle Father Profile
                 if ($fatherIc && strlen($fatherIc) >= 6) {
+                    $fEmailSlug = $this->makeParentEmailSlug($fatherName ?: 'bapa', $fatherIc);
                     $fUser = User::updateOrCreate(
-                        ['email' => $fatherIc . '@parent.tahfiz.edu.my'],
+                        ['email' => $fEmailSlug . '@tahfiz.com'],
                         [
-                            'name'      => $fatherIc,
+                            'name'      => $fEmailSlug,
                             'full_name' => $fatherName ?: 'Bapa ' . $name,
-                            'password'  => Hash::make($fatherIc),
+                            'password'  => Hash::make('password'),
                             'role'      => 'parent',
                             'status'    => 'active',
                         ]
@@ -337,12 +357,13 @@ class StudentsImport implements ToCollection, WithHeadingRow, SkipsEmptyRows
 
                 // Handle Mother Profile
                 if ($motherIc && strlen($motherIc) >= 6) {
+                    $mEmailSlug = $this->makeParentEmailSlug($motherName ?: 'ibu', $motherIc);
                     $mUser = User::updateOrCreate(
-                        ['email' => $motherIc . '@parent.tahfiz.edu.my'],
+                        ['email' => $mEmailSlug . '@tahfiz.com'],
                         [
-                            'name'      => $motherIc,
+                            'name'      => $mEmailSlug,
                             'full_name' => $motherName ?: 'Ibu ' . $name,
-                            'password'  => Hash::make($motherIc),
+                            'password'  => Hash::make('password'),
                             'role'      => 'parent',
                             'status'    => 'active',
                         ]

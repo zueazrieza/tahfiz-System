@@ -215,7 +215,7 @@ export function ManageAttendance() {
       {viewMode === 'daily' && (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { label: 'Jumlah', value: todayStats.total, color: 'text-gray-900', bg: 'bg-gray-50' },
               { label: 'Hadir', value: todayStats.present, color: 'text-green-600', bg: 'bg-green-50' },

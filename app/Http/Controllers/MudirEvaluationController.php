@@ -12,11 +12,13 @@ class MudirEvaluationController extends Controller
 {
     public function index()
     {
-        return response()->json(MudirEvaluation::with(['student', 'evaluator'])->latest()->get());
+        return response()->json(MudirEvaluation::with(['student', 'evaluator'])->latest()->paginate(50));
     }
 
     public function store(Request $request)
     {
+        abort_if(!in_array(auth()->user()?->role, ['admin', 'teacher']), 403, 'Akses ditolak.');
+
         $request->validate([
             'student_id' => 'required|exists:students,id',
             'surah' => 'required|string',
@@ -29,16 +31,18 @@ class MudirEvaluationController extends Controller
 
         $total_score = $request->tajwid_score + $request->kelancaran_score + $request->hafazan_score + $request->lagu_score;
         $passed = $total_score >= 80; // Pass mark could be 80
-        $badge = $passed ? 'Level ' . ($request->juzuk > 0 ? ceil($request->juzuk / 5) : 1) : null; 
+        $badge = $passed ? 'Level ' . ($request->juzuk > 0 ? ceil($request->juzuk / 5) : 1) : null;
 
         // Award graduation condition
         if ($request->juzuk == 30 && $passed) {
             $badge = 'Gold G'; // Gold G for Khatam 30 Juzuk (from HafazanLevelSelector)
         }
 
+        $evaluatorId = auth()->id();
+
         $evaluation = MudirEvaluation::create([
             'student_id' => $request->student_id,
-            'evaluator_id' => $request->input('evaluator_id', 1),
+            'evaluator_id' => $evaluatorId,
             'surah' => $request->surah,
             'juzuk' => $request->juzuk,
             'tajwid_score' => $request->tajwid_score,
@@ -57,7 +61,7 @@ class MudirEvaluationController extends Controller
                 'name' => $badge,
                 'type' => 'Badge',
                 'description' => 'Lulus Tasmik Mudir dengan markah ' . $total_score . '% (Juzuk ' . $request->juzuk . ')',
-                'awarded_by' => $request->input('evaluator_id', 1),
+                'awarded_by' => $evaluatorId,
                 'date' => now(),
             ]);
 

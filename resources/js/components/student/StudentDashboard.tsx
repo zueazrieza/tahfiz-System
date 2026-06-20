@@ -32,7 +32,6 @@ import { HafazanLevelSelector } from '../hafazan/HafazanLevelSelector';
 import { StudyRoadmap } from '../shared/StudyRoadmap';
 import { ProfileView } from '../profile/ProfileView';
 import { InfoCenter } from '../shared/InfoCenter';
-import { ThemeToggle } from '../shared/ThemeToggle';
 import { useAppStore } from '../../store/AppContext';
 
 interface StudentDashboardProps {
@@ -262,7 +261,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-100 dark:bg-slate-950 transition-colors duration-500">
+    <div className="flex h-screen w-screen overflow-hidden bg-gray-100">
       {/* ─── Mobile backdrop ─── */}
       {isMobile && sidebarOpen && (
         <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 49 }} />
@@ -270,7 +269,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
 
       {/* ─── SIDEBAR ─── */}
       {(!isMobile ? sidebarOpen : true) && (
-        <aside className="transition-colors duration-500 from-[#1A4D50] to-[#6FC7CB] dark:from-slate-900 dark:to-slate-800" style={{
+        <aside className="from-[#1A4D50] to-[#6FC7CB]" style={{
           width: '200px', flexShrink: 0,
           background: 'linear-gradient(180deg, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%)',
           display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',
@@ -310,7 +309,6 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
             })}
           </nav>
           <div style={{ padding: '0.75rem 0.6rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-            <ThemeToggle />
             <button onClick={onLogout}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.6rem',
