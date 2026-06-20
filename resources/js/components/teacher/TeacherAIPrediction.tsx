@@ -88,35 +88,78 @@ function StudentPredictionCard({ pred, trendColor }: { pred: any; trendColor: (t
         <p className="text-xs text-gray-500">📝 {(pred.recommendation ?? '').slice(0, 80)}…</p>
       </div>
 
-      {/* Hidden print view */}
+      {/* Hidden print view — 680px wide, optimised for 1 A4 page */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '680px', opacity: 0, pointerEvents: 'none', zIndex: -9999, overflow: 'hidden', height: '1px' }}>
-        <div ref={printRef} style={{ width: '680px', background: '#fff', fontFamily: 'Arial, sans-serif', color: '#111' }}>
-          <AKMALLetterhead docType="Laporan Ramalan AI Pelajar" />
-          <div style={{ padding: '0 20px' }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '4px' }}>{pred.studentName}</h3>
-          <p style={{ fontSize: '12px', color: '#555', marginBottom: '16px' }}>{pred.currentProgress} · Trend: {pred.performanceTrend}</p>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '16px' }}>
-            <tbody>
-              {[
-                ['Sabak Score', pred.sabaq_score != null ? `${pred.sabaq_score}%` : '—'],
-                ['Sabki Score', pred.sabki_score != null ? `${pred.sabki_score}%` : '—'],
-                ['Manzil Score', pred.manzil_score != null ? `${pred.manzil_score}%` : '—'],
-                ['Anggaran Khatam', pred.estimatedCompletion],
-                ['Keyakinan AI', pred.confidence],
-                ['Kadar Kehadiran', pred.attendanceRate],
-              ].map(([k, v]) => (
-                <tr key={k}>
-                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 10px', fontWeight: 700, background: '#f9fafb', width: '40%' }}>{k}</td>
-                  <td style={{ border: '1px solid #e5e7eb', padding: '6px 10px' }}>{v}</td>
+        <div ref={printRef} style={{ width: '680px', background: '#fff', fontFamily: 'Arial, sans-serif', color: '#1a1a1a', fontSize: '11px' }}>
+          <AKMALLetterhead
+            docType="Laporan Ramalan AI Pelajar"
+            meta={`Pelajar: ${pred.studentName}`}
+          />
+          <div style={{ padding: '0 18px' }}>
+
+            {/* Student header */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px' }}>
+              <tbody>
+                <tr>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '8px 12px', width: '60%' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 900, color: '#0d3d40' }}>{pred.studentName}</div>
+                    <div style={{ fontSize: '9px', color: '#666', marginTop: '2px' }}>{pred.currentProgress}</div>
+                  </td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '8px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#6d28d9' }}>{pred.performanceTrend}</div>
+                    <div style={{ fontSize: '8px', color: '#666', marginTop: '1px', textTransform: 'uppercase' }}>Trend Prestasi</div>
+                  </td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '8px 12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#15803d' }}>{pred.confidence}</div>
+                    <div style={{ fontSize: '8px', color: '#666', marginTop: '1px', textTransform: 'uppercase' }}>Keyakinan AI</div>
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={{ background: '#f5f3ff', borderRadius: '8px', padding: '12px' }}>
-            <p style={{ fontWeight: 700, fontSize: '11px', marginBottom: '6px', color: '#5b21b6' }}>Cadangan AI:</p>
-            <p style={{ fontSize: '10px', color: '#374151', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{pred.recommendation}</p>
-          </div>
-          <AKMALLetterFooter />
+              </tbody>
+            </table>
+
+            {/* Scores + details */}
+            <div style={{ fontSize: '9px', fontWeight: 800, color: '#0d3d40', textTransform: 'uppercase', letterSpacing: '0.05em', borderLeft: '3px solid #6d28d9', paddingLeft: '6px', marginBottom: '6px' }}>
+              Analisis Komponen Hafazan
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginBottom: '10px' }}>
+              <thead>
+                <tr style={{ background: '#f5f3ff' }}>
+                  {['Komponen', 'Skor', 'Komponen', 'Skor'].map((h, i) => (
+                    <th key={i} style={{ border: '1px solid #ddd6fe', padding: '4px 8px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, background: '#fafafa' }}>Sabak (Baharu)</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, color: '#1d4ed8' }}>{pred.sabaq_score != null ? `${pred.sabaq_score}%` : '—'}</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, background: '#fafafa' }}>Anggaran Khatam</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px' }}>{pred.estimatedCompletion}</td>
+                </tr>
+                <tr style={{ background: '#f9fafb' }}>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, background: '#fafafa' }}>Sabki (Ulang Kaji)</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, color: '#15803d' }}>{pred.sabki_score != null ? `${pred.sabki_score}%` : '—'}</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, background: '#fafafa' }}>Kadar Kehadiran</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px' }}>{pred.attendanceRate}</td>
+                </tr>
+                <tr>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, background: '#fafafa' }}>Manzil (Penjagaan)</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, color: '#b45309' }}>{pred.manzil_score != null ? `${pred.manzil_score}%` : '—'}</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 700, background: '#fafafa' }}>Purata Ayat/Hari</td>
+                  <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px' }}>{pred.avgAyahPerDay}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Recommendation */}
+            <div style={{ fontSize: '9px', fontWeight: 800, color: '#0d3d40', textTransform: 'uppercase', letterSpacing: '0.05em', borderLeft: '3px solid #6d28d9', paddingLeft: '6px', marginBottom: '6px' }}>
+              Cadangan & Pelan Tindakan AI
+            </div>
+            <div style={{ background: '#fafafe', border: '1px solid #ddd6fe', borderLeft: '3px solid #6d28d9', padding: '8px 10px', fontSize: '10px', color: '#374151', lineHeight: 1.6 }}>
+              {(pred.recommendation ?? '').slice(0, 500)}{(pred.recommendation ?? '').length > 500 ? '…' : ''}
+            </div>
+
+            <AKMALLetterFooter />
           </div>
         </div>
       </div>

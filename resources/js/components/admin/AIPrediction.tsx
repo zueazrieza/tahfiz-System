@@ -36,44 +36,59 @@ function PrintView({ predictions }: { predictions: any[] }) {
     : 0;
 
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', width: '780px' }}>
-      <AKMALLetterhead docType="Laporan Ramalan AI" meta={`Pelajar Dipantau: ${predictions.length}`} />
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#1a1a1a', width: '780px', fontSize: '10px' }}>
+      <AKMALLetterhead
+        docType="Laporan Ramalan AI Hafazan"
+        meta={`Pelajar Dipantau: ${predictions.length} | Purata Ketepatan: ${avgConf}%`}
+      />
       <div style={{ padding: '0 20px' }}>
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-        {[
-          { label: 'Purata Ketepatan', value: `${avgConf}%`, color: '#2563eb' },
-          { label: 'Pelajar Dipantau', value: predictions.length, color: '#16a34a' },
-        ].map(item => (
-          <div key={item.label} style={{ flex: 1, border: '2px solid #e5e7eb', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: item.color }}>{item.value}</div>
-            <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>{item.label}</div>
-          </div>
-        ))}
-      </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-        <thead>
-          <tr style={{ background: '#f5f3ff' }}>
-            {['Nama Pelajar', 'Kemajuan', 'Khatam', 'Sabak', 'Sabki', 'Manzil', 'Trend', 'Keyakinan'].map(h => (
-              <th key={h} style={{ border: '1px solid #ddd6fe', padding: '7px 8px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {predictions.map((p, i) => (
-            <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px', fontWeight: 600 }}>{p.studentName}</td>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.current_progress}</td>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.estimated_completion}</td>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.sabaq_score != null ? `${p.sabaq_score}%` : '—'}</td>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.sabki_score != null ? `${p.sabki_score}%` : '—'}</td>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.manzil_score != null ? `${p.manzil_score}%` : '—'}</td>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.performance_trend}</td>
-              <td style={{ border: '1px solid #e5e7eb', padding: '6px 8px' }}>{p.confidence}</td>
+
+        {/* Summary */}
+        <table style={{ width: '50%', borderCollapse: 'collapse', marginBottom: '12px' }}>
+          <tbody>
+            <tr>
+              {[
+                { label: 'Purata Ketepatan AI', value: `${avgConf}%`, color: '#1d4ed8' },
+                { label: 'Pelajar Dipantau', value: predictions.length, color: '#15803d' },
+              ].map(item => (
+                <td key={item.label} style={{ border: '1px solid #e5e7eb', padding: '6px 10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 900, color: item.color }}>{item.value}</div>
+                  <div style={{ fontSize: '8px', color: '#666', marginTop: '1px', textTransform: 'uppercase' }}>{item.label}</div>
+                </td>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <AKMALLetterFooter />
+          </tbody>
+        </table>
+
+        {/* Table */}
+        <div style={{ fontSize: '9px', fontWeight: 800, color: '#0d3d40', textTransform: 'uppercase', letterSpacing: '0.05em', borderLeft: '3px solid #6d28d9', paddingLeft: '7px', marginBottom: '6px' }}>
+          Ramalan Individu Pelajar
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+          <thead>
+            <tr style={{ background: '#f5f3ff' }}>
+              {['Nama Pelajar', 'Kemajuan Semasa', 'Anggaran Khatam', 'Sabak', 'Sabki', 'Manzil', 'Trend', 'Keyakinan'].map(h => (
+                <th key={h} style={{ border: '1px solid #ddd6fe', padding: '5px 6px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {predictions.map((p, i) => (
+              <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px', fontWeight: 700 }}>{p.studentName}</td>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px' }}>{p.current_progress}</td>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px' }}>{p.estimated_completion}</td>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px', textAlign: 'center' }}>{p.sabaq_score != null ? `${p.sabaq_score}%` : '—'}</td>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px', textAlign: 'center' }}>{p.sabki_score != null ? `${p.sabki_score}%` : '—'}</td>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px', textAlign: 'center' }}>{p.manzil_score != null ? `${p.manzil_score}%` : '—'}</td>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px' }}>{p.performance_trend}</td>
+                <td style={{ border: '1px solid #e5e7eb', padding: '4px 6px' }}>{p.confidence}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <AKMALLetterFooter />
       </div>
     </div>
   );

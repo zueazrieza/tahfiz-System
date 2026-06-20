@@ -50,95 +50,107 @@ async function captureElementAsPDF(
 
 /* ─── Printable Hafazan Report ─────────────────────────────────────────────── */
 function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any[] }) {
+  const activeStudents = state.students.filter((s: any) => s.status === 'Aktif').length;
+  const records = [...state.hafazanRecords].sort((a: any, b: any) => b.date.localeCompare(a.date));
+
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', width: '780px' }}>
-      <AKMALLetterhead docType="Laporan Hafazan" meta={`Jumlah Rekod: ${state.hafazanRecords.length}`} />
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#1a1a1a', width: '780px', fontSize: '11px' }}>
+      <AKMALLetterhead docType="Laporan Rekod Hafazan" meta={`Jumlah Rekod: ${state.hafazanRecords.length} | Pelajar Aktif: ${activeStudents}`} />
 
-      {/* Summary */}
       <div style={{ padding: '0 20px' }}>
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-        {[
-          { label: 'Jumlah Sesi', value: state.hafazanRecords.length, color: '#16a34a' },
-          { label: 'Pelajar Aktif', value: state.students.filter((s: any) => s.status === 'Aktif').length, color: '#2563eb' },
-          { label: 'Jumlah Kelas', value: state.classes.length, color: '#7c3aed' },
-        ].map(item => (
-          <div key={item.label} style={{ flex: 1, border: `2px solid ${item.color}`, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '26px', fontWeight: 900, color: item.color }}>{item.value}</div>
-            <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>{item.label}</div>
-          </div>
-        ))}
-      </div>
 
-      {/* Monthly Trend Table */}
-      <div style={{ marginBottom: '20px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '8px', borderLeft: '4px solid #16a34a', paddingLeft: '8px' }}>Sesi Hafazan Bulanan</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-          <thead>
-            <tr style={{ background: '#f0fdf4' }}>
-              <th style={{ border: '1px solid #d1fae5', padding: '8px', textAlign: 'left' }}>Bulan</th>
-              <th style={{ border: '1px solid #d1fae5', padding: '8px', textAlign: 'right' }}>Sesi Direkod</th>
-              <th style={{ border: '1px solid #d1fae5', padding: '8px', textAlign: 'right' }}>Bar Kemajuan</th>
-            </tr>
-          </thead>
+        {/* Summary row */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px' }}>
           <tbody>
-            {hafazanData.map((row, i) => {
-              const max = Math.max(...hafazanData.map(d => d.sessions), 1);
-              return (
-                <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                  <td style={{ border: '1px solid #e5e7eb', padding: '8px', fontWeight: 600 }}>{row.name}</td>
-                  <td style={{ border: '1px solid #e5e7eb', padding: '8px', textAlign: 'right' }}>{row.sessions}</td>
-                  <td style={{ border: '1px solid #e5e7eb', padding: '8px' }}>
-                    <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '8px', width: '100%' }}>
-                      <div style={{ background: '#16a34a', borderRadius: '4px', height: '8px', width: `${Math.round((row.sessions / max) * 100)}%` }} />
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Hafazan Records Detail */}
-      <div>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '8px', borderLeft: '4px solid #16a34a', paddingLeft: '8px' }}>Butiran Rekod Hafazan</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-          <thead>
-            <tr style={{ background: '#f0fdf4' }}>
-              {['Tarikh', 'Pelajar', 'Surah (Sabak)', 'Ayat', 'Gred', 'Catatan'].map(h => (
-                <th key={h} style={{ border: '1px solid #d1fae5', padding: '6px 8px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+            <tr>
+              {[
+                { label: 'Jumlah Sesi', value: state.hafazanRecords.length, color: '#15803d' },
+                { label: 'Pelajar Aktif', value: activeStudents, color: '#1d4ed8' },
+                { label: 'Jumlah Kelas', value: state.classes.length, color: '#6d28d9' },
+              ].map(item => (
+                <td key={item.label} style={{ border: '1px solid #e5e7eb', padding: '8px 12px', textAlign: 'center', width: '33%' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: item.color }}>{item.value}</div>
+                  <div style={{ fontSize: '9px', color: '#666', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.label}</div>
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {[...state.hafazanRecords]
-              .sort((a: any, b: any) => b.date.localeCompare(a.date))
-              .slice(0, 20)
-              .map((r: any, i: number) => {
-                const student = state.students.find((s: any) => s.id === r.studentId);
+          </tbody>
+        </table>
+
+        {/* Monthly Trend */}
+        <div style={{ marginBottom: '14px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: '#0d3d40', textTransform: 'uppercase', letterSpacing: '0.05em', borderLeft: '3px solid #15803d', paddingLeft: '7px', marginBottom: '6px' }}>
+            Trend Sesi Hafazan (5 Bulan Terkini)
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+            <thead>
+              <tr style={{ background: '#f0fdf4' }}>
+                {['Bulan', 'Sesi Direkod', 'Kadar'].map(h => (
+                  <th key={h} style={{ border: '1px solid #d1fae5', padding: '5px 8px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {hafazanData.map((row, i) => {
+                const max = Math.max(...hafazanData.map(d => d.sessions), 1);
                 return (
-                  <tr key={r.id} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px' }}>{r.date}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px', fontWeight: 600 }}>{student?.name ?? '—'}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px' }}>{r.sabaq?.surah ?? '—'} ({r.sabaq?.from}–{r.sabaq?.to})</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px', textAlign: 'center' }}>{r.ayahCount ?? '—'}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px' }}>
-                      <span style={{ padding: '2px 6px', borderRadius: '9999px', background: r.sabaq?.grade === 'Mumtaz' ? '#dcfce7' : r.sabaq?.grade === 'Jayyid' ? '#dbeafe' : '#fef9c3', color: r.sabaq?.grade === 'Mumtaz' ? '#15803d' : r.sabaq?.grade === 'Jayyid' ? '#1d4ed8' : '#854d0e', fontSize: '10px', fontWeight: 700 }}>
-                        {r.sabaq?.grade ?? '—'}
-                      </span>
+                  <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', fontWeight: 600 }}>{row.name}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px' }}>{row.sessions} sesi</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 8px', width: '200px' }}>
+                      <div style={{ background: '#e5e7eb', borderRadius: '3px', height: '6px', width: '100%' }}>
+                        <div style={{ background: '#15803d', borderRadius: '3px', height: '6px', width: `${Math.round((row.sessions / max) * 100)}%` }} />
+                      </div>
                     </td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px', color: '#555' }}>{r.remarks || '—'}</td>
                   </tr>
                 );
               })}
-          </tbody>
-        </table>
-        {state.hafazanRecords.length > 20 && (
-          <p style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>Menunjukkan 20 terkini daripada {state.hafazanRecords.length} rekod.</p>
-        )}
-      </div>
+            </tbody>
+          </table>
+        </div>
 
-      <AKMALLetterFooter />
+        {/* Records Detail */}
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: '#0d3d40', textTransform: 'uppercase', letterSpacing: '0.05em', borderLeft: '3px solid #15803d', paddingLeft: '7px', marginBottom: '6px' }}>
+            Butiran Rekod Hafazan Terkini
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+            <thead>
+              <tr style={{ background: '#f0fdf4' }}>
+                {['Tarikh', 'Pelajar', 'Surah (Sabak)', 'Ayat', 'Gred', 'Catatan'].map(h => (
+                  <th key={h} style={{ border: '1px solid #d1fae5', padding: '5px 7px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {records.slice(0, 25).map((r: any, i: number) => {
+                const student = state.students.find((s: any) => s.id === r.studentId);
+                const grade = r.sabaq?.grade ?? '—';
+                const gradeBg = grade === 'Mumtaz' ? '#dcfce7' : grade === 'Jayyid' ? '#dbeafe' : '#fef9c3';
+                const gradeColor = grade === 'Mumtaz' ? '#15803d' : grade === 'Jayyid' ? '#1d4ed8' : '#854d0e';
+                return (
+                  <tr key={r.id} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', whiteSpace: 'nowrap' }}>{r.date}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', fontWeight: 600 }}>{student?.name ?? '—'}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px' }}>{r.sabaq?.surah ?? '—'} ({r.sabaq?.from ?? ''}–{r.sabaq?.to ?? ''})</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', textAlign: 'center' }}>{r.ayahCount ?? '—'}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px' }}>
+                      <span style={{ padding: '1px 5px', borderRadius: '9999px', background: gradeBg, color: gradeColor, fontSize: '9px', fontWeight: 700 }}>{grade}</span>
+                    </td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', color: '#555' }}>{r.remarks || '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {records.length > 25 && (
+            <div style={{ fontSize: '9px', color: '#888', marginTop: '5px', fontStyle: 'italic' }}>
+              * Menunjukkan 25 rekod terkini daripada {records.length} rekod keseluruhan.
+            </div>
+          )}
+        </div>
+
+        <AKMALLetterFooter />
       </div>
     </div>
   );
@@ -146,72 +158,83 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
 
 /* ─── Printable Payment Report ─────────────────────────────────────────────── */
 function PaymentPrintView({ state }: { state: any }) {
-  const total = state.payments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
-  const paid = state.payments.filter((p: any) => p.status === 'Dibayar').reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+  const total   = state.payments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+  const paid    = state.payments.filter((p: any) => p.status === 'Dibayar').reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   const pending = total - paid;
-  return (
-    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#111', width: '780px' }}>
-      <AKMALLetterhead docType="Laporan Pembayaran" meta={`Jumlah Invois: ${state.payments.length}`} />
-      <div style={{ padding: '0 20px' }}>
-      {/* Summary */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-        {[
-          { label: 'Jumlah Bil', value: `RM ${total.toLocaleString()}`, color: '#1a1a1a' },
-          { label: 'Terkumpul', value: `RM ${paid.toLocaleString()}`, color: '#16a34a' },
-          { label: 'Belum Bayar', value: `RM ${pending.toLocaleString()}`, color: '#dc2626' },
-          { label: 'Kadar Kutipan', value: total > 0 ? `${Math.round((paid / total) * 100)}%` : '0%', color: '#2563eb' },
-        ].map(item => (
-          <div key={item.label} style={{ flex: 1, border: '2px solid #e5e7eb', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: item.color }}>{item.value}</div>
-            <div style={{ fontSize: '11px', color: '#555', marginTop: '2px' }}>{item.label}</div>
-          </div>
-        ))}
-      </div>
+  const sorted  = [...state.payments].sort((a: any, b: any) =>
+    `${b.year}-${String(b.month).padStart(2,'0')}`.localeCompare(`${a.year}-${String(a.month).padStart(2,'0')}`)
+  );
 
-      {/* Payments Detail */}
-      <div>
-        <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#1a1a1a', marginBottom: '8px', borderLeft: '4px solid #2563eb', paddingLeft: '8px' }}>Lejar Pembayaran</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
-          <thead>
-            <tr style={{ background: '#eff6ff' }}>
-              {['Pelajar', 'Bulan / Tahun', 'Jumlah', 'Status', 'Tarikh Akhir', 'Tarikh Bayar'].map(h => (
-                <th key={h} style={{ border: '1px solid #bfdbfe', padding: '7px 8px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+  return (
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#fff', color: '#1a1a1a', width: '780px', fontSize: '11px' }}>
+      <AKMALLetterhead docType="Laporan Pembayaran" meta={`Jumlah Invois: ${state.payments.length}`} />
+
+      <div style={{ padding: '0 20px' }}>
+
+        {/* Summary */}
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px' }}>
+          <tbody>
+            <tr>
+              {[
+                { label: 'Jumlah Bil', value: `RM ${total.toLocaleString()}`, color: '#1a1a1a' },
+                { label: 'Terkumpul', value: `RM ${paid.toLocaleString()}`, color: '#15803d' },
+                { label: 'Belum Bayar', value: `RM ${pending.toLocaleString()}`, color: '#dc2626' },
+                { label: 'Kadar Kutipan', value: total > 0 ? `${Math.round((paid / total) * 100)}%` : '0%', color: '#1d4ed8' },
+              ].map(item => (
+                <td key={item.label} style={{ border: '1px solid #e5e7eb', padding: '8px 10px', textAlign: 'center', width: '25%' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 900, color: item.color }}>{item.value}</div>
+                  <div style={{ fontSize: '9px', color: '#666', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.label}</div>
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {[...state.payments]
-              .sort((a: any, b: any) => `${b.year}-${String(b.month).padStart(2,'0')}`.localeCompare(`${a.year}-${String(a.month).padStart(2,'0')}`))
-              .map((p: any, i: number) => {
-                const student = state.students.find((s: any) => s.id === p.studentId);
+          </tbody>
+        </table>
+
+        {/* Lejar */}
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: '#0d3d40', textTransform: 'uppercase', letterSpacing: '0.05em', borderLeft: '3px solid #1d4ed8', paddingLeft: '7px', marginBottom: '6px' }}>
+            Lejar Pembayaran
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+            <thead>
+              <tr style={{ background: '#eff6ff' }}>
+                {['Pelajar', 'Bulan / Tahun', 'Jumlah (RM)', 'Status', 'Tarikh Akhir', 'Tarikh Bayar'].map(h => (
+                  <th key={h} style={{ border: '1px solid #bfdbfe', padding: '5px 7px', textAlign: 'left', fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((p: any, i: number) => {
+                const student  = state.students.find((s: any) => s.id === p.studentId);
                 const monthName = new Date(p.year, p.month - 1).toLocaleString('ms-MY', { month: 'long', year: 'numeric' });
+                const isPaid    = p.status === 'Dibayar';
                 return (
                   <tr key={p.id} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px', fontWeight: 600 }}>{student?.name ?? '—'}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px' }}>{monthName}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px', fontWeight: 700 }}>RM {p.amount}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px' }}>
-                      <span style={{ padding: '2px 8px', borderRadius: '9999px', background: p.status === 'Dibayar' ? '#dcfce7' : '#fee2e2', color: p.status === 'Dibayar' ? '#15803d' : '#dc2626', fontSize: '10px', fontWeight: 700 }}>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', fontWeight: 600 }}>{student?.name ?? '—'}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px' }}>{monthName}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', fontWeight: 700 }}>{Number(p.amount).toLocaleString()}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px' }}>
+                      <span style={{ padding: '1px 6px', borderRadius: '9999px', background: isPaid ? '#dcfce7' : '#fee2e2', color: isPaid ? '#15803d' : '#dc2626', fontSize: '9px', fontWeight: 700 }}>
                         {p.status}
                       </span>
                     </td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px', color: '#555' }}>{p.dueDate ?? '—'}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '5px 8px', color: '#555' }}>{p.paidDate ?? '—'}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', color: '#555' }}>{p.dueDate ?? '—'}</td>
+                    <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', color: '#555' }}>{p.paidDate ?? '—'}</td>
                   </tr>
                 );
               })}
-          </tbody>
-          <tfoot>
-            <tr style={{ background: '#eff6ff', fontWeight: 700 }}>
-              <td colSpan={2} style={{ border: '1px solid #bfdbfe', padding: '7px 8px' }}>JUMLAH</td>
-              <td style={{ border: '1px solid #bfdbfe', padding: '7px 8px' }}>RM {total.toLocaleString()}</td>
-              <td colSpan={3} style={{ border: '1px solid #bfdbfe', padding: '7px 8px', color: '#16a34a' }}>RM {paid.toLocaleString()} dikutip</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            </tbody>
+            <tfoot>
+              <tr style={{ background: '#eff6ff', fontWeight: 700, fontSize: '10px' }}>
+                <td colSpan={2} style={{ border: '1px solid #bfdbfe', padding: '5px 7px' }}>JUMLAH KESELURUHAN</td>
+                <td style={{ border: '1px solid #bfdbfe', padding: '5px 7px' }}>RM {total.toLocaleString()}</td>
+                <td colSpan={3} style={{ border: '1px solid #bfdbfe', padding: '5px 7px', color: '#15803d' }}>RM {paid.toLocaleString()} dikutip</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
 
-      <AKMALLetterFooter />
+        <AKMALLetterFooter />
       </div>
     </div>
   );
