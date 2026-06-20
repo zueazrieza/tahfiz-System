@@ -97,7 +97,7 @@ class HafazanRecordController extends Controller
             $teacherId = $student?->teacher_id;
             if (!$teacherId && auth()->check()) {
                 $teacher = \App\Models\Teacher::where('id', auth()->user()->linked_id)->first();
-                $teacherId = $teacher?->id ?? \App\Models\Teacher::min('id');
+                $teacherId = $teacher?->id;
             }
         }
 

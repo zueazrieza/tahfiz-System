@@ -8,17 +8,6 @@ class ClassRoom extends Model
 {
     protected $fillable = ['name', 'capacity', 'teacher_id', 'center_id'];
 
-    public function getNameAttribute($value)
-    {
-        if ($this->teacher_id) {
-            $teacher = $this->primaryTeacher ?: \App\Models\Teacher::find($this->teacher_id);
-            if ($teacher) {
-                return "Halaqah " . $teacher->name;
-            }
-        }
-        return $value;
-    }
-
     public function teachers()
     {
         return $this->belongsToMany(Teacher::class, 'class_teacher', 'class_room_id', 'teacher_id')

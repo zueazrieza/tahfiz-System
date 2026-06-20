@@ -78,9 +78,9 @@ export async function handleLogout() {
     // best-effort
   }
   clearAuthCache();
-  // Clear legacy storage too
   sessionStorage.removeItem('authUser');
   localStorage.removeItem('authUser');
+  localStorage.removeItem('tahfiz_app_state');
   window.location.replace('/app/role-selection');
 }
 

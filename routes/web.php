@@ -109,7 +109,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         Route::post('/ai-predictions/generate',                       [AIController::class, 'generateForStudent']);
         Route::get('/ai-predictions/student/{studentId}',            [AIController::class, 'getPrediction']);
         Route::get('/ai-predictions/class/{classId}',                [AIController::class, 'getClassPredictions']);
-        Route::get('/ai-predictions/generate/class/{classId}',       [AIController::class, 'getClassPredictions']);
+        Route::match(['GET', 'POST'], '/ai-predictions/generate/class/{classId}', [AIController::class, 'getClassPredictions']);
         Route::post('/ai/import-alumni',                    [AIController::class, 'importAlumni']);
         Route::get('/ai/benchmarks',                        [AIController::class, 'getAIBenchmarks']);
         Route::get('/quran/verses/{chapter}',               [AIController::class, 'getQuranVerses']);
