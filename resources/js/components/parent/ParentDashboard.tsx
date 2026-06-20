@@ -80,9 +80,18 @@ export function ParentDashboard({ userName, onLogout }: ParentDashboardProps) {
   const child = children.find(c => String(c.id) === selectedChildId) || children[0];
   const parentUser = state.users.find(u => u.name === authUser.name && u.role === 'parent') ?? state.users.find(u => u.role === 'parent')!;
 
+  const [hasPending, setHasPending] = useState(false);
+  useEffect(() => {
+    if (!child?.id) return;
+    axios.get(`/api/payments?student_id=${child.id}`)
+      .then(res => {
+        const pending = (res.data as any[]).some((p: any) => p.status !== 'Dibayar');
+        setHasPending(pending);
+      })
+      .catch(() => {});
+  }, [child?.id]);
+
   const attendanceRate = child?.attendance_rate ?? 0;
-  const childPayments = state.payments.filter(p => p.studentId === String(child?.id));
-  const hasPending = childPayments.some(p => p.status !== 'Dibayar');
 
   const navItemsWithBadge = navItems.map(n =>
     n.id === 'inbox' ? { ...n, badge: notifCount > 0 ? String(notifCount) : undefined } : n

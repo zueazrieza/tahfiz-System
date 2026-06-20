@@ -185,6 +185,31 @@ class HafazanRecordController extends Controller
             Log::warning('Achievement sync failed: ' . $e->getMessage());
         }
 
-        return response()->json($record, 201);
+        return response()->json([
+            'id'        => $record->id,
+            'studentId' => $record->student_id,
+            'teacherId' => $record->teacher_id,
+            'date'      => $record->date,
+            'sabaq'     => [
+                'surah' => $record->sabaq_surah,
+                'from'  => $record->sabaq_from,
+                'to'    => $record->sabaq_to,
+                'grade' => $record->sabaq_grade,
+            ],
+            'sabaqi'    => [
+                'surah' => $record->sabaqi_surah,
+                'from'  => $record->sabaqi_from,
+                'to'    => $record->sabaqi_to,
+                'grade' => $record->sabaqi_grade,
+            ],
+            'manzil'    => [
+                'surah' => $record->manzil_surah,
+                'from'  => $record->manzil_from,
+                'to'    => $record->manzil_to,
+                'grade' => $record->manzil_grade,
+            ],
+            'remarks'   => $record->remarks,
+            'ayahCount' => $record->ayah_count,
+        ], 201);
     }
 }

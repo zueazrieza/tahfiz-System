@@ -8,10 +8,9 @@ import { ConfirmModal } from '../shared/ConfirmModal';
 export function ManageAttendance() {
   const { state, dispatch } = useAppStore();
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => 
-    t.email === authUser.email || 
-    (authUser.name && t.name.toLowerCase().includes(authUser.name.toLowerCase().split(' ').slice(-1)[0]))
-  ) ?? state.teachers[0];
+  const teacher = state.teachers.find(t => String(t.id) === String(authUser.linked_id))
+    ?? state.teachers.find(t => t.email === authUser.email)
+    ?? state.teachers[0];
   const teacherClasses = state.classes.filter(c => teacher?.classIds.some(cid => String(cid) === String(c.id)));
   const [selectedClassId, setSelectedClassId] = useState(teacherClasses[0]?.id ?? '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -43,7 +42,7 @@ export function ManageAttendance() {
         data.forEach((row: any) => {
           const remarks = row.remarks || '';
           const reasonType = presetValues.includes(remarks) ? remarks : (remarks ? 'Lain-lain' : '');
-          map[row.student_id] = { status: row.status, remarks, reasonType };
+          map[String(row.studentId ?? row.student_id)] = { status: row.status, remarks, reasonType };
         });
         setAttendanceMap(map);
       } else {
@@ -85,8 +84,8 @@ export function ManageAttendance() {
   };
 
   const getStatusForStudent = (studentId: string): AttendanceStatus => {
-    if (attendanceMap[studentId]) return attendanceMap[studentId].status;
-    const existing = state.attendance.find(a => a.studentId === studentId && a.date === date);
+    if (attendanceMap[String(studentId)]) return attendanceMap[String(studentId)].status;
+    const existing = state.attendance.find(a => String(a.studentId) === String(studentId) && a.date === date);
     return existing?.status ?? 'Hadir';
   };
 

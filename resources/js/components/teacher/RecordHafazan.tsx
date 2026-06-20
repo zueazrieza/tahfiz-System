@@ -11,10 +11,9 @@ export function RecordHafazan() {
 
   // Get the logged-in teacher's ID from sessionStorage
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => 
-    t.email === authUser.email || 
-    (authUser.name && t.name.toLowerCase().includes(authUser.name.toLowerCase().split(' ').slice(-1)[0]))
-  ) ?? state.teachers[0];
+  const teacher = state.teachers.find(t => String(t.id) === String(authUser.linked_id))
+    ?? state.teachers.find(t => t.email === authUser.email)
+    ?? state.teachers[0];
   const teacherClasses = state.classes.filter(c => teacher?.classIds.some(cid => String(cid) === String(c.id)));
   const [selectedClassId, setSelectedClassId] = useState(teacherClasses[0]?.id ?? '');
   const studentsInClass = state.students.filter(s => String(s.classId) === String(selectedClassId));
@@ -78,7 +77,7 @@ export function RecordHafazan() {
     try {
       const resp = await axios.post('/api/hafazan-records', pendingPayload);
       if (resp.status === 201 || resp.status === 200) {
-        dispatch({ type: 'RECORD_HAFAZAN', payload: pendingPayload });
+        dispatch({ type: 'RECORD_HAFAZAN', payload: { ...pendingPayload, id: resp.data.id } });
         setShowSuccess(true);
         setPendingPayload(null);
         setTimeout(() => {

@@ -205,14 +205,13 @@ export function ManageTeachers() {
       return;
     }
     try {
-      const response = await axios.put(`/api/classes/${editClassForm.id}`, {
+      await axios.put(`/api/classes/${editClassForm.id}`, {
         name: editClassForm.name,
         capacity: editClassForm.capacity,
         teacherId: editClassForm.teacherId
       });
-      // Update global state
-      const updatedClasses = state.classes.map(c => c.id === editClassForm.id ? response.data : c);
-      dispatch({ type: 'SET_CLASSES', payload: updatedClasses });
+      const classesRes = await axios.get('/api/classes');
+      dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
       setShowEditClassModal(false);
       setEditClassForm(null);
     } catch (error) {

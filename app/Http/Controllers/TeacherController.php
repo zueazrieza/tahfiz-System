@@ -152,7 +152,28 @@ class TeacherController extends Controller
 
         $teacher = Teacher::create($data);
 
-        return response()->json($teacher, 201);
+        $classIds = \App\Models\ClassRoom::where('teacher_id', $teacher->id)->pluck('id');
+        return response()->json([
+            'id'                   => $teacher->id,
+            'name'                 => $teacher->name,
+            'gender'               => $teacher->gender,
+            'email'                => $teacher->email,
+            'phone'                => $teacher->phone,
+            'icNo'                 => $teacher->ic_no,
+            'specialization'       => $teacher->specialization,
+            'status'               => $teacher->status,
+            'joinedDate'           => $teacher->joined_date,
+            'qualification'        => $teacher->qualification,
+            'experience'           => $teacher->experience,
+            'medicalHistory'       => $teacher->medical_history,
+            'emergencyContactName' => $teacher->emergency_contact_name,
+            'emergencyContactPhone'=> $teacher->emergency_contact_phone,
+            'dependentsCount'      => $teacher->dependents_count,
+            'residence'            => $teacher->residence,
+            'serviceStartDate'     => $teacher->service_start_date,
+            'userId'               => $teacher->user_id,
+            'classIds'             => $classIds,
+        ], 201);
     }
 
     /**

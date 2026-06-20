@@ -83,6 +83,16 @@ class AttendanceController extends Controller
 
         $attendances = $query->with(['student', 'classRoom'])->latest('date')->get();
 
-        return response()->json($attendances);
+        return response()->json($attendances->map(function ($a) {
+            return [
+                'id'        => $a->id,
+                'studentId' => $a->student_id,
+                'classId'   => $a->class_id,
+                'teacherId' => $a->teacher_id,
+                'date'      => $a->date,
+                'status'    => $a->status,
+                'remarks'   => $a->remarks,
+            ];
+        }));
     }
 }

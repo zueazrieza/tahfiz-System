@@ -157,6 +157,7 @@ export function ManageStudents() {
         status: 'Aktif'
       });
       dispatch({ type: 'ADD_STUDENT', payload: response.data });
+      setStudentsPage(1);
       resetAddForm();
       setShowAddModal(false);
     } catch (error) {
@@ -226,6 +227,7 @@ export function ManageStudents() {
         intakeJuzuk:             editForm.intakeJuzuk,
       });
       dispatch({ type: 'EDIT_STUDENT', payload: res.data });
+      setStudentsPage(1);
       setShowEditModal(false);
       setEditForm(null);
     } catch (error) {
@@ -786,7 +788,7 @@ export function ManageStudents() {
                   <div><label className={labelCls}>Umur</label><input type="number" required className={inputCls} value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className={labelCls}>No. Matrik</label><input className={inputCls} value={editForm.matric_no || editForm.matricNo} onChange={e => setEditForm({ ...editForm, matricNo: e.target.value })} /></div>
+                  <div><label className={labelCls}>No. Matrik</label><input className={inputCls} value={editForm.matricNo ?? editForm.matric_no ?? ''} onChange={e => setEditForm({ ...editForm, matricNo: e.target.value, matric_no: e.target.value })} /></div>
                   <div><label className={labelCls}>Sesi Intake</label><input className={inputCls} value={editForm.intake} onChange={e => setEditForm({ ...editForm, intake: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

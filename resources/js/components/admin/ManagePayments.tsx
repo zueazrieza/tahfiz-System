@@ -127,9 +127,7 @@ export function ManagePayments() {
       return;
     }
     try {
-      const res = await axios.put(`/api/payments/${p.id}`, { status: newStatus });
-      dispatch({ type: 'TOGGLE_PAYMENT', payload: { id: p.id, status: newStatus } });
-      // Reload for side effects (activity log handled in reducer but maybe date changed)
+      await axios.put(`/api/payments/${p.id}`, { status: newStatus });
       const paymentsRes = await axios.get('/api/payments');
       dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
     } catch (err) {
