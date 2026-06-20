@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { 
-  ShieldCheck, 
-  GraduationCap, 
-  Users, 
-  BookOpen, 
-  ArrowLeft, 
+import {
+  ShieldCheck,
+  GraduationCap,
+  Users,
+  BookOpen,
+  ArrowLeft,
   ChevronRight,
   Sparkles,
   LayoutDashboard
@@ -69,7 +69,7 @@ export function RoleSelectionPage() {
 
   return (
     <div className="min-h-screen flex bg-white font-sans selection:bg-[#6FC7CB] selection:text-white overflow-hidden">
-      
+
       {/* ── LEFT PANEL: Brand & Institutional Context ── */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#1A4D50] overflow-hidden items-center justify-center p-12">
         {/* Abstract Background patterns */}
@@ -77,13 +77,13 @@ export function RoleSelectionPage() {
           <div className="absolute top-[-10%] left-[-10%] size-[500px] rounded-full border-[60px] border-white" />
           <div className="absolute bottom-[-20%] right-[-10%] size-[400px] rounded-full border-[30px] border-white" />
         </div>
-        
+
         <div className="relative z-10 w-full max-w-lg text-center">
-          
+
           <div className="mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
-            <img 
-              src="/images/logo.png" 
-              alt="AKMAL Logo" 
+            <img
+              src="/images/logo.png"
+              alt="AKMAL Logo"
               className="w-48 mx-auto mb-8 drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             />
             <h2 className="text-4xl font-extrabold text-white mb-6 tracking-tight leading-tight">
@@ -94,7 +94,7 @@ export function RoleSelectionPage() {
               Satu portal untuk semua. Pilih peranan anda untuk memulakan sesi pengurusan akademik yang lebih efisien.
             </p>
           </div>
-          
+
           {/* Stats/Badges */}
           <div className="flex items-center justify-center gap-6 animate-in fade-in zoom-in duration-1000 delay-300">
              <div className="bg-white/5 border border-white/10 backdrop-blur-md px-6 py-4 rounded-2xl">
@@ -107,7 +107,7 @@ export function RoleSelectionPage() {
              </div>
           </div>
         </div>
-        
+
         {/* Decorative dots */}
         <div className="absolute top-1/4 right-20 grid grid-cols-4 gap-4 opacity-20">
           {[...Array(16)].map((_, i) => <div key={i} className="size-1.5 bg-white rounded-full" />)}
@@ -117,14 +117,14 @@ export function RoleSelectionPage() {
       {/* ── RIGHT PANEL: Role Selection ── */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-slate-50/30 overflow-y-auto">
         <div className="w-full max-w-md animate-in fade-in slide-in-from-right-8 duration-700">
-          
+
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <img src="/images/logo.png" alt="Logo" className="h-12" />
           </div>
 
           <div className="mb-10 text-center lg:text-left">
-            <button 
+            <button
               onClick={handleBack}
               className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase tracking-widest transition-colors mb-6 group"
             >
@@ -149,8 +149,8 @@ export function RoleSelectionPage() {
                   onClick={() => setSelectedRole(role.id)}
                   className={`
                     w-full flex items-center gap-5 p-5 rounded-[24px] border-2 transition-all duration-300 relative group
-                    ${isSelected 
-                      ? 'bg-white border-[#6FC7CB] shadow-2xl shadow-cyan-100/50 -translate-y-1' 
+                    ${isSelected
+                      ? 'bg-white border-[#6FC7CB] shadow-2xl shadow-cyan-100/50 -translate-y-1'
                       : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
                     }
                   `}
@@ -162,7 +162,7 @@ export function RoleSelectionPage() {
                   `}>
                     {role.icon}
                   </div>
-                  
+
                   <div className="flex-1 text-left">
                     <h3 className={`font-black text-lg transition-colors ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>
                       {role.label}

@@ -1046,11 +1046,11 @@
 
             <nav class="nav-links">
                 <a href="#home">Home</a>
-                <a href="#features">Features</a>
-                <a href="#testimonials">Testimonials</a>
-                <a href="#locations">Locations</a>
-                <a href="#about">About</a>
-                <a href="#contact">Contact</a>
+                <a href="#metodologi">Metodologi</a>
+                <a href="#features">Strategi</a>
+                <a href="#online-programs">Program</a>
+                <a href="#locations">Lokasi</a>
+                <a href="#contact">Hubungi</a>
             </nav>
 
             <div class="nav-actions">
@@ -1210,6 +1210,70 @@
             <div style="background: #0b5b54; padding: 2rem 1rem; border-radius: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;" onmouseenter="this.style.transform='translateY(-8px)'; this.style.backgroundColor='#0e6e65';" onmouseleave="this.style.transform='translateY(0)'; this.style.backgroundColor='#0b5b54';">
                 <div style="font-size: 2.5rem; font-weight: 800; color: #ffffff; letter-spacing: -0.03em; margin-bottom: 0.25rem;">637</div>
                 <div style="font-size: 0.8rem; font-weight: 700; color: #a7f3d0; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9;">Pelajar</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- METHODOLOGY SECTION -->
+    <section id="metodologi" style="padding: 5rem 1rem; background: #fff;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <div style="text-align: center; margin-bottom: 3.5rem;">
+                <p style="text-transform: uppercase; letter-spacing: 0.12em; color: #6FC7CB; font-weight: 700; margin-bottom: 0.5rem; font-size: 0.8rem;">Kaedah Terbukti</p>
+                <h2 style="font-size: 2.2rem; font-weight: 800; color: #1A4D50; margin-bottom: 1rem;">Metodologi 3-Tunjang AKMAL</h2>
+                <p style="color: #64748b; max-width: 520px; margin: 0 auto; font-size: 0.95rem; line-height: 1.7;">Setiap sesi hafazan mengikut sistem 3 tunjang yang telah terbukti berkesan selama lebih 10 tahun dalam melahirkan huffaz berkualiti.</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 4rem;">
+                <!-- Sabaq -->
+                <div style="background: linear-gradient(145deg, #E8F6F7, #D1EEF0); border-radius: 28px; padding: 2.5rem; text-align: center; border: 1px solid #B8E4E7; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: rgba(111,199,203,0.15); border-radius: 50%;"></div>
+                    <div style="width: 64px; height: 64px; background: #6FC7CB; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 1.75rem; box-shadow: 0 10px 25px rgba(111,199,203,0.4);">📖</div>
+                    <div style="display: inline-block; background: #1A4D50; color: #6FC7CB; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.15em; padding: 0.25rem 0.9rem; border-radius: 999px; margin-bottom: 1rem; text-transform: uppercase;">Tunjang 1</div>
+                    <h3 style="font-size: 1.6rem; font-weight: 900; color: #1A4D50; margin-bottom: 0.75rem; letter-spacing: -0.02em;">Sabaq</h3>
+                    <p style="color: #2D7A7E; font-size: 0.9rem; line-height: 1.7;">Hafazan baharu setiap hari bersama murabbi yang berpengalaman. Target minimum 1 muka surat sehari untuk mencapai 30 juzuk dalam setahun.</p>
+                </div>
+
+                <!-- Sabaqi -->
+                <div style="background: linear-gradient(145deg, #F0FDF4, #D1FAE5); border-radius: 28px; padding: 2.5rem; text-align: center; border: 1px solid #A7F3D0; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: rgba(167,243,208,0.2); border-radius: 50%;"></div>
+                    <div style="width: 64px; height: 64px; background: #10B981; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 1.75rem; box-shadow: 0 10px 25px rgba(16,185,129,0.35);">🔄</div>
+                    <div style="display: inline-block; background: #065F46; color: #6EE7B7; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.15em; padding: 0.25rem 0.9rem; border-radius: 999px; margin-bottom: 1rem; text-transform: uppercase;">Tunjang 2</div>
+                    <h3 style="font-size: 1.6rem; font-weight: 900; color: #065F46; margin-bottom: 0.75rem; letter-spacing: -0.02em;">Sabaqi</h3>
+                    <p style="color: #047857; font-size: 0.9rem; line-height: 1.7;">Ulangan hafazan dari sesi semalam untuk mengukuhkan ingatan jangka pendek. Memastikan setiap ayat yang baru dihafaz tidak mudah terlupa.</p>
+                </div>
+
+                <!-- Manzil -->
+                <div style="background: linear-gradient(145deg, #FFFBEB, #FDE68A); border-radius: 28px; padding: 2.5rem; text-align: center; border: 1px solid #FCD34D; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: rgba(253,211,77,0.2); border-radius: 50%;"></div>
+                    <div style="width: 64px; height: 64px; background: #F59E0B; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 1.75rem; box-shadow: 0 10px 25px rgba(245,158,11,0.35);">🏆</div>
+                    <div style="display: inline-block; background: #78350F; color: #FCD34D; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.15em; padding: 0.25rem 0.9rem; border-radius: 999px; margin-bottom: 1rem; text-transform: uppercase;">Tunjang 3</div>
+                    <h3 style="font-size: 1.6rem; font-weight: 900; color: #78350F; margin-bottom: 0.75rem; letter-spacing: -0.02em;">Manzil</h3>
+                    <p style="color: #92400E; font-size: 0.9rem; line-height: 1.7;">Muraja'ah hafazan lama secara berkala untuk memastikan hafazan kekal kukuh selamanya. Proses pemantapan yang berterusan sehingga khatam.</p>
+                </div>
+            </div>
+
+            <!-- Achievement highlights -->
+            <div style="background: #1A4D50; border-radius: 28px; padding: 2.5rem 3rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; align-items: center;">
+                <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 2rem;">
+                    <div style="font-size: 2.8rem; font-weight: 900; color: #6FC7CB; letter-spacing: -0.03em; line-height: 1;">3</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem;">Bulan Terpantas</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.35rem;">Rekod khatam 30 juzuk</div>
+                </div>
+                <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 2rem;">
+                    <div style="font-size: 2.8rem; font-weight: 900; color: #6FC7CB; letter-spacing: -0.03em; line-height: 1;">7–11</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem;">Bulan Purata</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.35rem;">Tempoh khatam pelajar biasa</div>
+                </div>
+                <div style="text-align: center; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 2rem;">
+                    <div style="font-size: 2.8rem; font-weight: 900; color: #6FC7CB; letter-spacing: -0.03em; line-height: 1;">10+</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem;">Tahun Minimum</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.35rem;">Tiada had umur atas</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2.8rem; font-weight: 900; color: #6FC7CB; letter-spacing: -0.03em; line-height: 1;">564+</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.25rem;">Al-Hafiz Dilahirkan</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 0.35rem;">Sejak 2018 hingga kini</div>
+                </div>
             </div>
         </div>
     </section>
