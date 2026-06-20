@@ -73,14 +73,29 @@ class UserController extends Controller
 
         $student = Student::findOrFail($request->student_id);
 
+        $email = str_replace(' ', '', strtolower($request->username)) . '@tahfiz.com';
+
         $user = User::create([
-            'name' => $request->username,
-            'email' => str_replace(' ', '', strtolower($request->username)) . '@tahfiz.com',
-            'password' => Hash::make($request->password),
-            'role' => 'student',
-            'status' => 'active',
-            'linked_id' => $student->id
+            'name'      => $request->username,
+            'email'     => $email,
+            'password'  => Hash::make($request->password),
+            'role'      => 'student',
+            'status'    => 'active',
+            'linked_id' => $student->id,
         ]);
+
+        // Notify all parents linked to this student
+        $parentProfiles = $student->parents ?? collect();
+        foreach ($parentProfiles as $profile) {
+            if ($profile->user_id) {
+                AppNotification::send(
+                    $profile->user_id,
+                    'Akaun Portal Pelajar Telah Disediakan',
+                    "Akaun log masuk untuk {$student->name} telah dicipta oleh Admin. E-mel: {$email} | Kata laluan: {$request->password}. Sila log masuk ke portal pelajar.",
+                    'system'
+                );
+            }
+        }
 
         return response()->json(['message' => 'Student account created', 'user' => $user]);
     }
