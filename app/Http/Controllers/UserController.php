@@ -43,15 +43,24 @@ class UserController extends Controller
 
     public function studentsWithoutAccounts()
     {
-        $students = Student::all();
-        $studentUserIds = User::where('role', 'student')->whereNotNull('linked_id')->pluck('linked_id')->toArray();
-        
-        $studentsWithoutUser = $students->filter(function($student) use ($studentUserIds) {
-            return !in_array($student->id, $studentUserIds);
+        $students = Student::where('status', 'Aktif')->get();
+
+        // Map each student with their account info (if any)
+        $userMap = User::where('role', 'student')
+            ->whereNotNull('linked_id')
+            ->pluck('email', 'linked_id');
+
+        $result = $students->map(function ($student) use ($userMap) {
+            return [
+                'id'           => $student->id,
+                'name'         => $student->name,
+                'matric_no'    => $student->matric_no,
+                'has_account'  => isset($userMap[$student->id]),
+                'account_email'=> $userMap[$student->id] ?? null,
+            ];
         });
-        
-        Log::info('Students without accounts count: ' . $studentsWithoutUser->count());
-        return response()->json($studentsWithoutUser->values());
+
+        return response()->json($result->values());
     }
 
     public function createStudentAccount(Request $request)

@@ -14,8 +14,9 @@ interface UserData {
 interface StudentData {
   id: number;
   name: string;
-  enrollment_no?: string;
-  studentId?: string;
+  matric_no?: string;
+  has_account: boolean;
+  account_email?: string;
 }
 
 export function UserApproval() {
@@ -122,12 +123,16 @@ export function UserApproval() {
           <UserCheck size={18} /> Kelulusan Pengguna
           {pendingUsers.length > 0 && <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{pendingUsers.length}</span>}
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('create')}
           className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'create' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
         >
           <UserPlus size={18} /> Akaun Pelajar
-          {studentsWithoutAccounts.length > 0 && <span className="bg-indigo-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{studentsWithoutAccounts.length}</span>}
+          {studentsWithoutAccounts.filter(s => !s.has_account).length > 0 && (
+            <span className="bg-indigo-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+              {studentsWithoutAccounts.filter(s => !s.has_account).length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -218,9 +223,9 @@ export function UserApproval() {
                         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none bg-white"
                       >
                         <option value="">-- Sila Pilih Pelajar --</option>
-                        {studentsWithoutAccounts.map(s => (
+                        {studentsWithoutAccounts.filter(s => !s.has_account).map(s => (
                           <option key={s.id} value={s.id}>
-                            {s.name} {s.enrollment_no || s.studentId ? `(${s.enrollment_no || s.studentId})` : ''}
+                            {s.name} {s.matric_no ? `(${s.matric_no})` : ''}
                           </option>
                         ))}
                       </select>
@@ -268,25 +273,33 @@ export function UserApproval() {
                   <h3 className="text-lg font-bold text-gray-900">Pelajar Tanpa Akaun</h3>
                   <p className="text-sm text-gray-500 italic">Sila sediakan akaun log masuk untuk pelajar di bawah bagi membolehkan mereka mengakses portal pelajar.</p>
                   
-                  <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2">
+                  <div className="max-h-[360px] overflow-y-auto space-y-2 pr-2">
                     {studentsWithoutAccounts.length === 0 ? (
-                      <p className="text-center py-8 text-gray-400 text-sm">Semua pelajar sudah mempunyai akaun.</p>
+                      <p className="text-center py-8 text-gray-400 text-sm">Tiada pelajar aktif.</p>
                     ) : (
                       studentsWithoutAccounts.map(s => (
-                        <div key={s.id} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between group border border-transparent hover:border-indigo-100 transition-all">
+                        <div key={s.id} className={`p-3 rounded-lg flex items-center justify-between border transition-all ${s.has_account ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-transparent hover:border-indigo-100'}`}>
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{s.name}</p>
-                            <p className="text-xs text-gray-500">{s.enrollment_no || s.studentId || ''}</p>
+                            {s.has_account ? (
+                              <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                                <Check size={11} /> {s.account_email}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-400">{s.matric_no || 'Tiada no. matrik'}</p>
+                            )}
                           </div>
-                          <button 
-                            onClick={() => {
-                              setSelectedStudent(s.id);
-                              setUsername(s.name.toLowerCase().replace(/\s+/g, '_'));
-                            }}
-                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
-                          >
-                            <UserPlus size={16} />
-                          </button>
+                          {!s.has_account && (
+                            <button
+                              onClick={() => {
+                                setSelectedStudent(s.id);
+                                setUsername(s.matric_no ? s.matric_no.toLowerCase().replace(/\//g, '-') : s.name.split(' ')[0].toLowerCase());
+                              }}
+                              className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                            >
+                              <UserPlus size={16} />
+                            </button>
+                          )}
                         </div>
                       ))
                     )}
