@@ -90,6 +90,12 @@ class TeacherController extends Controller
         return response()->json($this->teacherShape($teacher), 201);
     }
 
+    public function show(string $id)
+    {
+        $teacher = Teacher::findOrFail($id);
+        return response()->json($this->teacherShape($teacher));
+    }
+
     public function update(Request $request, string $id)
     {
         $teacher = Teacher::findOrFail($id);
