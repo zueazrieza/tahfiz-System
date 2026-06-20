@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileSpreadsheet, Eye, User, Briefcase, Phone, BookOpen, HeartPulse, RotateCcw } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, ChevronLeft, ChevronRight, FileSpreadsheet, Eye, User, Phone, BookOpen, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import axios from 'axios';
 
@@ -628,13 +628,6 @@ export function ManageTeachers() {
                       <p className="font-bold text-slate-700">{selectedTeacher.name}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400"><BookOpen className="w-5 h-5" /></div>
-                    <div>
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Kepakaran</p>
-                      <p className="font-bold text-slate-700">{selectedTeacher.specialization || '—'}</p>
-                    </div>
-                  </div>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -644,35 +637,7 @@ export function ManageTeachers() {
                       <p className="font-bold text-slate-700">{selectedTeacher.phone}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400"><Briefcase className="w-5 h-5" /></div>
-                    <div>
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Pengalaman</p>
-                      <p className="font-bold text-slate-700">{selectedTeacher.experience || 'Baru'}</p>
-                    </div>
-                  </div>
                 </div>
-              </section>
-
-              <hr className="border-slate-50" />
-
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
-                 <div>
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Pendidikan / Kelayakan</p>
-                    <p className="text-sm text-slate-600 leading-relaxed font-medium">{selectedTeacher.qualification || 'Tiada maklumat'}</p>
-                 </div>
-                 <div>
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Sejarah Kesihatan</p>
-                    <p className="text-sm text-slate-600 leading-relaxed font-medium">{selectedTeacher.medicalHistory || 'Tiada rekod perubatan'}</p>
-                 </div>
-                 <div>
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Kecemasan (Nama)</p>
-                    <p className="text-sm text-slate-700 font-bold">{selectedTeacher.emergencyContactName || '—'}</p>
-                 </div>
-                 <div>
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Kecemasan (Telefon)</p>
-                    <p className="text-sm text-slate-700 font-bold">{selectedTeacher.emergencyContactPhone || '—'}</p>
-                 </div>
               </section>
 
               <div className="pt-4 flex gap-3">
