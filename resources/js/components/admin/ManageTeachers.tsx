@@ -12,7 +12,7 @@ export function ManageTeachers() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAssignHalaqahModal, setShowAssignHalaqahModal] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
-  const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', icNo: '', username: '', specialization: '', gender: 'M' });
+  const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', icNo: '', username: '', gender: 'M' });
   const [addClassForm, setAddClassForm] = useState({ name: '', capacity: 20, teacherId: '' });
   const [editClassForm, setEditClassForm] = useState<any>(null);
   const [editForm, setEditForm] = useState<any>(null);
@@ -46,7 +46,17 @@ export function ManageTeachers() {
         console.error('Error fetching classes:', error);
       }
     };
+    const fetchStudents = async () => {
+      try {
+        const response = await axios.get('/api/students', { params: { per_page: 500 } });
+        const students = response.data?.data ?? response.data;
+        dispatch({ type: 'SET_STUDENTS', payload: students });
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      }
+    };
     fetchClasses();
+    fetchStudents();
   }, [dispatch]);
 
   useEffect(() => {
@@ -95,7 +105,7 @@ export function ManageTeachers() {
         status: 'Aktif'
       });
       dispatch({ type: 'ADD_TEACHER', payload: response.data });
-      setAddForm({ name: '', email: '', phone: '', icNo: '', username: '', specialization: '', gender: 'M' });
+      setAddForm({ name: '', email: '', phone: '', icNo: '', username: '', gender: 'M' });
       setShowAddModal(false);
     } catch (error) {
       console.error('Error adding teacher:', error);
@@ -328,10 +338,9 @@ export function ManageTeachers() {
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-600">Emel:</span><span className="text-gray-900 truncate ml-2">{teacher.email}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Telefon:</span><span className="text-gray-900">{teacher.phone}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Telefon:</span><span className="text-gray-900">{teacher.phone || '—'}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Halaqah:</span><span className="text-gray-900">{getClassNames(teacher.classIds)}</span></div>
               <div className="flex justify-between"><span className="text-gray-600">Pelajar:</span><span className="font-semibold text-green-600">{getStudentCount(teacher.id)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Kepakaran:</span><span className="text-gray-900">{teacher.specialization}</span></div>
             </div>
             <div className="mt-4 pt-4 border-t border-gray-100 flex">
               <button 
@@ -390,15 +399,16 @@ export function ManageTeachers() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {state.classes.map(cls => {
             const studentCount = cls.studentIds.length;
-            const teacherName = state.teachers.find(t => String(t.id) === String(cls.teacherId))?.name ?? 'Tiada Guru';
+            const teacher = state.teachers.find(t => String(t.id) === String(cls.teacherId));
             return (
-              <div 
-                key={cls.id} 
+              <div
+                key={cls.id}
                 className="p-8 bg-[#F8F9FA] border-2 border-transparent hover:border-[#8A63F2] rounded-[1.5rem] transition-all duration-300 group cursor-pointer"
               >
-                <h4 className="text-xl font-bold text-[#2D3142] mb-2">{cls.name} - {teacherName}</h4>
+                <h4 className="text-xl font-bold text-[#2D3142] mb-1">{cls.name}</h4>
+                <p className="text-xs text-gray-400 font-medium mb-1">{teacher ? teacher.name : 'Tiada Guru'}</p>
                 <p className="text-sm text-gray-500 mb-6 font-medium">{studentCount} Pelajar</p>
-                <button 
+                <button
                   onClick={() => { setEditClassForm(cls); setShowEditClassModal(true); }}
                   className="flex items-center gap-2 text-[#52B788] font-bold hover:gap-3 transition-all border-none bg-transparent p-0 cursor-pointer text-sm"
                 >
@@ -423,7 +433,6 @@ export function ManageTeachers() {
                 <div><label className="block text-sm font-medium text-gray-700 mb-2">No. IC (Opsional)</label><input className={inputCls} placeholder="Jika ada" value={addForm.icNo} onChange={e => setAddForm({ ...addForm, icNo: e.target.value })} /></div>
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-2">No. Telefon</label><input type="tel" required className={inputCls} placeholder="+60 12-345 6789" value={addForm.phone} onChange={e => setAddForm({ ...addForm, phone: e.target.value })} /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-2">Kepakaran</label><input className={inputCls} placeholder="e.g. Hafazan & Tajweed" value={addForm.specialization} onChange={e => setAddForm({ ...addForm, specialization: e.target.value })} /></div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Jantina</label>
                 <select className={inputCls} value={addForm.gender} onChange={e => setAddForm({ ...addForm, gender: e.target.value })}>
@@ -446,39 +455,39 @@ export function ManageTeachers() {
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Cipta Halaqah Baharu</h3>
             <form className="space-y-6" onSubmit={handleAddClass}>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Nama Halaqah</label>
-                <input 
-                  required 
-                  className={inputCls} 
-                  placeholder="e.g., Al-Falah" 
-                  value={addClassForm.name} 
-                  onChange={e => setAddClassForm({ ...addClassForm, name: e.target.value })} 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Kapasiti</label>
-                <input 
-                  type="number" 
-                  required 
-                  className={inputCls} 
-                  placeholder="Maksimum pelajar" 
-                  value={addClassForm.capacity} 
-                  onChange={e => setAddClassForm({ ...addClassForm, capacity: Number(e.target.value) })} 
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Pilih Guru / Murabbi</label>
-                <select 
-                  required 
-                  className={inputCls} 
-                  value={addClassForm.teacherId} 
-                  onChange={e => setAddClassForm({ ...addClassForm, teacherId: e.target.value })}
+                <select
+                  required
+                  className={inputCls}
+                  value={addClassForm.teacherId}
+                  onChange={e => {
+                    const tid = e.target.value;
+                    const tName = state.teachers.find(t => String(t.id) === tid)?.name ?? '';
+                    setAddClassForm({ ...addClassForm, teacherId: tid, name: tName ? `Halaqah ${tName}` : '' });
+                  }}
                 >
                   <option value="">Pilih guru</option>
-                  {state.teachers.map(t => (
+                  {state.teachers.filter(t => t.status === 'Aktif').map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
+              </div>
+              {addClassForm.name && (
+                <div className="px-4 py-3 bg-teal-50 border border-teal-200 rounded-xl">
+                  <p className="text-xs font-bold text-teal-500 uppercase tracking-wider mb-0.5">Nama Halaqah (auto)</p>
+                  <p className="font-bold text-teal-800">{addClassForm.name}</p>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Kapasiti Pelajar</label>
+                <input
+                  type="number"
+                  required
+                  className={inputCls}
+                  placeholder="Maksimum pelajar"
+                  value={addClassForm.capacity}
+                  onChange={e => setAddClassForm({ ...addClassForm, capacity: Number(e.target.value) })}
+                />
               </div>
               <div className="flex flex-col gap-3 pt-4">
                 <button type="submit" className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
@@ -512,11 +521,7 @@ export function ManageTeachers() {
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-gray-500 ml-1">No. Telefon</label>
-                <input type="tel" required className={inputCls} placeholder="+60 12-345 6789" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Kepakaran</label>
-                <input className={inputCls} placeholder="e.g. Hafazan & Tajweed" value={editForm.specialization} onChange={e => setEditForm({ ...editForm, specialization: e.target.value })} />
+                <input type="tel" required className={inputCls} placeholder="+60 12-345 6789" value={editForm.phone || ''} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-gray-500 ml-1">Jantina</label>
@@ -545,37 +550,36 @@ export function ManageTeachers() {
             <h3 className="text-2xl font-bold text-[#2D3142] mb-8 text-center px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">Edit Maklumat Halaqah</h3>
             <form className="space-y-6" onSubmit={handleEditClass}>
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Nama Halaqah</label>
-                <input 
-                  required 
-                  className={inputCls} 
-                  value={editClassForm.name} 
-                  onChange={e => setEditClassForm({ ...editClassForm, name: e.target.value })} 
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-500 ml-1">Kapasiti</label>
-                <input 
-                  type="number" 
-                  required 
-                  className={inputCls} 
-                  value={editClassForm.capacity} 
-                  onChange={e => setEditClassForm({ ...editClassForm, capacity: Number(e.target.value) })} 
-                />
-              </div>
-              <div className="space-y-2">
                 <label className="block text-sm font-bold text-gray-500 ml-1">Pilih Guru / Murabbi</label>
-                <select 
-                  required 
-                  className={inputCls} 
-                  value={editClassForm.teacherId} 
-                  onChange={e => setEditClassForm({ ...editClassForm, teacherId: e.target.value })}
+                <select
+                  required
+                  className={inputCls}
+                  value={editClassForm.teacherId}
+                  onChange={e => {
+                    const tid = e.target.value;
+                    const tName = state.teachers.find(t => String(t.id) === tid)?.name ?? '';
+                    setEditClassForm({ ...editClassForm, teacherId: tid, name: tName ? `Halaqah ${tName}` : editClassForm.name });
+                  }}
                 >
-                  <option value="">Pilih guru</option>
-                  {state.teachers.map(t => (
+                  <option value="">Tiada Guru</option>
+                  {state.teachers.filter(t => t.status === 'Aktif').map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
+              </div>
+              <div className="px-4 py-3 bg-teal-50 border border-teal-200 rounded-xl">
+                <p className="text-xs font-bold text-teal-500 uppercase tracking-wider mb-0.5">Nama Halaqah (auto)</p>
+                <p className="font-bold text-teal-800">{editClassForm.name}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-500 ml-1">Kapasiti Pelajar</label>
+                <input
+                  type="number"
+                  required
+                  className={inputCls}
+                  value={editClassForm.capacity}
+                  onChange={e => setEditClassForm({ ...editClassForm, capacity: Number(e.target.value) })}
+                />
               </div>
               <div className="flex flex-col gap-3 pt-4">
                 <button type="submit" className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all border-none cursor-pointer">
@@ -705,9 +709,11 @@ export function ManageTeachers() {
                         value={cls.teacherId || ''}
                         onChange={async (e) => {
                           const newTeacherId = e.target.value;
+                          const newTeacherName = state.teachers.find(t => String(t.id) === newTeacherId)?.name ?? '';
+                          const newName = newTeacherName ? `Halaqah ${newTeacherName}` : cls.name;
                           try {
                             const response = await axios.put(`/api/classes/${cls.id}`, {
-                              name: cls.name,
+                              name: newName,
                               capacity: cls.capacity,
                               teacherId: newTeacherId || null
                             });
