@@ -39,14 +39,20 @@ export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
   const { state } = useAppStore();
   const [prediction, setPrediction] = useState<AIPredictionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [childProfile, setChildProfile] = useState<any | null>(null);
 
-  const child = state.students.find(s => String(s.id) === String(childId));
+  // state.students is only populated by admin routes; fall back to API for parent logins
+  const child = state.students.find(s => String(s.id) === String(childId)) ?? childProfile;
   const childClass = state.classes.find(c => c.id === child?.classId);
   const teacher = state.teachers.find(t => t.id === child?.teacherId);
 
   useEffect(() => {
-    if (childId) {
-      fetchPrediction();
+    if (!childId) return;
+    fetchPrediction();
+    if (!state.students.find(s => String(s.id) === String(childId))) {
+      axios.get(`/api/students/${childId}`)
+        .then(res => setChildProfile(res.data))
+        .catch(console.error);
     }
   }, [childId]);
 

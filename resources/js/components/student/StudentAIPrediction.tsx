@@ -33,20 +33,29 @@ export function StudentAIPrediction({ onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<any[]>([]);
   const [classRank, setClassRank] = useState<{ rank: number; total: number } | null>(null);
+  const [studentProfile, setStudentProfile] = useState<{ id: string | number; classId?: string | number; juzukCompleted?: number } | null>(null);
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
   const studentId = authUser.linked_id;
-  const student = state.students?.find(s => String(s.id) === String(studentId));
+  // state.students is only populated when an admin visits ManageStudents/ManageTeachers.
+  // For student logins, fall back to a direct API fetch.
+  const student = state.students?.find(s => String(s.id) === String(studentId)) ?? studentProfile;
 
   const streak = student ? getStudentStreak(state, String(student.id)) : 0;
+
+  useEffect(() => {
+    if (!studentId) { setLoading(false); return; }
+    if (state.students?.find(s => String(s.id) === String(studentId))) return;
+    axios.get(`/api/students/${studentId}`)
+      .then(res => setStudentProfile(res.data))
+      .catch(() => setLoading(false));
+  }, [studentId]);
 
   useEffect(() => {
     if (student?.id) {
       fetchPrediction(String(student.id));
       fetchRecords(String(student.id));
       if (student.classId) fetchClassRank(String(student.id), String(student.classId));
-    } else {
-      setLoading(false);
     }
   }, [student?.id]);
 

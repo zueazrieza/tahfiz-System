@@ -174,35 +174,56 @@ export function TeacherAIPrediction() {
   const [predictions, setPredictions] = useState<any[]>([]);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
   const [generateResult, setGenerateResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [teacherProfile, setTeacherProfile] = useState<any | null>(null);
 
-  // Resolve teacher
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => 
-    t.email === authUser.email || 
+  // state.teachers is only populated by admin routes; fall back to API for teacher logins
+  const storeTeacher = state.teachers.find(t =>
+    String(t.id) === String(authUser.linked_id) ||
+    t.email === authUser.email ||
     (authUser.name && t.name.toLowerCase().includes(authUser.name.toLowerCase().split(' ').slice(-1)[0]))
   ) ?? state.teachers[0];
+  const teacher = storeTeacher ?? teacherProfile;
+
+  useEffect(() => {
+    if (!authUser.linked_id || storeTeacher) return;
+    axios.get(`/api/teachers/${authUser.linked_id}`)
+      .then(res => setTeacherProfile(res.data))
+      .catch(console.error);
+  }, [authUser.linked_id]);
 
   useEffect(() => {
     if (teacher?.id) {
       fetchPredictions();
     }
-  }, [teacher]);
+  }, [teacher?.id]);
 
   const fetchPredictions = async () => {
     setIsGenerating(true);
     try {
       const allPreds: any[] = [];
-      const classIds = (teacher?.classIds || []).map(id => String(id));
-      
+      const classIds = (teacher?.classIds || []).map((id: any) => String(id));
+
       for (const cid of classIds) {
         const resp = await axios.get(`/api/ai-predictions/class/${cid}`);
         allPreds.push(...resp.data);
       }
 
+      // Build student name index: store first, then supplement from teacher API
+      const nameIndex: Record<string, string> = {};
+      state.students.forEach(s => { nameIndex[String(s.id)] = s.name; });
+      const missingIds = allPreds.map(p => String(p.student_id)).filter(id => !nameIndex[id]);
+      if (missingIds.length > 0) {
+        try {
+          const res = await axios.get(`/api/teacher/students?teacherId=${teacher?.id}`);
+          (res.data as any[]).forEach(s => { nameIndex[String(s.id)] = s.name; });
+        } catch {}
+      }
+
       const mapped = allPreds.map(p => ({
         id: p.id,
         studentId: p.student_id,
-        studentName: state.students.find(s => String(s.id) === String(p.student_id))?.name || 'Pelajar',
+        studentName: nameIndex[String(p.student_id)] || 'Pelajar',
         currentProgress: p.current_progress,
         estimatedCompletion: p.estimated_completion,
         performanceTrend: p.performance_trend,
@@ -235,7 +256,7 @@ export function TeacherAIPrediction() {
     setShowGenerateConfirm(false);
     setIsGenerating(true);
     try {
-      const classIds = (teacher?.classIds || []).map(id => String(id));
+      const classIds = (teacher?.classIds || []).map((id: any) => String(id));
       for (const cid of classIds) {
         await axios.post(`/api/ai-predictions/generate/class/${cid}`);
       }

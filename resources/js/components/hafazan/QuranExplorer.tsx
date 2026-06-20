@@ -156,8 +156,17 @@ interface Props {
 export function QuranExplorer({ onNavigate }: Props) {
   const { state } = useAppStore();
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const student = state.students?.find(s => String(s.id) === String(authUser.linked_id));
-  const juzukCompleted = student?.juzukCompleted ?? student?.juzuk_completed ?? 0;
+  const storeStudent = state.students?.find(s => String(s.id) === String(authUser.linked_id));
+  const [apiJuzuk, setApiJuzuk] = useState<number>(0);
+
+  useEffect(() => {
+    if (storeStudent || !authUser.linked_id) return;
+    axios.get(`/api/students/${authUser.linked_id}`)
+      .then(res => setApiJuzuk(res.data.juzukCompleted ?? res.data.juzuk_completed ?? 0))
+      .catch(() => {});
+  }, [authUser.linked_id]);
+
+  const juzukCompleted: number = storeStudent?.juzukCompleted ?? storeStudent?.juzuk_completed ?? apiJuzuk;
 
   const [mode, setMode] = useState<'overview' | 'reader'>('overview');
   const [selectedSurah, setSelectedSurah] = useState<typeof SURAHS[0] | null>(null);
