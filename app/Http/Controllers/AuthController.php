@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\AppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -95,6 +96,17 @@ class AuthController extends Controller
             'role'     => $data['role'],
             'status'   => 'pending', // Default to pending as requested
         ]);
+
+        // Notify all admins about new registration
+        $roleLabel = $data['role'] === 'teacher' ? 'Guru' : 'Ibu Bapa';
+        User::where('role', 'admin')->each(function ($admin) use ($user, $roleLabel) {
+            AppNotification::send(
+                $admin->id,
+                'Permohonan Akaun Baru',
+                "{$roleLabel} baru telah mendaftar: {$user->name} ({$user->email}). Sila semak dan luluskan di Pengurusan Akses.",
+                'system'
+            );
+        });
 
         // We DO NOT login immediately if pending
         return response()->json([

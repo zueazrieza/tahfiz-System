@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Student;
+use App\Models\AppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,15 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $user->update(['status' => 'active']);
+
+        // Notify the approved user so they know they can now log in
+        AppNotification::send(
+            $user->id,
+            'Akaun Anda Telah Diluluskan',
+            'Tahniah! Akaun anda telah diluluskan oleh Admin. Anda kini boleh log masuk ke sistem AKMAL.',
+            'system'
+        );
+
         return response()->json(['message' => 'User approved successfully', 'user' => $user]);
     }
 
