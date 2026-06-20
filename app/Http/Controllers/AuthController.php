@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\AppNotification;
+use App\Models\ParentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -90,12 +91,21 @@ class AuthController extends Controller
         ]);
 
         $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
-            'status'   => 'pending', // Default to pending as requested
+            'name'      => $data['name'],
+            'full_name' => $data['name'],
+            'email'     => $data['email'],
+            'password'  => Hash::make($data['password']),
+            'role'      => $data['role'],
+            'status'    => 'pending',
         ]);
+
+        // Auto-create ParentProfile so getChildren() works after approval
+        if ($data['role'] === 'parent') {
+            ParentProfile::firstOrCreate(
+                ['user_id' => $user->id],
+                ['relationship_type' => 'parent']
+            );
+        }
 
         // Notify all admins about new registration
         $roleLabel = $data['role'] === 'teacher' ? 'Guru' : 'Ibu Bapa';

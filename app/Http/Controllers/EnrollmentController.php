@@ -200,33 +200,8 @@ class EnrollmentController extends Controller
         $student->update($updateData);
         $student->refresh();
 
-        // When activated, create student login account if it doesn't exist
+        // When activated, notify parent (admin creates student account manually via Pengurusan Akses)
         if ($student->status === 'Aktif') {
-            $existingUser = User::where('linked_id', $student->id)->where('role', 'student')->first();
-            if (!$existingUser) {
-                // Use matric number if available (e.g. 25-ABB-00299@tahfiz.com), else fallback to first name
-                if (!empty($student->matric_no)) {
-                    $emailSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($student->matric_no)));
-                } else {
-                    $nameParts = preg_split('/\s+/', trim($student->name));
-                    $emailSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '', $nameParts[0]));
-                }
-                $email = $emailSlug . '@tahfiz.com';
-                $base = $email;
-                $counter = 1;
-                while (User::where('email', $email)->exists()) {
-                    $email = str_replace('@', $counter . '@', $base);
-                    $counter++;
-                }
-                User::create([
-                    'name'      => $student->name,
-                    'email'     => $email,
-                    'password'  => Hash::make($student->ic_no ?? 'password'),
-                    'role'      => 'student',
-                    'linked_id' => $student->id,
-                ]);
-            }
-
             $parentUser = $this->getParentUser($student);
             if ($parentUser) {
                 $this->sendMail($parentUser->email, new \App\Mail\StatusNotificationMail($student, 'Aktif', 'Pendaftaran anda telah disahkan dan diaktifkan.'));
