@@ -18,7 +18,17 @@ class ParentProfile extends Model
         'income',
         'address',
         'phone',
-        'relationship_type'
+        'relationship_type',
+        'postcode',
+        'city',
+        'district',
+        'state_name',
+        'country',
+        'parliament',
+        'sector',
+        'office_phone',
+        'child_count',
+        'reference',
     ];
 
     public function user()

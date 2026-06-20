@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Teacher;
 use App\Models\Student;
+use App\Models\ParentProfile;
 
 class ProfileController extends Controller
 {
@@ -52,12 +53,12 @@ class ProfileController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255|unique:users,name,' . $user->id,
-            'full_name' => 'nullable|string|max:255',
-            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string',
-            'address' => 'nullable|string',
-            'password' => 'nullable|string|min:8|confirmed',
+            'name'             => 'sometimes|required|string|max:255|unique:users,name,' . $user->id,
+            'full_name'        => 'nullable|string|max:255',
+            'email'            => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'phone'            => 'nullable|string',
+            'address'          => 'nullable|string',
+            'password'         => 'nullable|string|min:8|confirmed',
             'current_password' => 'required_with:password|string',
         ]);
 
@@ -71,43 +72,84 @@ class ProfileController extends Controller
         }
         unset($validated['current_password']);
 
-        $user->update($validated);
+        // Also update phone/job/wage on users table
+        $userFields = array_filter([
+            'full_name' => $request->full_name ?: null,
+            'phone'     => $request->phone,
+            'job'       => $request->job,
+            'wage'      => $request->wage,
+        ], fn($v) => $v !== null);
 
-        // If teacher, update teacher record too
+        $user->update(array_merge($validated, $userFields));
+
+        // Update teacher record
         if ($user->role === 'teacher') {
             $teacher = $user->teacher;
             if ($teacher) {
                 $teacher->update([
-                    'name' => $request->name ?? $teacher->name,
-                    'phone' => $request->phone ?? $teacher->phone,
-                    'ic_no' => $request->icNo ?? $teacher->ic_no,
-                    'qualification' => $request->qualification ?? $teacher->qualification,
-                    'experience' => $request->experience ?? $teacher->experience,
-                    'medical_history' => $request->medicalHistory ?? $teacher->medical_history,
-                    'emergency_contact_name' => $request->emergencyContactName ?? $teacher->emergency_contact_name,
+                    'phone'                   => $request->phone ?? $teacher->phone,
+                    'qualification'           => $request->qualification ?? $teacher->qualification,
+                    'experience'              => $request->experience ?? $teacher->experience,
+                    'medical_history'         => $request->medicalHistory ?? $teacher->medical_history,
+                    'emergency_contact_name'  => $request->emergencyContactName ?? $teacher->emergency_contact_name,
                     'emergency_contact_phone' => $request->emergencyContactPhone ?? $teacher->emergency_contact_phone,
-                    'residence' => $request->residence ?? $teacher->residence,
+                    'residence'               => $request->residence ?? $teacher->residence,
+                    'dependents_count'        => $request->dependentsCount ?? $teacher->dependents_count,
                 ]);
             }
         }
 
-        // If parent, update parent record too
+        // Update parent record
         if ($user->role === 'parent') {
-            $parent = $user->parentProfile;
-            if ($parent) {
-                $parent->update([
-                    'occupation' => $request->job ?? $parent->occupation,
-                    'income' => $request->wage ?? $parent->income,
-                    'phone' => $request->phone ?? $parent->phone,
-                    'address' => $request->address ?? $parent->address,
-                    'relationship_type' => $request->relation ?? $parent->relationship_type,
+            $parent = $user->parentProfile ?? ParentProfile::firstOrCreate(
+                ['user_id' => $user->id],
+                ['relationship_type' => 'parent']
+            );
+            $parent->update([
+                'relationship_type' => $request->relation ?? $parent->relationship_type,
+                'occupation'        => $request->job ?? $parent->occupation,
+                'income'            => $request->wage ?? $parent->income,
+                'phone'             => $request->phone ?? $parent->phone,
+                'address'           => $request->address ?? $parent->address,
+                'postcode'          => $request->postcode ?? $parent->postcode,
+                'city'              => $request->city ?? $parent->city,
+                'district'          => $request->district ?? $parent->district,
+                'state_name'        => $request->stateName ?? $parent->state_name,
+                'country'           => $request->country ?? $parent->country,
+                'parliament'        => $request->parliament ?? $parent->parliament,
+                'sector'            => $request->sector ?? $parent->sector,
+                'office_phone'      => $request->officePhone ?? $parent->office_phone,
+                'child_count'       => $request->childCount ?? $parent->child_count,
+                'reference'         => $request->reference ?? $parent->reference,
+            ]);
+        }
+
+        // Update student record
+        if ($user->role === 'student') {
+            $student = $user->student ?? Student::find($user->linked_id);
+            if ($student) {
+                $student->update([
+                    'phone'                   => $request->phone ?? $student->phone,
+                    'address'                 => $request->address ?? $student->address,
+                    'gender'                  => $request->gender ?? $student->gender,
+                    'marital_status'          => $request->maritalStatus ?? $student->marital_status,
+                    'blood_type'              => $request->bloodType ?? $student->blood_type,
+                    'dob'                     => $request->dob ?? $student->dob,
+                    'pob'                     => $request->pob ?? $student->pob,
+                    'citizenship'             => $request->citizenship ?? $student->citizenship,
+                    'race'                    => $request->race ?? $student->race,
+                    'religion'                => $request->religion ?? $student->religion,
+                    'family_income'           => $request->familyIncome ?? $student->family_income,
+                    'medical_history'         => $request->medicalHistory ?? $student->medical_history,
+                    'emergency_contact_name'  => $request->emergencyContactName ?? $student->emergency_contact_name,
+                    'emergency_contact_phone' => $request->emergencyContactPhone ?? $student->emergency_contact_phone,
                 ]);
             }
         }
 
         return response()->json([
             'message' => 'Profile updated successfully',
-            'user' => $user
+            'user'    => $user->fresh(),
         ]);
     }
 }

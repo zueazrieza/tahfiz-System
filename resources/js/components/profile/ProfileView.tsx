@@ -132,7 +132,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userId }) => {
         stateName: pData?.state_name || '',
         country: pData?.country || 'MAL',
         parliament: pData?.parliament || '',
-        job: u.job || pData?.occupation || '',
+        job: pData?.occupation || u.job || '',
         sector: pData?.sector || '',
         officePhone: pData?.office_phone || '',
         childCount: pData?.child_count || 0,
@@ -160,9 +160,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userId }) => {
     }
     try {
 
-      const payload = { 
+      const payload = {
         ...formData,
-        name: formData.username, // Map username back to 'name' for the API
+        name: formData.username,    // login username → users.name
+        full_name: formData.name,   // display name  → users.full_name
       };
       await axios.post('/api/profile', payload);
       
