@@ -106,14 +106,9 @@ export function AIPrediction() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      // Always fetch fresh class list so this page works standalone
-      let classIds: number[] = [];
-      if (state.classes.length > 0) {
-        classIds = [...new Set(state.classes.map(c => c.id))];
-      } else {
-        const classResp = await axios.get('/api/classes');
-        classIds = [...new Set((Array.isArray(classResp.data) ? classResp.data : []).map((c: any) => c.id as number))];
-      }
+      // Always fetch fresh class list from API so this page works standalone
+      const classResp = await axios.get('/api/classes');
+      const classIds: number[] = [...new Set((Array.isArray(classResp.data) ? classResp.data : []).map((c: any) => c.id as number))];
 
       setTotalClasses(classIds.length);
       const all: any[] = [];
