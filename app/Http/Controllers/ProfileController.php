@@ -87,14 +87,17 @@ class ProfileController extends Controller
             $teacher = $user->teacher;
             if ($teacher) {
                 $teacher->update([
-                    'phone'                   => $request->phone ?? $teacher->phone,
-                    'qualification'           => $request->qualification ?? $teacher->qualification,
-                    'experience'              => $request->experience ?? $teacher->experience,
-                    'medical_history'         => $request->medicalHistory ?? $teacher->medical_history,
-                    'emergency_contact_name'  => $request->emergencyContactName ?? $teacher->emergency_contact_name,
-                    'emergency_contact_phone' => $request->emergencyContactPhone ?? $teacher->emergency_contact_phone,
-                    'residence'               => $request->residence ?? $teacher->residence,
-                    'dependents_count'        => $request->dependentsCount ?? $teacher->dependents_count,
+                    'phone'                   => $request->phone                   ?? $teacher->phone,
+                    'ic_no'                   => $request->icNo                    ?? $teacher->ic_no,
+                    'gender'                  => $request->gender                  ?? $teacher->gender,
+                    'qualification'           => $request->qualification           ?? $teacher->qualification,
+                    'experience'              => $request->experience              ?? $teacher->experience,
+                    'medical_history'         => $request->medicalHistory          ?? $teacher->medical_history,
+                    'emergency_contact_name'  => $request->emergencyContactName    ?? $teacher->emergency_contact_name,
+                    'emergency_contact_phone' => $request->emergencyContactPhone   ?? $teacher->emergency_contact_phone,
+                    'residence'               => $request->residence               ?? $teacher->residence,
+                    'dependents_count'        => $request->dependentsCount         ?? $teacher->dependents_count,
+                    'service_start_date'      => $request->serviceStartDate        ?? $teacher->service_start_date,
                 ]);
             }
         }

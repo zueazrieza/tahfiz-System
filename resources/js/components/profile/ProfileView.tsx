@@ -166,23 +166,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ userId }) => {
         full_name: formData.name,   // display name  → users.full_name
       };
       await axios.post('/api/profile', payload);
-      
-      // Update local state and global context
-      dispatch({
-        type: 'EDIT_USER',
-        payload: { id: user.id, ...payload }
-      });
-      
-      if (teacher) {
-        dispatch({
-          type: 'EDIT_TEACHER',
-          payload: { id: teacher.id, ...payload }
-        });
-      }
-
-      alert('Profil berjaya disimpan ke pangkalan data.');
       setIsEditing(false);
-      fetchProfile(); // Refresh
+      await fetchProfile(); // Refresh with latest DB data
+      // Toast notification
+      const toast = document.createElement('div');
+      toast.textContent = 'Profil berjaya disimpan ke pangkalan data.';
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#10b981;color:#fff;padding:14px 22px;border-radius:12px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.15);';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
     } catch (err: any) {
       console.error('Failed to save profile', err);
       alert('Gagal menyimpan profil: ' + (err.response?.data?.message || 'Ralat sambungan.'));
