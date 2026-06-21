@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Save, RefreshCw, BookOpen, CheckCircle, Mic } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
@@ -12,16 +12,38 @@ const normalizeGrade = (g: string) => GRADE_MAP[g] ?? g;
 export function RecordHafazan() {
   const { state, dispatch } = useAppStore();
 
-  // Get the logged-in teacher's ID from sessionStorage
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => String(t.id) === String(authUser.linked_id))
-    ?? state.teachers.find(t => t.email === authUser.email)
-    ?? state.teachers[0];
-  const teacherClasses = state.classes.filter(c => teacher?.classIds.some(cid => String(cid) === String(c.id)));
-  const [selectedClassId, setSelectedClassId] = useState(teacherClasses[0]?.id ?? '');
-  const studentsInClass = state.students.filter(s => String(s.classId) === String(selectedClassId));
+  const teacherId = authUser.linked_id;
 
+  const [teacherClasses, setTeacherClasses] = useState<any[]>([]);
+  const [studentsInClass, setStudentsInClass] = useState<any[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
+
+  // Fetch classes that belong to this teacher
+  useEffect(() => {
+    if (!teacherId) return;
+    axios.get('/api/classes')
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          const mine = res.data.filter((c: any) => String(c.teacherId) === String(teacherId));
+          setTeacherClasses(mine);
+          if (mine.length > 0) setSelectedClassId(String(mine[0].id));
+        }
+      })
+      .catch(console.error);
+  }, [teacherId]);
+
+  // Fetch students when selected class changes
+  useEffect(() => {
+    if (!selectedClassId) { setStudentsInClass([]); return; }
+    axios.get(`/api/students?classId=${selectedClassId}`)
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+        setStudentsInClass(data);
+      })
+      .catch(console.error);
+  }, [selectedClassId]);
   const [recordDate, setRecordDate] = useState(new Date().toISOString().split('T')[0]);
   const [formData, setFormData] = useState({
     sabaq: '', sabaqFrom: '', sabaqTo: '', sabaqGrade: '' as Grade,
@@ -49,7 +71,7 @@ export function RecordHafazan() {
     e.preventDefault();
     if (!selectedStudent) { alert('Sila pilih pelajar terlebih dahulu.'); return; }
     if (Object.keys(fieldErrors).length > 0) { alert('Sila betulkan ralat dalam borang sebelum menyimpan.'); return; }
-    if (!teacher?.id) {
+    if (!teacherId) {
       alert('Ralat: Profil murabbi tidak dijumpai. Sila log masuk semula.');
       return;
     }
@@ -61,7 +83,7 @@ export function RecordHafazan() {
 
     const payload = {
       studentId: selectedStudent,
-      teacherId: teacher?.id,
+      teacherId: teacherId,
       date: recordDate,
       sabaq: { surah: formData.sabaq, from: parseInt(formData.sabaqFrom || '0'), to: parseInt(formData.sabaqTo || '0'), grade: formData.sabaqGrade },
       sabaqi: { surah: formData.sabaqi, from: parseInt(formData.sabaqiFrom || '0'), to: parseInt(formData.sabaqiTo || '0'), grade: formData.sabaqiGrade },
@@ -167,7 +189,7 @@ export function RecordHafazan() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="classSelect">Pilih Kelas *</label>
               <select id="classSelect" value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedStudent(''); }} className={inCls()} aria-required="true">
-                {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name} - {state.teachers.find(t => String(t.id) === String(c.teacherId))?.name ?? 'Tiada Murabbi'}</option>)}
+                {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
