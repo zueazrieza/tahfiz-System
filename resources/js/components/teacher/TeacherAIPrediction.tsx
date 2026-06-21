@@ -85,7 +85,19 @@ function StudentPredictionCard({ pred, trendColor }: { pred: any; trendColor: (t
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-500">📝 {(pred.recommendation ?? '').slice(0, 80)}…</p>
+        <div className="text-xs text-gray-600 space-y-1">
+          {(pred.recommendation ?? '').split('\n\n').slice(0, 2).map((section: string, i: number) => {
+            const lines = section.split('\n');
+            return (
+              <div key={i}>
+                <p className="font-semibold text-gray-700">{lines[0]}</p>
+                {lines.slice(1).filter((l: string) => l.trim()).map((l: string, j: number) => (
+                  <p key={j} className="pl-2 text-gray-500">{l}</p>
+                ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Hidden print view — 680px wide, optimised for 1 A4 page */}
@@ -156,7 +168,17 @@ function StudentPredictionCard({ pred, trendColor }: { pred: any; trendColor: (t
               Cadangan & Pelan Tindakan AI
             </div>
             <div style={{ background: '#fafafe', border: '1px solid #ddd6fe', borderLeft: '3px solid #6d28d9', padding: '8px 10px', fontSize: '10px', color: '#374151', lineHeight: 1.6 }}>
-              {(pred.recommendation ?? '').slice(0, 500)}{(pred.recommendation ?? '').length > 500 ? '…' : ''}
+              {(pred.recommendation ?? '').split('\n\n').map((section: string, i: number) => {
+                const lines = section.split('\n');
+                return (
+                  <div key={i} style={{ marginBottom: i < ((pred.recommendation ?? '').split('\n\n').length - 1) ? '8px' : 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: '10px', marginBottom: '3px', color: '#1d4ed8' }}>{lines[0]}</div>
+                    {lines.slice(1).filter((l: string) => l.trim()).map((l: string, j: number) => (
+                      <div key={j} style={{ paddingLeft: '8px', marginBottom: '2px' }}>{l}</div>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
 
             <AKMALLetterFooter />

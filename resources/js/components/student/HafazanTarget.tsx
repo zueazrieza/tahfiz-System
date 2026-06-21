@@ -132,18 +132,32 @@ export function HafazanTarget() {
         </div>
       ))}
 
-      {/* Projected completion */}
+      {/* Projected completion — aligned with AI prediction formula (604 mukasurat, 1 Juz = 20 muka) */}
       <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-xl border border-green-200 p-6">
         <div className="flex items-center gap-3 mb-2">
           <BookOpen className="text-green-600" size={22} />
           <h3 className="font-semibold text-green-900">Unjuran Khatam Al-Quran</h3>
         </div>
-        {data?.weekly?.current > 0 ? (
-          <>
-            <p className="text-3xl font-bold text-green-700">{Math.ceil((6236 - (data?.stats?.juzukCompleted ?? 0) * 208) / (data?.weekly?.current / 7))} hari</p>
-            <p className="text-sm text-green-700 mt-1">Berdasarkan kadar semasa ~{Math.round(data?.weekly?.current / 7)} ayat/hari</p>
-          </>
-        ) : (
+        {data?.weekly?.current > 0 ? (() => {
+          const juzuk = data?.stats?.juzukCompleted ?? 0;
+          const avgAyahPerDay = data?.weekly?.current / 7;
+          const avgPpd = avgAyahPerDay / 6; // 6 ayat ≈ 1 mukasurat
+          const pagesRemaining = 604 - Math.min(604, juzuk * 20);
+          const rawDays = avgPpd > 0 ? Math.ceil(pagesRemaining / avgPpd) : 548;
+          const days = Math.max(365, Math.min(548, rawDays));
+          const years = Math.floor(days / 365);
+          const months = Math.round((days % 365) / 30);
+          const timeStr = years > 0 ? `${years} tahun ${months} bulan` : `${months} bulan`;
+          return (
+            <>
+              <p className="text-3xl font-bold text-green-700">{timeStr}</p>
+              <p className="text-sm text-green-700 mt-1">
+                {days} hari — kadar semasa ~{avgPpd.toFixed(1)} muka surat/hari ({Math.round(avgAyahPerDay)} ayat/hari)
+              </p>
+              <p className="text-xs text-green-600 mt-1 opacity-70">Baki: {pagesRemaining} mukasurat | Formula: 1 Juz = 20 muka, 604 muka surat jumlah</p>
+            </>
+          );
+        })() : (
           <p className="text-gray-500 text-sm">Mula rekod hafazan untuk lihat unjuran anda!</p>
         )}
       </div>

@@ -18,6 +18,10 @@ interface AIPredictionData {
   sabaq_score?: number | null;
   sabki_score?: number | null;
   manzil_score?: number | null;
+  pages_per_day?: number | null;
+  days_to_complete?: number | null;
+  milestone_3_months?: string | null;
+  progress_percent?: number | null;
 }
 
 interface ParentAIPredictionProps {
@@ -132,7 +136,7 @@ export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
             {[
               { icon: <Calendar className="w-6 h-6 text-purple-600" />, bg: 'bg-purple-50 border-purple-200', label: 'Anggaran Khatam', value: prediction.estimated_completion },
               { icon: <TrendingUp className="w-6 h-6 text-blue-600" />, bg: 'bg-blue-50 border-blue-200',     label: 'Tahap Keyakinan AI', value: prediction.confidence },
-              { icon: <BookOpen className="w-6 h-6 text-green-600" />, bg: 'bg-green-50 border-green-200',    label: 'Purata Ayat/Hari', value: prediction.avg_ayah_per_day },
+              { icon: <BookOpen className="w-6 h-6 text-green-600" />, bg: 'bg-green-50 border-green-200',    label: 'Kemajuan', value: prediction.progress_percent != null ? `${prediction.progress_percent}%` : prediction.current_progress },
             ].map(item => (
               <div key={item.label} className={`rounded-xl border p-5 ${item.bg} flex items-center gap-4`}>
                 <div className="p-2 bg-white rounded-lg shadow-sm">{item.icon}</div>
@@ -143,6 +147,26 @@ export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
               </div>
             ))}
           </div>
+
+          {/* Milestone & pages rate */}
+          {(prediction.milestone_3_months || prediction.pages_per_day) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {prediction.milestone_3_months && (
+                <div className="bg-teal-50 border border-teal-200 rounded-xl p-5">
+                  <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-1">Pencapaian 3 Bulan</p>
+                  <p className="text-xl font-bold text-teal-800">{prediction.milestone_3_months}</p>
+                  <p className="text-xs text-teal-600 mt-1">Unjuran berdasarkan kadar hafazan semasa</p>
+                </div>
+              )}
+              {prediction.pages_per_day != null && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                  <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Kadar Hafazan</p>
+                  <p className="text-xl font-bold text-amber-800">{prediction.pages_per_day} muka surat/hari</p>
+                  <p className="text-xs text-amber-600 mt-1">Sasaran: ≥ 1 muka surat sehari</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Attendance & Stats */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -171,7 +195,33 @@ export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
               <Brain className="w-6 h-6 text-purple-600 animate-pulse" />
               <h3 className="font-bold text-purple-900 text-base uppercase tracking-tight">Cadangan AI (Metodologi Pengulangan)</h3>
             </div>
-            <p className="text-purple-800 text-sm whitespace-pre-line leading-relaxed font-semibold">{prediction.recommendation || prediction.recommendations}</p>
+            <div className="space-y-3 text-sm leading-relaxed">
+              {(prediction.recommendation || prediction.recommendations || '')
+                .split('\n\n')
+                .filter(Boolean)
+                .map((section: string, i: number) => {
+                  const lines = section.split('\n');
+                  const header = lines[0];
+                  const bullets = lines.slice(1).filter((l: string) => l.trim().startsWith('•'));
+                  const body = lines.slice(1).filter((l: string) => !l.trim().startsWith('•')).join(' ').trim();
+                  return (
+                    <div key={i} className="space-y-1">
+                      <p className="font-bold text-purple-900">{header}</p>
+                      {body && <p className="text-purple-800 opacity-90">{body}</p>}
+                      {bullets.length > 0 && (
+                        <ul className="space-y-0.5 pl-1">
+                          {bullets.map((b: string, j: number) => (
+                            <li key={j} className="flex gap-2 text-purple-800">
+                              <span className="shrink-0">•</span>
+                              <span className="opacity-90">{b.replace(/^•\s*/, '')}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
           </div>
 
           {/* AI Journey Visualizer (Figure 3 Integration) */}

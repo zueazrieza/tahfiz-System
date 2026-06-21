@@ -21,6 +21,9 @@ class AIPrediction extends Model
         'days_to_complete',
         'milestone_3_months',
         'progress_percent',
+        'sabaq_score',
+        'sabki_score',
+        'manzil_score',
     ];
 
     public function student()
