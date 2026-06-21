@@ -260,12 +260,12 @@ export function ViewReports() {
           axios.get('/api/hafazan-records'),
           axios.get('/api/attendance')
         ]);
-        setWeeklyReports(reportsRes.data);
-        dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
-        dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
-        dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
-        dispatch({ type: 'SET_HAFAZAN_RECORDS', payload: hafazanRes.data });
-        dispatch({ type: 'SET_ATTENDANCE', payload: attendanceRes.data });
+        if (Array.isArray(reportsRes.data)) setWeeklyReports(reportsRes.data);
+        if (Array.isArray(studentsRes.data)) dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
+        if (Array.isArray(paymentsRes.data)) dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
+        if (Array.isArray(classesRes.data)) dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
+        if (Array.isArray(hafazanRes.data)) dispatch({ type: 'SET_HAFAZAN_RECORDS', payload: hafazanRes.data });
+        if (Array.isArray(attendanceRes.data)) dispatch({ type: 'SET_ATTENDANCE', payload: attendanceRes.data });
       } catch (err) {
         console.error('Failed to fetch reports data', err);
       }
@@ -279,16 +279,19 @@ export function ViewReports() {
   const hafazanData = Array.from({ length: 5 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 4 + i, 1);
     const m = d.getMonth(); const y = d.getFullYear();
-    const sessions = state.hafazanRecords
+    const sessions = (state.hafazanRecords ?? [])
       .filter((r: any) => { const rd = new Date(r.date); return rd.getMonth() === m && rd.getFullYear() === y; })
       .length;
     return { name: monthNames[m], sessions };
   });
 
-  const attendanceData = state.classes.map((cls: any) => {
-    if (!cls.studentIds.length) return { class: cls.name, rate: 0 };
+  const attendanceData = (state.classes ?? []).map((cls: any) => {
+    // API returns { students: [{id,name,...}] }, MockData uses { studentIds: ['1','2'] }
+    const studentIds: string[] = cls.studentIds
+      ?? (cls.students ?? []).map((s: any) => String(s.id));
+    if (!studentIds.length) return { class: cls.name, rate: 0 };
     const rate = Math.round(
-      cls.studentIds.reduce((sum: number, sid: string) => sum + getStudentAttendanceRate(state, sid), 0) / cls.studentIds.length
+      studentIds.reduce((sum: number, sid: string) => sum + getStudentAttendanceRate(state, sid), 0) / studentIds.length
     );
     return { class: cls.name, rate };
   });
