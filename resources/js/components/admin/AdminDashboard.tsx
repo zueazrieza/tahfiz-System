@@ -83,13 +83,13 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
   usePolling(async () => {
     try {
       const { data } = await axios.get('/api/admin/stats');
-      setLiveStats(data);
+      if (data && typeof data === 'object' && !Array.isArray(data)) setLiveStats(data);
     } catch { /* silent – keep stale data */ }
     finally { setStatsLoading(false); }
 
     try {
       const { data } = await axios.get('/api/admin/activities');
-      setActivities(data);
+      setActivities(Array.isArray(data) ? data : []);
     } catch { /* silent – keep stale data */ }
     finally { setActivitiesLoading(false); }
   }, 30_000);
