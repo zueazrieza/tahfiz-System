@@ -100,16 +100,26 @@ export function AIPrediction() {
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [totalClasses, setTotalClasses] = useState(0);
   const printRef = useRef<HTMLDivElement>(null);
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const classIds = [...new Set(state.classes.map(c => c.id))];
+      // Always fetch fresh class list so this page works standalone
+      let classIds: number[] = [];
+      if (state.classes.length > 0) {
+        classIds = [...new Set(state.classes.map(c => c.id))];
+      } else {
+        const classResp = await axios.get('/api/classes');
+        classIds = [...new Set((Array.isArray(classResp.data) ? classResp.data : []).map((c: any) => c.id as number))];
+      }
+
+      setTotalClasses(classIds.length);
       const all: any[] = [];
       for (const cid of classIds) {
         const resp = await axios.get(`/api/ai-predictions/class/${cid}`);
-        all.push(...resp.data);
+        if (Array.isArray(resp.data)) all.push(...resp.data);
       }
       const mapped = all.map(p => ({
         ...p,
@@ -183,7 +193,7 @@ export function AIPrediction() {
               {[
                 { label: 'Purata Ketepatan AI', value: `${avgConfidence}%` },
                 { label: 'Pelajar Dipantau', value: predictions.length },
-                { label: 'Kelas Dianalisis', value: state.classes.length },
+                { label: 'Kelas Dianalisis', value: totalClasses || state.classes.length },
               ].map(m => (
                 <div key={m.label} className="bg-white rounded-lg p-3">
                   <p className="text-sm text-gray-600">{m.label}</p>
