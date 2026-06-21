@@ -21,8 +21,11 @@ const HAFAZAN_LEVELS = [
 
 export function ManageAchievements() {
   const { state } = useAppStore();
+  const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
+  const teacherId = authUser.linked_id;
+
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
-  const [students, setStudents] = useState<any[]>([]); // Use local state for students from API
+  const [students, setStudents] = useState<any[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [studentsLoading, setStudentsLoading] = useState(true);
@@ -37,17 +40,17 @@ export function ManageAchievements() {
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [teacherId]);
 
   const fetchStudents = async () => {
+    if (!teacherId) return;
     try {
       setStudentsLoading(true);
-      const resp = await axios.get('/api/teacher/students');
-      setStudents(resp.data);
+      const resp = await axios.get(`/api/teacher/students?teacherId=${teacherId}`);
+      setStudents(Array.isArray(resp.data) ? resp.data : []);
     } catch (err) {
       console.error('Failed to fetch students', err);
-      // Fallback to context students if API fails (though API is preferred for real IDs)
-      setStudents(state.students);
+      setStudents([]);
     } finally {
       setStudentsLoading(false);
     }

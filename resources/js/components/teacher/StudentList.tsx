@@ -8,10 +8,7 @@ import { SkeletonCard } from '../shared/Skeleton';
 export function StudentList() {
   const { state } = useAppStore();
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t =>
-    t.email === authUser.email ||
-    (authUser.name && t.name.toLowerCase().includes(authUser.name.toLowerCase().split(' ').slice(-1)[0]))
-  ) ?? state.teachers[0];
+  const teacherId = authUser.linked_id;
 
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
@@ -37,14 +34,13 @@ export function StudentList() {
       const resp = await axios.get('/api/classes');
       const data = resp.data;
       // Filter classes for this teacher
-      const teacherClasses = data.filter((c: any) => String(c.teacherId) === String(teacher?.id));
+      const teacherClasses = data.filter((c: any) => String(c.teacherId) === String(teacherId));
       setClasses(teacherClasses);
       if (teacherClasses.length > 0 && !selectedClassId) {
         setSelectedClassId(teacherClasses[0].id);
       }
     } catch (err) {
       console.error('Failed to fetch classes', err);
-      setClasses(state.classes.filter(c => teacher?.classIds.some(cid => String(cid) === String(c.id))));
     }
   };
 
@@ -92,7 +88,7 @@ export function StudentList() {
           onChange={e => { setSelectedClassId(e.target.value); setStudentsPage(1); }}
           className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
         >
-          {classes.map(c => <option key={c.id} value={c.id}>{c.name} - {teacher?.name || 'Tiada Murabbi'}</option>)}
+          {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAppStore } from '../../store/AppContext';
 import { Upload, FileText, CheckCircle, Target, Award, Plus } from 'lucide-react';
@@ -7,33 +7,38 @@ import { ConfirmModal } from '../shared/ConfirmModal';
 export function UploadReport() {
   const { state } = useAppStore();
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => 
-    t.email === authUser.email || 
-    (authUser.name && t.name.toLowerCase().includes(authUser.name.toLowerCase().split(' ').slice(-1)[0]))
-  ) ?? state.teachers[0];
-  
+  const teacherId = authUser.linked_id;
+
   const [activeTab, setActiveTab] = useState<'report'|'target'>('report');
-  
+  const [myStudents, setMyStudents] = useState<any[]>([]);
+
   // Report state
   const [content, setContent] = useState('');
   const [score, setScore] = useState(0);
   const [saved, setSaved] = useState(false);
-  const pastReports = state.reports.filter(r => r.teacherId === teacher?.id).sort((a, b) => b.date.localeCompare(a.date));
+  const pastReports = state.reports.filter(r => String(r.teacherId) === String(teacherId)).sort((a, b) => b.date.localeCompare(a.date));
 
-  // Target state
-  // Get classes for this teacher
-  const teacherClasses = state.classes.filter(c => 
-    String(c.teacherId) === String(teacher?.id) || 
-    String(c.teacher_id) === String(teacher?.id) ||
-    teacher?.classIds?.includes(String(c.id))
-  ).map(c => String(c.id));
-
-  const myStudents = state.students.filter(s => {
-    const sCid = String(s.classId || s.class_id);
-    const sTid = String(s.teacherId || s.teacher_id);
-    return teacherClasses.includes(sCid) || (sTid !== 'undefined' && sTid === String(teacher?.id));
-  });
   const [selectedStudent, setSelectedStudent] = useState('');
+
+  useEffect(() => {
+    if (!teacherId) return;
+    axios.get('/api/classes')
+      .then(res => {
+        if (!Array.isArray(res.data)) return;
+        const myClasses = res.data.filter((c: any) => String(c.teacherId) === String(teacherId));
+        const promises = myClasses.map((c: any) =>
+          axios.get(`/api/students?classId=${c.id}`)
+            .then(r => Array.isArray(r.data) ? r.data : (Array.isArray(r.data?.data) ? r.data.data : []))
+            .catch(() => [])
+        );
+        Promise.all(promises).then(results => {
+          const all = results.flat();
+          const unique = all.filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i);
+          setMyStudents(unique);
+        });
+      })
+      .catch(console.error);
+  }, [teacherId]);
   const [targetM1, setTargetM1] = useState('');
   const [targetM2, setTargetM2] = useState('');
   const [targetM3, setTargetM3] = useState('');
@@ -52,7 +57,7 @@ export function UploadReport() {
     setConfirmReport(false);
     try {
       await axios.post('/api/reports/weekly', {
-        teacher_id: teacher?.id,
+        teacher_id: teacherId,
         content,
         weekly_score: score,
         date: new Date().toISOString().split('T')[0]
