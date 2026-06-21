@@ -1,6 +1,6 @@
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type Grade = 'Mumtaz' | 'Jayyid' | 'Maqbul' | 'Perlu Penambahbaikan' | '';
+export type Grade = 'Mumtaz' | 'Jayyid Jiddan' | 'Jayyid' | 'Maqbul' | '';
 export type AttendanceStatus = 'Hadir' | 'Tidak Hadir' | 'Lewat';
 export type PaymentStatus = 'Dibayar' | 'Belum Bayar' | 'Tertunggak';
 export type UserRole = 'admin' | 'teacher' | 'parent' | 'student';

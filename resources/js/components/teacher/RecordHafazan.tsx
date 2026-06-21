@@ -6,7 +6,7 @@ import { Grade } from '../../store/mockData';
 import { ConfirmModal } from '../shared/ConfirmModal';
 import { VoiceRecorder } from '../shared/VoiceRecorder';
 
-const GRADE_MAP: Record<string, string> = { A: 'Mumtaz', B: 'Jayyid', C: 'Maqbul', D: 'Perlu Penambahbaikan' };
+const GRADE_MAP: Record<string, string> = { A: 'Mumtaz', B: 'Jayyid Jiddan', C: 'Jayyid', D: 'Maqbul', 'Perlu Penambahbaikan': 'Maqbul' };
 const normalizeGrade = (g: string) => GRADE_MAP[g] ?? g;
 
 export function RecordHafazan() {
@@ -95,8 +95,8 @@ export function RecordHafazan() {
     }
   };
 
-  const gradeOptions: Grade[] = ['Mumtaz', 'Jayyid', 'Maqbul', 'Perlu Penambahbaikan'];
-  const gradeLabels: Record<Grade, string> = { 'Mumtaz': 'Mumtaz (ممتاز)', 'Jayyid': 'Jayyid (جيد)', 'Maqbul': 'Maqbul (مقبول)', 'Perlu Penambahbaikan': 'Perlu Penambahbaikan', '': '' };
+  const gradeOptions: Grade[] = ['Mumtaz', 'Jayyid Jiddan', 'Jayyid', 'Maqbul'];
+  const gradeLabels: Record<Grade, string> = { 'Mumtaz': 'Mumtaz (ممتاز)', 'Jayyid Jiddan': 'Jayyid Jiddan (جيد جداً)', 'Jayyid': 'Jayyid (جيد)', 'Maqbul': 'Maqbul (مقبول)', '': '' };
   const inCls = (err?: string) => `w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${err ? 'border-red-400 focus:ring-red-400 bg-red-50' : 'border-gray-200 focus:ring-green-500'}`;
 
   return (
@@ -295,7 +295,7 @@ export function RecordHafazan() {
               <div key={h.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
                 <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-xs">{h.date}</span>
                 <span className="font-medium">{h.sabaq.surah} {h.sabaq.from}–{h.sabaq.to}</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${normalizeGrade(h.sabaq.grade) === 'Mumtaz' ? 'bg-green-100 text-green-700' : normalizeGrade(h.sabaq.grade) === 'Jayyid' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{normalizeGrade(h.sabaq.grade)}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${normalizeGrade(h.sabaq.grade) === 'Mumtaz' ? 'bg-green-100 text-green-700' : normalizeGrade(h.sabaq.grade) === 'Jayyid Jiddan' ? 'bg-teal-100 text-teal-700' : normalizeGrade(h.sabaq.grade) === 'Jayyid' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{normalizeGrade(h.sabaq.grade)}</span>
                 <span className="text-gray-500">{h.ayahCount} ayah</span>
               </div>
             ))}

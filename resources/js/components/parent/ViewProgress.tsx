@@ -42,8 +42,9 @@ export function ViewProgress({ childId, childData }: ViewProgressProps) {
 
   const gradeColor = (g: string) =>
     g === 'Mumtaz' ? 'bg-green-100 text-green-700' :
+    g === 'Jayyid Jiddan' ? 'bg-teal-100 text-teal-700' :
     g === 'Jayyid' ? 'bg-blue-100 text-blue-700' :
-    g === 'Maqbul' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+    g === 'Maqbul' ? 'bg-yellow-100 text-yellow-700' : 'bg-yellow-100 text-yellow-700';
 
   // Monthly summary (current month)
   const now = new Date();

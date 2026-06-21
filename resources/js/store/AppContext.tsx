@@ -174,7 +174,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'RECORD_HAFAZAN': {
       const record: HafazanRecord = { ...action.payload, id: genId('h') };
       const student = state.students.find(s => s.id === record.studentId);
-      const gradeLabel = (g: Grade) => g === 'Mumtaz' ? 'Mumtaz (ممتاز)' : g === 'Jayyid' ? 'Jayyid (جيد)' : g === 'Maqbul' ? 'Maqbul (مقبول)' : g;
+      const gradeLabel = (g: Grade) => g === 'Mumtaz' ? 'Mumtaz (ممتاز)' : g === 'Jayyid Jiddan' ? 'Jayyid Jiddan (جيد جداً)' : g === 'Jayyid' ? 'Jayyid (جيد)' : g === 'Maqbul' ? 'Maqbul (مقبول)' : g;
       const notif: Notification = {
         id: genId('n'), studentId: record.studentId, type: 'hafazan',
         title: 'Rekod Hafazan Dikemas Kini',
@@ -420,7 +420,7 @@ export function computeAIPrediction(state: AppState, studentId: string) {
     totalSabaqAyah += Math.max(0, (r.sabaq.to || 0) - (r.sabaq.from || 0));
     
     // Performance Grades affecting quality of memorization
-    const gradeVal = (g?: Grade) => g === 'Mumtaz' ? 1.15 : g === 'Jayyid' ? 1.0 : g === 'Maqbul' ? 0.8 : g === 'Perlu Penambahbaikan' ? 0.5 : null;
+    const gradeVal = (g?: Grade) => g === 'Mumtaz' ? 1.15 : g === 'Jayyid Jiddan' ? 1.08 : g === 'Jayyid' ? 1.0 : g === 'Maqbul' ? 0.8 : null;
     
     [r.sabaq.grade, r.sabaqi.grade, r.manzil.grade].forEach(g => {
       const val = gradeVal(g);

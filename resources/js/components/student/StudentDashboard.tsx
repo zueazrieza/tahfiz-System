@@ -204,10 +204,11 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
               const today = dashboardData?.todayHafazan;
               const gradeColor = (g: string | null) => {
                 if (!g) return { bg: '#f3f4f6', text: '#9ca3af', label: 'Belum' };
-                if (g === 'Mumtaz' || g === 'Sangat Baik') return { bg: '#dcfce7', text: '#16a34a', label: g };
-                if (g === 'Jayyid' || g === 'Baik' || g === 'Jayyid Jiddan') return { bg: '#dbeafe', text: '#1d4ed8', label: g };
-                if (g === 'Maqbul' || g === 'Sederhana') return { bg: '#fef9c3', text: '#a16207', label: g };
-                return { bg: '#fee2e2', text: '#b91c1c', label: g };
+                if (g === 'Mumtaz') return { bg: '#dcfce7', text: '#16a34a', label: g };
+                if (g === 'Jayyid Jiddan') return { bg: '#ccfbf1', text: '#0f766e', label: g };
+                if (g === 'Jayyid') return { bg: '#dbeafe', text: '#1d4ed8', label: g };
+                if (g === 'Maqbul') return { bg: '#fef9c3', text: '#a16207', label: g };
+                return { bg: '#fef9c3', text: '#a16207', label: g };
               };
               const classRank  = dashboardData?.classRank;
               const classTotal = dashboardData?.classTotal;

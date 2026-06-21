@@ -50,7 +50,7 @@ async function captureElementAsPDF(
 
 /* ─── Normalize legacy letter grades (A/B/C/D) to descriptive grades ─────── */
 function normalizeGrade(grade: string): string {
-  const map: Record<string, string> = { A: 'Mumtaz', B: 'Jayyid', C: 'Maqbul', D: 'Perlu Penambahbaikan' };
+  const map: Record<string, string> = { A: 'Mumtaz', B: 'Jayyid Jiddan', C: 'Jayyid', D: 'Maqbul', 'Perlu Penambahbaikan': 'Maqbul' };
   return map[grade] ?? grade;
 }
 
@@ -132,8 +132,8 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
               {records.slice(0, 25).map((r: any, i: number) => {
                 const student = state.students.find((s: any) => s.id === r.studentId);
                 const grade = normalizeGrade(r.sabaq?.grade ?? '—');
-                const gradeBg = grade === 'Mumtaz' ? '#dcfce7' : grade === 'Jayyid' ? '#dbeafe' : '#fef9c3';
-                const gradeColor = grade === 'Mumtaz' ? '#15803d' : grade === 'Jayyid' ? '#1d4ed8' : '#854d0e';
+                const gradeBg = grade === 'Mumtaz' ? '#dcfce7' : grade === 'Jayyid Jiddan' ? '#ccfbf1' : grade === 'Jayyid' ? '#dbeafe' : '#fef9c3';
+                const gradeColor = grade === 'Mumtaz' ? '#15803d' : grade === 'Jayyid Jiddan' ? '#0f766e' : grade === 'Jayyid' ? '#1d4ed8' : '#854d0e';
                 return (
                   <tr key={r.id} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
                     <td style={{ border: '1px solid #e5e7eb', padding: '4px 7px', whiteSpace: 'nowrap' }}>{r.date}</td>

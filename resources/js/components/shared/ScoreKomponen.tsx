@@ -6,18 +6,16 @@ interface Props {
 
 function scoreLabel(s: number): string {
   if (s >= 90) return 'Mumtaz';
-  if (s >= 75) return 'Baik';
-  if (s >= 60) return 'Sederhana';
-  if (s >= 40) return 'Lemah';
-  return 'Perlu Ulang';
+  if (s >= 75) return 'Jayyid Jiddan';
+  if (s >= 60) return 'Jayyid';
+  return 'Maqbul';
 }
 
 function scoreColor(s: number) {
   if (s >= 90) return { bar: 'bg-emerald-500', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700' };
-  if (s >= 75) return { bar: 'bg-blue-500',    text: 'text-blue-700',    badge: 'bg-blue-100 text-blue-700'    };
-  if (s >= 60) return { bar: 'bg-yellow-500',  text: 'text-yellow-700',  badge: 'bg-yellow-100 text-yellow-700'};
-  if (s >= 40) return { bar: 'bg-orange-500',  text: 'text-orange-700',  badge: 'bg-orange-100 text-orange-700'};
-  return          { bar: 'bg-rose-500',    text: 'text-rose-700',    badge: 'bg-rose-100 text-rose-700'    };
+  if (s >= 75) return { bar: 'bg-teal-500',    text: 'text-teal-700',    badge: 'bg-teal-100 text-teal-700'    };
+  if (s >= 60) return { bar: 'bg-blue-500',    text: 'text-blue-700',    badge: 'bg-blue-100 text-blue-700'    };
+  return          { bar: 'bg-yellow-500',  text: 'text-yellow-700',  badge: 'bg-yellow-100 text-yellow-700'};
 }
 
 function ScoreBar({ label, desc, score }: { label: string; desc: string; score: number | null }) {
