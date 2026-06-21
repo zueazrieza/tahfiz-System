@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { BookOpen, Users, Calendar, FileText, Brain, LogOut, LayoutDashboard, Upload, X, Mic2, Layers, Trophy, Menu } from 'lucide-react';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { RecordHafazan } from './RecordHafazan';
@@ -41,26 +42,47 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
   const { state } = useAppStore();
 
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => 
-    String(t.userId) === String(authUser.id) || 
-    t.email === authUser.email || 
-    (authUser.name && t.name.toLowerCase().includes(authUser.name.toLowerCase().split(' ').slice(-1)[0]))
-  ) ?? state.teachers[0];
-  const teacherClasses = state.classes.filter(c => teacher?.classIds.some(cid => String(cid) === String(c.id)));
-  const myStudentCount = state.students.filter(s => 
-    String(s.teacherId) === String(teacher?.id) || 
-    teacherClasses.some(c => String(c.id) === String(s.classId))
-  ).length;
+  const teacherId = authUser.linked_id;
   const todayName = new Date().toLocaleDateString('ms-MY', { weekday: 'long' });
 
-  const pendingRecords = new Set(
-    state.students.filter(s => s.teacherId === teacher?.id).map(s => s.id)
-  ).size - new Set(state.hafazanRecords.filter(h => h.date === new Date().toISOString().split('T')[0]).map(h => h.studentId)).size;
+  const [myClassCount, setMyClassCount] = useState(0);
+  const [myStudentCount, setMyStudentCount] = useState(0);
+  const [todayHafazanCount, setTodayHafazanCount] = useState(0);
+
+  useEffect(() => {
+    if (!teacherId) return;
+    axios.get('/api/classes')
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          const mine = res.data.filter((c: any) => String(c.teacherId) === String(teacherId));
+          setMyClassCount(mine.length);
+          let totalStudents = 0;
+          const promises = mine.map((c: any) =>
+            axios.get(`/api/students?classId=${c.id}`)
+              .then(r => {
+                const data = Array.isArray(r.data) ? r.data : (Array.isArray(r.data?.data) ? r.data.data : []);
+                totalStudents += data.length;
+              })
+              .catch(() => {})
+          );
+          Promise.all(promises).then(() => setMyStudentCount(totalStudents));
+        }
+      })
+      .catch(console.error);
+
+    const today = new Date().toISOString().split('T')[0];
+    axios.get(`/api/hafazan-records?teacher_id=${teacherId}&date=${today}`)
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+        setTodayHafazanCount(data.length);
+      })
+      .catch(() => {});
+  }, [teacherId]);
 
   const stats = [
-    { label: 'Pelajar Saya',     value: String(myStudentCount),              icon: <Users size={28} />,    color: '#3b82f6', bg: '#eff6ff' },
-    { label: 'Jumlah Kelas',     value: String(teacherClasses.length),       icon: <Calendar size={28} />, color: '#10b981', bg: '#f0fdf4' },
-    { label: 'Rekod Tertunggak', value: String(Math.max(0, pendingRecords)), icon: <FileText size={28} />, color: '#f59e0b', bg: '#fffbeb' },
+    { label: 'Pelajar Saya',      value: String(myStudentCount),  icon: <Users size={28} />,    color: '#3b82f6', bg: '#eff6ff' },
+    { label: 'Jumlah Kelas',      value: String(myClassCount),    icon: <Calendar size={28} />, color: '#10b981', bg: '#f0fdf4' },
+    { label: 'Rekod Hari Ini',    value: String(todayHafazanCount), icon: <FileText size={28} />, color: '#f59e0b', bg: '#fffbeb' },
   ];
 
   const renderContent = () => {

@@ -8,11 +8,11 @@ import { ConfirmModal } from '../shared/ConfirmModal';
 export function ManageAttendance() {
   const { state, dispatch } = useAppStore();
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
-  const teacher = state.teachers.find(t => String(t.id) === String(authUser.linked_id))
-    ?? state.teachers.find(t => t.email === authUser.email)
-    ?? state.teachers[0];
-  const teacherClasses = state.classes.filter(c => teacher?.classIds.some(cid => String(cid) === String(c.id)));
-  const [selectedClassId, setSelectedClassId] = useState(teacherClasses[0]?.id ?? '');
+  const teacherId = authUser.linked_id;
+
+  const [teacherClasses, setTeacherClasses] = useState<any[]>([]);
+  const [studentsInClass, setStudentsInClass] = useState<any[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, { status: AttendanceStatus; remarks: string; reasonType: string }>>({});
   const [saved, setSaved] = useState(false);
@@ -24,7 +24,28 @@ export function ManageAttendance() {
   const [classImage, setClassImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const studentsInClass = state.students.filter(s => String(s.classId) === String(selectedClassId));
+  useEffect(() => {
+    if (!teacherId) return;
+    axios.get('/api/classes')
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          const mine = res.data.filter((c: any) => String(c.teacherId) === String(teacherId));
+          setTeacherClasses(mine);
+          if (mine.length > 0) setSelectedClassId(String(mine[0].id));
+        }
+      })
+      .catch(console.error);
+  }, [teacherId]);
+
+  useEffect(() => {
+    if (!selectedClassId) { setStudentsInClass([]); return; }
+    axios.get(`/api/students?classId=${selectedClassId}`)
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+        setStudentsInClass(data);
+      })
+      .catch(console.error);
+  }, [selectedClassId]);
 
   useEffect(() => {
     if (selectedClassId && date) {
@@ -191,14 +212,14 @@ export function ManageAttendance() {
       {viewMode === 'daily' ? (
         <div className="flex gap-4">
           <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setAttendanceMap({}); }} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name} - {state.teachers.find(t => String(t.id) === String(c.teacherId))?.name ?? 'Tiada Murabbi'}</option>)}
+            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <input type="date" value={date} onChange={e => { setDate(e.target.value); setAttendanceMap({}); }} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" />
         </div>
       ) : (
         <div className="flex gap-4">
           <select value={selectedClassId} onChange={e => setSelectedClassId(e.target.value)} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name} - {state.teachers.find(t => String(t.id) === String(c.teacherId))?.name ?? 'Tiada Murabbi'}</option>)}
+            {teacherClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
             {['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'].map((m, i) => (
