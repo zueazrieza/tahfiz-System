@@ -163,7 +163,7 @@ export function TeacherDashboard({ userName, onLogout }: TeacherDashboardProps) 
           <div style={{ padding: '1.5rem 1rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <img src="/images/logo.png" alt="Logo" style={{ height: '55px', marginBottom: '0.75rem' }} />
             <p style={{ color: '#fff', fontWeight: 800, fontSize: '0.9rem', margin: 0, letterSpacing: '0.05em' }}>
-              {(teacher?.gender === 'F') ? 'MURABBIAH' : 'MURABBI'}
+              {(authUser?.gender === 'F') ? 'MURABBIAH' : 'MURABBI'}
             </p>
             <p style={{ color: '#E8F6F7', fontSize: '0.75rem', margin: '0.2rem 0 0', opacity: 0.9 }}>{userName}</p>
           </div>
