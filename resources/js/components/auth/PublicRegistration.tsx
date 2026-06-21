@@ -184,8 +184,8 @@ export function PublicRegistration() {
                  
                  <div className="grid grid-cols-2 gap-4">
                    {[
-                     { name: 'MURABBI IDHAM', img: '/images/murabbi_idham.png' },
-                     { name: 'MURABBI ARASH', img: '/images/murabbi_arash.png' }
+                     { name: 'MURABBI IDHAM', img: '/images/murabbi_idham - Copy.png' },
+                     { name: 'MURABBI ARASH', img: '/images/murabbiarash - Copy.png' }
                    ].map(r => (
                      <button
                        key={r.name}
