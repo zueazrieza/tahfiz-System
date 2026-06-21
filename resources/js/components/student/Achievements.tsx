@@ -41,18 +41,19 @@ export function Achievements() {
 
   // Badge definitions — names must match achievement names in backend exactly
   const badges = [
-    { name: 'Tahsin',                   icon: '📖', img: '/images/logo/level_1.jpeg',       description: 'Mulakan perjalanan hafazan',    earnedName: 'Tahsin' },
-    { name: 'Warrior',                  icon: '🛡️', img: '/images/logo/warrior.jpeg',       description: 'Hafal ≥ 1 Juzuk',              earnedName: 'Warrior' },
-    { name: 'Elite',                    icon: '⚔️', img: '/images/logo/elite.jpeg',         description: 'Hafal ≥ 5 Juzuk',              earnedName: 'Elite' },
-    { name: 'Master',                   icon: '💎', img: '/images/logo/master.jpeg',        description: 'Hafal ≥ 10 Juzuk',             earnedName: 'Master' },
-    { name: 'Grandmaster',              icon: '👑', img: '/images/logo/Level_G.jpeg',       description: 'Hafal ≥ 15 Juzuk',             earnedName: 'Grandmaster' },
-    { name: 'Titan',                    icon: '⚡', img: '/images/logo/level_T.jpeg',       description: 'Hafal ≥ 20 Juzuk',             earnedName: 'Titan' },
-    { name: 'Gladiator',                icon: '🔥', img: '/images/logo/level2.jpeg',        description: 'Hafal ≥ 25 Juzuk',             earnedName: 'Gladiator' },
-    { name: 'Legend Al-Hafiz',          icon: '🏆', img: '/images/logo/level_1_hafiz.jpeg', description: 'Khatam 30 Juzuk Al-Quran',      earnedName: 'Legend Al-Hafiz' },
-    { name: 'Legend Amethyst',          icon: '🔮', img: '/images/logo/level3.jpeg',        description: 'Tasmik 5 Juzuk/hari tanpa salah', earnedName: 'Legend Al-Hafiz Amethyst' },
-    { name: 'Legend Ruby',              icon: '♦️', img: '/images/logo/level4.jpeg',        description: 'Lulus tebuk hafazan 60 soalan', earnedName: 'Legend Al-Hafiz Ruby' },
-    { name: 'Legend Sapphire',          icon: '💠', img: '/images/logo/level_S.jpeg',       description: 'Lulus tebuk hafazan 120 soalan', earnedName: 'Legend Al-Hafiz Sapphire' },
-    { name: 'Syahadah Emperor',         icon: '👸', img: '/images/logo/level_SE.jpeg',      description: 'Ranking tertinggi AKMAL',       earnedName: 'Syahadah Emperor' },
+    { name: 'Tahsin',                   icon: '📖', img: '/images/logo/warrior.jpeg',          description: 'Mulakan perjalanan hafazan',       earnedName: 'Tahsin' },
+    { name: 'Warrior',                  icon: '🛡️', img: '/images/logo/warrior.jpeg',          description: 'Hafal ≥ 1 Juzuk',                 earnedName: 'Warrior' },
+    { name: 'Elite',                    icon: '⚔️', img: '/images/logo/elite.jpeg',            description: 'Hafal ≥ 5 Juzuk',                 earnedName: 'Elite' },
+    { name: 'Master',                   icon: '💎', img: '/images/logo/master.jpeg',           description: 'Hafal ≥ 10 Juzuk',                earnedName: 'Master' },
+    { name: 'Grandmaster',              icon: '👑', img: '/images/logo/grandmaster.jpeg',      description: 'Hafal ≥ 15 Juzuk',                earnedName: 'Grandmaster' },
+    { name: 'Titan',                    icon: '⚡', img: '/images/logo/titan.jpeg',            description: 'Hafal ≥ 20 Juzuk',                earnedName: 'Titan' },
+    { name: 'Gladiator',                icon: '🔥', img: '/images/logo/gladiator.jpeg',        description: 'Hafal ≥ 25 Juzuk',                earnedName: 'Gladiator' },
+    { name: 'Legend Al-Hafiz',          icon: '🏆', img: '/images/logo/legend-al-hafiz.jpeg',  description: 'Khatam 30 Juzuk Al-Quran',         earnedName: 'Legend Al-Hafiz' },
+    { name: 'Legend Amethyst',          icon: '🔮', img: '/images/logo/amthyst.jpeg',          description: 'Tasmik 5 Juzuk/hari tanpa salah',  earnedName: 'Legend Al-Hafiz Amethyst' },
+    { name: 'Legend Ruby',              icon: '♦️', img: '/images/logo/ruby.jpeg',             description: 'Lulus tebuk hafazan 60 soalan',    earnedName: 'Legend Al-Hafiz Ruby' },
+    { name: 'Legend Sapphire',          icon: '💠', img: '/images/logo/sapphire.jpeg',         description: 'Lulus tebuk hafazan 120 soalan',   earnedName: 'Legend Al-Hafiz Sapphire' },
+    { name: 'Emerald Syahadah',         icon: '💚', img: '/images/logo/emerald-syahadah.jpeg', description: 'Pencapaian Syahadah Emerald',       earnedName: 'Emerald Syahadah' },
+    { name: 'Diamond Syahadah',         icon: '💎', img: '/images/logo/diamond-syahadah.jpeg', description: 'Ranking tertinggi AKMAL',           earnedName: 'Diamond Syahadah' },
   ];
 
   const specialtyAchievements = [

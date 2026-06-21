@@ -372,23 +372,23 @@ export function getStudentStreak(state: AppState, studentId: string): number {
 }
 
 const RANK_TABLE = [
-  { min: 0,  name: 'Tahsin',                    icon: '📖', image: '/images/logo/level_1.jpeg',        nextRank: 'Warrior',               nextMin: 1  },
-  { min: 1,  name: 'Warrior',                   icon: '🛡️', image: '/images/logo/warrior.jpeg',        nextRank: 'Elite',                 nextMin: 5  },
-  { min: 5,  name: 'Elite',                     icon: '⚔️', image: '/images/logo/elite.jpeg',          nextRank: 'Master',                nextMin: 10 },
-  { min: 10, name: 'Master',                    icon: '💎', image: '/images/logo/master.jpeg',         nextRank: 'Grandmaster',           nextMin: 15 },
-  { min: 15, name: 'Grandmaster',               icon: '👑', image: '/images/logo/Level_G.jpeg',        nextRank: 'Titan',                 nextMin: 20 },
-  { min: 20, name: 'Titan',                     icon: '⚡', image: '/images/logo/level_T.jpeg',        nextRank: 'Gladiator',             nextMin: 25 },
-  { min: 25, name: 'Gladiator',                 icon: '🔥', image: '/images/logo/level2.jpeg',         nextRank: 'Legend Al-Hafiz',       nextMin: 30 },
-  { min: 30, name: 'Legend Al-Hafiz',           icon: '🏆', image: '/images/logo/level_1_hafiz.jpeg',  nextRank: 'Legend Al-Hafiz Amethyst', nextMin: 30 },
+  { min: 0,  name: 'Tahsin',       icon: '📖', image: '/images/logo/warrior.jpeg',        nextRank: 'Warrior',         nextMin: 1  },
+  { min: 1,  name: 'Warrior',      icon: '🛡️', image: '/images/logo/warrior.jpeg',        nextRank: 'Elite',           nextMin: 5  },
+  { min: 5,  name: 'Elite',        icon: '⚔️', image: '/images/logo/elite.jpeg',          nextRank: 'Master',          nextMin: 10 },
+  { min: 10, name: 'Master',       icon: '💎', image: '/images/logo/master.jpeg',         nextRank: 'Grandmaster',     nextMin: 15 },
+  { min: 15, name: 'Grandmaster',  icon: '👑', image: '/images/logo/grandmaster.jpeg',    nextRank: 'Titan',           nextMin: 20 },
+  { min: 20, name: 'Titan',        icon: '⚡', image: '/images/logo/titan.jpeg',          nextRank: 'Gladiator',       nextMin: 25 },
+  { min: 25, name: 'Gladiator',    icon: '🔥', image: '/images/logo/gladiator.jpeg',      nextRank: 'Legend Al-Hafiz', nextMin: 30 },
+  { min: 30, name: 'Legend Al-Hafiz', icon: '🏆', image: '/images/logo/legend-al-hafiz.jpeg', nextRank: 'Legend Al-Hafiz Amethyst', nextMin: 30 },
 ];
 
 export function getStudentRank(juzuk: number, dbRanking?: number | null): { name: string; icon: string; image: string; level: number; nextRank: string; progressToNext: number } {
-  // For Legend sub-ranks (dbRanking 8-11), use exact name from DB
   const legendSubRanks: Record<number, { name: string; icon: string; image: string; nextRank: string }> = {
-    8:  { name: 'Legend Al-Hafiz Amethyst', icon: '🔮', image: '/images/logo/level3.jpeg',       nextRank: 'Legend Al-Hafiz Ruby' },
-    9:  { name: 'Legend Al-Hafiz Ruby',     icon: '♦️', image: '/images/logo/level4.jpeg',       nextRank: 'Legend Al-Hafiz Sapphire' },
-    10: { name: 'Legend Al-Hafiz Sapphire', icon: '💠', image: '/images/logo/level_S.jpeg',      nextRank: 'Syahadah Emperor' },
-    11: { name: 'Syahadah Emperor',         icon: '👸', image: '/images/logo/level_SE.jpeg',     nextRank: 'Completed!' },
+    8:  { name: 'Legend Al-Hafiz Amethyst', icon: '🔮', image: '/images/logo/amthyst.jpeg',          nextRank: 'Legend Al-Hafiz Ruby'     },
+    9:  { name: 'Legend Al-Hafiz Ruby',     icon: '♦️', image: '/images/logo/ruby.jpeg',             nextRank: 'Legend Al-Hafiz Sapphire' },
+    10: { name: 'Legend Al-Hafiz Sapphire', icon: '💠', image: '/images/logo/sapphire.jpeg',         nextRank: 'Emerald Syahadah'         },
+    11: { name: 'Emerald Syahadah',         icon: '💚', image: '/images/logo/emerald-syahadah.jpeg', nextRank: 'Diamond Syahadah'         },
+    12: { name: 'Diamond Syahadah',         icon: '💎', image: '/images/logo/diamond-syahadah.jpeg', nextRank: 'Completed!'               },
   };
 
   if (dbRanking !== null && dbRanking !== undefined && legendSubRanks[dbRanking]) {
