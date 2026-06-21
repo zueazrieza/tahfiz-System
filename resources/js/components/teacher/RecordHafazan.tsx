@@ -6,6 +6,9 @@ import { Grade } from '../../store/mockData';
 import { ConfirmModal } from '../shared/ConfirmModal';
 import { VoiceRecorder } from '../shared/VoiceRecorder';
 
+const GRADE_MAP: Record<string, string> = { A: 'Mumtaz', B: 'Jayyid', C: 'Maqbul', D: 'Perlu Penambahbaikan' };
+const normalizeGrade = (g: string) => GRADE_MAP[g] ?? g;
+
 export function RecordHafazan() {
   const { state, dispatch } = useAppStore();
 
@@ -292,7 +295,7 @@ export function RecordHafazan() {
               <div key={h.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
                 <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-xs">{h.date}</span>
                 <span className="font-medium">{h.sabaq.surah} {h.sabaq.from}–{h.sabaq.to}</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${h.sabaq.grade === 'Mumtaz' ? 'bg-green-100 text-green-700' : h.sabaq.grade === 'Jayyid' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{h.sabaq.grade}</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${normalizeGrade(h.sabaq.grade) === 'Mumtaz' ? 'bg-green-100 text-green-700' : normalizeGrade(h.sabaq.grade) === 'Jayyid' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{normalizeGrade(h.sabaq.grade)}</span>
                 <span className="text-gray-500">{h.ayahCount} ayah</span>
               </div>
             ))}

@@ -48,6 +48,12 @@ async function captureElementAsPDF(
   pdf.save(filename);
 }
 
+/* ─── Normalize legacy letter grades (A/B/C/D) to descriptive grades ─────── */
+function normalizeGrade(grade: string): string {
+  const map: Record<string, string> = { A: 'Mumtaz', B: 'Jayyid', C: 'Maqbul', D: 'Perlu Penambahbaikan' };
+  return map[grade] ?? grade;
+}
+
 /* ─── Printable Hafazan Report ─────────────────────────────────────────────── */
 function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any[] }) {
   const activeStudents = state.students.filter((s: any) => s.status === 'Aktif').length;
@@ -125,7 +131,7 @@ function HafazanPrintView({ state, hafazanData }: { state: any; hafazanData: any
             <tbody>
               {records.slice(0, 25).map((r: any, i: number) => {
                 const student = state.students.find((s: any) => s.id === r.studentId);
-                const grade = r.sabaq?.grade ?? '—';
+                const grade = normalizeGrade(r.sabaq?.grade ?? '—');
                 const gradeBg = grade === 'Mumtaz' ? '#dcfce7' : grade === 'Jayyid' ? '#dbeafe' : '#fef9c3';
                 const gradeColor = grade === 'Mumtaz' ? '#15803d' : grade === 'Jayyid' ? '#1d4ed8' : '#854d0e';
                 return (
