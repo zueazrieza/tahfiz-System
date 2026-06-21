@@ -224,7 +224,39 @@ export function TeacherAIPrediction() {
         ponteng_label: p.ponteng_label ?? null,
       }));
 
-      setPredictions(mapped);
+      // If no predictions exist yet, auto-generate for all classes
+      if (mapped.length === 0 && classIds.length > 0) {
+        for (const cid of classIds) {
+          await axios.post(`/api/ai-predictions/generate/class/${cid}`).catch(() => {});
+        }
+        // Re-fetch after generation
+        const allPreds2: any[] = [];
+        for (const cid of classIds) {
+          const r = await axios.get(`/api/ai-predictions/class/${cid}`).catch(() => ({ data: [] }));
+          allPreds2.push(...(Array.isArray(r.data) ? r.data : []));
+        }
+        const mapped2 = allPreds2.map(p => ({
+          id: p.id,
+          studentId: p.student_id,
+          studentName: nameIndex[String(p.student_id)] || 'Pelajar',
+          currentProgress: p.current_progress,
+          estimatedCompletion: p.estimated_completion,
+          performanceTrend: p.performance_trend,
+          confidence: p.confidence,
+          recommendation: p.recommendation,
+          attendanceRate: p.attendance_rate,
+          avgAyahPerDay: p.avg_ayah_per_day,
+          sabaq_score: p.sabaq_score,
+          sabki_score: p.sabki_score,
+          manzil_score: p.manzil_score,
+          ponteng_count: p.ponteng_count ?? 0,
+          ponteng_rate: p.ponteng_rate ?? 0,
+          ponteng_label: p.ponteng_label ?? null,
+        }));
+        setPredictions(mapped2);
+      } else {
+        setPredictions(mapped);
+      }
       setGenerated(true);
     } catch (err) {
       console.error('Failed to fetch AI predictions', err);
@@ -259,9 +291,7 @@ export function TeacherAIPrediction() {
   };
 
   // UI Derived state — use predictions (from API) not local state for accuracy
-  const totalStudents = predictions.length > 0
-    ? predictions.length
-    : state.students.filter(s => String(s.teacherId) === String(teacher?.id)).length;
+  const totalStudents = predictions.length;
 
   const avgConfidence = predictions.length
     ? Math.round(predictions.reduce((sum, p) => sum + parseInt(p.confidence), 0) / predictions.length)
