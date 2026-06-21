@@ -76,14 +76,16 @@ export function ManageStudents() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [studentsRes, classesRes, teachersRes] = await Promise.all([
+        const [studentsRes, classesRes, teachersRes, attendanceRes] = await Promise.all([
           axios.get('/api/students'),
           axios.get('/api/classes'),
-          axios.get('/api/teachers?all=true')
+          axios.get('/api/teachers?all=true'),
+          axios.get('/api/attendance')
         ]);
         if (Array.isArray(studentsRes.data)) dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
         if (Array.isArray(classesRes.data)) dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
         dispatch({ type: 'SET_TEACHERS', payload: Array.isArray(teachersRes.data) ? teachersRes.data : teachersRes.data.data });
+        if (Array.isArray(attendanceRes.data)) dispatch({ type: 'SET_ATTENDANCE', payload: attendanceRes.data });
 
         if (Array.isArray(classesRes.data) && classesRes.data.length > 0) setAddForm(prev => ({ ...prev, classId: classesRes.data[0].id }));
         if (teachersRes.data.data?.length > 0) setAddForm(prev => ({ ...prev, teacherId: teachersRes.data.data[0].id }));
