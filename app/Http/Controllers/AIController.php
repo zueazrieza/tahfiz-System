@@ -42,6 +42,17 @@ class AIController extends Controller
 
     public function getPrediction(string $studentId)
     {
+        // Return pre-computed prediction from AIPredictionController if available
+        $stored = AIPrediction::where('student_id', $studentId)->first();
+        if ($stored) {
+            return response()->json(array_merge($stored->toArray(), [
+                'avg_pages_per_week' => $stored->pages_per_day ? round($stored->pages_per_day * 7, 1) : null,
+                'sabaq_score'        => $stored->sabaq_score,
+                'sabki_score'        => $stored->sabki_score,
+                'manzil_score'       => $stored->manzil_score,
+            ]));
+        }
+
         $student = Student::findOrFail($studentId);
 
         $records    = HafazanRecord::where('student_id', $studentId)->orderBy('date')->get();
