@@ -1047,7 +1047,7 @@
             <nav class="nav-links">
                 <a href="#home">Home</a>
                 <a href="#metodologi">Metodologi</a>
-                <a href="#features">Strategi</a>
+                <a href="#testimoni">Testimoni</a>
                 <a href="#online-programs">Program</a>
                 <a href="#locations">Lokasi</a>
                 <a href="#contact">Hubungi</a>
