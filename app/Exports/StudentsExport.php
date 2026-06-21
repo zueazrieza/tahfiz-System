@@ -7,8 +7,11 @@ use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StudentsExport implements FromCollection, WithHeadings, WithMapping
+class StudentsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     public function collection()
     {
@@ -23,30 +26,33 @@ class StudentsExport implements FromCollection, WithHeadings, WithMapping
             'NO IC PELAJAR',
             'JANTINA',
             'TARIKH LAHIR',
-            'KELAS 2026',
-            'HALAQAH KELAS',
+            'UMUR',
+            'ALAMAT',
+            'KELAS',
+            'NAMA MURABBI',
             'TARIKH DAFTAR',
             'TARIKH TAMAT',
             'STATUS',
+            'STATUS KHATAM',
             'INTAKE',
+            'BATCH',
             'NAMA BAPA',
             'NO IC BAPA',
             'NAMA IBU',
             'NO IC IBU',
+            'NAMA PENJAGA (SISTEM)',
+            'TELEFON PENJAGA',
+            'SEJARAH KESIHATAN',
             'BIL JUZUK',
             'RANKING',
             'JUZUK SEMASA',
             'PURATA SABAQ/HARI',
             'JENIS BACAAN',
             'TARGET JUZUK',
-            'UMUR',
-            'BATCH',
             'TEMPOH KHATAM',
             'BILANGAN HARI',
             'TARIKH MULA',
             'TARIKH KHATAM',
-            'NAMA MURABBI',
-            'STATUS KHATAM',
         ];
     }
 
@@ -59,7 +65,6 @@ class StudentsExport implements FromCollection, WithHeadings, WithMapping
         $father = $student->parents->firstWhere('relationship_type', 'father');
         $mother = $student->parents->firstWhere('relationship_type', 'mother');
 
-        // Computed khatam fields
         $tarikhKhatam  = $prediction?->estimated_completion;
         $tarikhMula    = $student->enrolled_date;
         $bilHari       = null;
@@ -76,32 +81,46 @@ class StudentsExport implements FromCollection, WithHeadings, WithMapping
             $student->name,
             $student->matric_no,
             $student->ic_no,
-            $student->gender,
+            $student->gender === 'F' ? 'Perempuan' : 'Lelaki',
             $student->dob,
+            $student->age,
+            $student->address,
             $className,
-            $className,
+            $murabbi,
             $student->enrolled_date,
             $student->tarikh_tamat,
             $student->status,
+            $student->status_khatam,
             $student->intake,
-            $father?->user?->full_name ?? '',
+            $student->batch,
+            $father?->user?->full_name ?? $father?->user?->name ?? '',
             $father?->ic_no ?? '',
-            $mother?->user?->full_name ?? '',
+            $mother?->user?->full_name ?? $mother?->user?->name ?? '',
             $mother?->ic_no ?? '',
+            $student->parent_name,
+            $student->parent_phone,
+            $student->medical_history,
             $student->juzuk_completed,
             $student->ranking,
             $student->juzuk_semasa,
             $student->purata_sabaq_sehari,
             $student->jenis_bacaan,
             $student->target_bil_juzuk,
-            $student->age,
-            $student->batch,
             $tempohKhatam,
             $bilHari,
             $tarikhMula,
             $tarikhKhatam,
-            $murabbi,
-            $student->status_khatam,
+        ];
+    }
+
+    public function styles(Worksheet $sheet): array
+    {
+        return [
+            1 => [
+                'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+                'fill'      => ['fillType' => 'solid', 'startColor' => ['argb' => 'FF2D6A8F']],
+                'alignment' => ['horizontal' => 'center'],
+            ],
         ];
     }
 }
