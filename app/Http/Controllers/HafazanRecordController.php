@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Models\AppNotification;
 use App\Models\User;
 use App\Mail\HafazanRecordedMail;
+use App\Http\Controllers\AIPredictionController;
 
 class HafazanRecordController extends Controller
 {
@@ -183,6 +184,13 @@ class HafazanRecordController extends Controller
             (new AchievementController())->syncStudentAchievements($record->student_id);
         } catch (\Exception $e) {
             Log::warning('Achievement sync failed: ' . $e->getMessage());
+        }
+
+        // Auto-refresh AI prediction with latest hafazan data
+        try {
+            (new AIPredictionController())->generate(new \Illuminate\Http\Request(['student_id' => $record->student_id]));
+        } catch (\Exception $e) {
+            Log::warning('AI prediction refresh failed: ' . $e->getMessage());
         }
 
         return response()->json([
