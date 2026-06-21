@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Target, Calendar, BookOpen, TrendingUp, Loader2 } from 'lucide-react';
+import { Target, Calendar, BookOpen, TrendingUp, Loader2, CheckCircle } from 'lucide-react';
 
 export function HafazanTarget() {
   const [loading, setLoading] = useState(true);
