@@ -34,7 +34,8 @@ export function MudirEvaluation() {
   const fetchEvaluations = async () => {
     try {
       const resp = await axios.get('/api/mudir-evaluations');
-      setEvaluations(Array.isArray(resp.data) ? resp.data : []);
+      const raw = resp.data;
+      setEvaluations(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : []);
     } catch (error) {
       console.error('Failed to fetch evaluations', error);
     }

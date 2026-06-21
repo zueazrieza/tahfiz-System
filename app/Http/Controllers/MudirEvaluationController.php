@@ -12,7 +12,7 @@ class MudirEvaluationController extends Controller
 {
     public function index()
     {
-        return response()->json(MudirEvaluation::with(['student', 'evaluator'])->latest()->paginate(50));
+        return response()->json(MudirEvaluation::with(['student', 'evaluator'])->latest()->get());
     }
 
     public function store(Request $request)
