@@ -275,6 +275,14 @@ export function ManageParents() {
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Hubungan</p>
                         <p className="font-bold text-slate-700 text-sm capitalize">{selectedParent.relationshipType}</p>
                       </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pekerjaan</p>
+                        <p className="font-bold text-slate-700 text-sm">{selectedParent.occupation || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pendapatan</p>
+                        <p className="font-bold text-emerald-600 text-sm">RM {selectedParent.income || '0.00'}</p>
+                      </div>
                     </div>
                   </div>
                 )}

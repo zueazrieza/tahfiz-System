@@ -103,7 +103,7 @@ class ParentController extends Controller
                     'icNo' => $primary->ic_no,
                     'phone' => $primary->phone ?? ($mother ? $mother->phone : ($father ? $father->phone : '')),
                     'occupation' => $primary->occupation,
-                    'income' => ($father ? $father->income : 0) + ($mother ? $mother->income : 0),
+                    'income' => $parents->sum('income'),
                     'relationshipType' => $father && $mother ? 'Ibu & Bapa' : $primary->relationship_type,
                     'children' => []
                 ];
