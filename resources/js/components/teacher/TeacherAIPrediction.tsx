@@ -321,7 +321,7 @@ export function TeacherAIPrediction() {
 
   const avgJuzuk = predictions.length
     ? Math.round(predictions.reduce((sum, p) => {
-        const juzuk = parseInt((p.currentProgress || '0 Juzuk').replace(/\D/g, '')) || 0;
+        const juzuk = parseInt(p.currentProgress || '0') || 0;
         return sum + juzuk;
       }, 0) / predictions.length)
     : 0;
