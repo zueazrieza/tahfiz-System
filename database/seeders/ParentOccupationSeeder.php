@@ -23,12 +23,22 @@ class ParentOccupationSeeder extends Seeder
         ];
         $fatherInc = [2500, 3000, 3200, 3500, 4000, 4500, 5000, 5500, 6000, 7000, 8000, 9000, 10000, 12000];
         $motherInc = [0, 1500, 2000, 2500, 3000, 3200, 3500, 4000, 4500, 5000, 6000];
+        $sectors   = ['Awam', 'Swasta', 'Sendiri', 'GLC', 'Badan Berkanun', 'NGO'];
+        $cities    = ['Kuala Lumpur', 'Shah Alam', 'Subang Jaya', 'Petaling Jaya', 'Klang', 'Ampang',
+                      'Seremban', 'Johor Bahru', 'Ipoh', 'Alor Setar', 'Kota Bharu', 'Kuantan',
+                      'Kuala Terengganu', 'Georgetown', 'Kota Kinabalu', 'Kuching'];
+        $states    = ['SELANGOR', 'KUALA LUMPUR', 'JOHOR', 'PERAK', 'KEDAH', 'KELANTAN',
+                      'PAHANG', 'TERENGGANU', 'PULAU PINANG', 'SABAH', 'SARAWAK', 'NEGERI SEMBILAN'];
 
         $fathers = DB::table('parents')->where('relationship_type', 'father')->whereNull('occupation')->get();
         foreach ($fathers as $f) {
             DB::table('parents')->where('id', $f->id)->update([
                 'occupation' => $fatherOcc[array_rand($fatherOcc)],
                 'income'     => $fatherInc[array_rand($fatherInc)],
+                'sector'     => $sectors[array_rand($sectors)],
+                'city'       => $cities[array_rand($cities)],
+                'state_name' => $states[array_rand($states)],
+                'country'    => 'MAL',
             ]);
         }
 
@@ -37,9 +47,27 @@ class ParentOccupationSeeder extends Seeder
             DB::table('parents')->where('id', $m->id)->update([
                 'occupation' => $motherOcc[array_rand($motherOcc)],
                 'income'     => $motherInc[array_rand($motherInc)],
+                'sector'     => $sectors[array_rand($sectors)],
+                'city'       => $cities[array_rand($cities)],
+                'state_name' => $states[array_rand($states)],
+                'country'    => 'MAL',
             ]);
         }
 
-        $this->command->info('Updated ' . count($fathers) . ' fathers and ' . count($mothers) . ' mothers.');
+        // Also add sector/city/state for already-seeded records that are missing them
+        $missing = DB::table('parents')
+            ->whereNotNull('occupation')
+            ->whereNull('city')
+            ->get();
+        foreach ($missing as $p) {
+            DB::table('parents')->where('id', $p->id)->update([
+                'sector'     => $sectors[array_rand($sectors)],
+                'city'       => $cities[array_rand($cities)],
+                'state_name' => $states[array_rand($states)],
+                'country'    => 'MAL',
+            ]);
+        }
+
+        $this->command->info('Updated ' . count($fathers) . ' fathers and ' . count($mothers) . ' mothers. Filled gaps for ' . count($missing) . ' records.');
     }
 }

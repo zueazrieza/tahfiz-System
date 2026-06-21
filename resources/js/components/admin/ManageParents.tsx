@@ -204,94 +204,102 @@ export function ManageParents() {
       {/* View Modal */}
       {showViewModal && selectedParent && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-[40px] max-w-2xl w-full shadow-2xl animate-in zoom-in duration-300 my-8">
+          <div className="bg-white rounded-[40px] max-w-3xl w-full shadow-2xl animate-in zoom-in duration-300 my-8">
             <div className="p-10 pb-0 shrink-0">
                <h3 className="text-3xl font-black text-slate-800 tracking-tight">Profil Penjaga</h3>
                <p className="text-[#6FC7CB] font-bold text-xs uppercase tracking-widest mt-1">Maklumat Peribadi & Keluarga</p>
             </div>
-            
-            <div className="p-10 pt-8 space-y-8">
-              <div className="grid grid-cols-1 gap-6">
-                {selectedParent.father && (
-                  <div className="bg-blue-50/50 rounded-[32px] p-6 border border-blue-100">
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" /> Maklumat Ayah
+
+            <div className="p-10 pt-8 space-y-6">
+              {/* Parent Cards */}
+              <div className="grid grid-cols-1 gap-4">
+                {[
+                  selectedParent.father ? { data: selectedParent.father, label: 'Ayah', bg: 'bg-blue-50/50 border-blue-100', dot: 'bg-blue-500', text: 'text-blue-500' } : null,
+                  selectedParent.mother ? { data: selectedParent.mother, label: 'Ibu', bg: 'bg-pink-50/50 border-pink-100', dot: 'bg-pink-500', text: 'text-pink-500' } : null,
+                  (!selectedParent.father && !selectedParent.mother) ? { data: { ...selectedParent }, label: selectedParent.relationshipType || 'Penjaga', bg: 'bg-slate-50 border-slate-100', dot: 'bg-slate-400', text: 'text-slate-500' } : null,
+                ].filter(Boolean).map((p: any) => (
+                  <div key={p.label} className={`rounded-[28px] p-6 border ${p.bg}`}>
+                    <p className={`text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${p.text}`}>
+                      <span className={`w-2 h-2 rounded-full animate-pulse ${p.dot}`} /> Maklumat {p.label}
                     </p>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
                       <div>
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Nama Penuh</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.father.name}</p>
+                        <p className="font-bold text-slate-700 text-sm">{p.data.name || '—'}</p>
                       </div>
                       <div>
                         <p className="text-[9px] font-bold text-slate-400 uppercase">No. IC</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.father.icNo}</p>
+                        <p className="font-bold text-slate-700 text-sm font-mono">{p.data.icNo || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">No. Telefon</p>
+                        <p className="font-bold text-slate-700 text-sm">{p.data.phone || '—'}</p>
                       </div>
                       <div>
                         <p className="text-[9px] font-bold text-slate-400 uppercase">Pekerjaan</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.father.occupation || '—'}</p>
+                        <p className="font-bold text-slate-700 text-sm">{p.data.occupation || '—'}</p>
                       </div>
                       <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pendapatan</p>
-                        <p className="font-bold text-emerald-600 text-sm">RM {selectedParent.father.income || '0.00'}</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Sektor</p>
+                        <p className="font-bold text-slate-700 text-sm">{p.data.sector || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pendapatan Bulanan</p>
+                        <p className="font-bold text-emerald-600 text-sm">RM {p.data.income || '0.00'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">No. Tel Pejabat</p>
+                        <p className="font-bold text-slate-700 text-sm">{p.data.officePhone || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Jumlah Anak</p>
+                        <p className="font-bold text-slate-700 text-sm">{p.data.childCount ?? '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">Rujukan</p>
+                        <p className="font-bold text-slate-700 text-sm">{p.data.reference || '—'}</p>
                       </div>
                     </div>
+                    {/* Address block */}
+                    {(p.data.address || p.data.city || p.data.state) && (
+                      <div className="mt-4 pt-4 border-t border-white/60">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">Alamat</p>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3">
+                          {p.data.address && (
+                            <div className="col-span-2 md:col-span-3">
+                              <p className="font-bold text-slate-700 text-sm">{p.data.address}</p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Poskod</p>
+                            <p className="font-bold text-slate-700 text-sm">{p.data.postcode || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Bandar</p>
+                            <p className="font-bold text-slate-700 text-sm">{p.data.city || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Negeri</p>
+                            <p className="font-bold text-slate-700 text-sm">{p.data.state || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Daerah</p>
+                            <p className="font-bold text-slate-700 text-sm">{p.data.district || '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">Parlimen</p>
+                            <p className="font-bold text-slate-700 text-sm">{p.data.parliament || '—'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {selectedParent.mother && (
-                  <div className="bg-pink-50/50 rounded-[32px] p-6 border border-pink-100">
-                    <p className="text-[10px] font-black text-pink-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <span className="w-2 h-2 bg-pink-500 rounded-full animate-pulse" /> Maklumat Ibu
-                    </p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Nama Penuh</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.mother.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">No. IC</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.mother.icNo}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pekerjaan</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.mother.occupation || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pendapatan</p>
-                        <p className="font-bold text-emerald-600 text-sm">RM {selectedParent.mother.income || '0.00'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {!selectedParent.father && !selectedParent.mother && (
-                  <div className="bg-slate-50 rounded-[32px] p-6 border border-slate-100">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Nama Penuh</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Hubungan</p>
-                        <p className="font-bold text-slate-700 text-sm capitalize">{selectedParent.relationshipType}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pekerjaan</p>
-                        <p className="font-bold text-slate-700 text-sm">{selectedParent.occupation || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">Pendapatan</p>
-                        <p className="font-bold text-emerald-600 text-sm">RM {selectedParent.income || '0.00'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
 
-              <hr className="border-slate-50" />
-
+              {/* Children */}
               <section>
-                 <div className="flex items-center gap-3 mb-4">
+                 <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-400"><Users className="w-5 h-5" /></div>
                     <p className="text-sm font-bold text-slate-800">Senarai Anak di Akademi</p>
                  </div>
@@ -305,10 +313,10 @@ export function ManageParents() {
                  </div>
               </section>
 
-              <div className="pt-4">
-                <button 
-                  onClick={() => setShowViewModal(false)} 
-                  className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all font-bold"
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all"
                 >
                   TUTUP PROFIL
                 </button>
