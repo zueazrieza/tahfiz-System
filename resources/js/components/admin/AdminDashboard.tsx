@@ -97,7 +97,7 @@ export function AdminDashboard({ userName, onLogout }: AdminDashboardProps) {
   const stats = [
     { label: 'Jumlah Pelajar',    value: statsLoading ? '…' : String(liveStats.totalStudents),                    icon: <Users size={28} />,        color: '#3b82f6', bg: '#eff6ff' },
     { label: 'Jumlah Murabbi',    value: statsLoading ? '…' : String(liveStats.totalTeachers),                    icon: <GraduationCap size={28} />, color: '#10b981', bg: '#f0fdf4' },
-    { label: 'Pendapatan Bulanan', value: statsLoading ? '…' : `RM ${liveStats.monthlyRevenue.toLocaleString()}`, icon: <DollarSign size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
+    { label: 'Pendapatan Bulanan', value: statsLoading ? '…' : `RM ${(liveStats.monthlyRevenue ?? 0).toLocaleString()}`, icon: <DollarSign size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
     { label: 'Kelas Aktif',       value: statsLoading ? '…' : String(liveStats.totalClasses),                     icon: <FileText size={28} />,     color: '#f59e0b', bg: '#fffbeb' },
   ];
 

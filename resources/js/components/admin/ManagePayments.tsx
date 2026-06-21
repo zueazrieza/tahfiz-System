@@ -59,7 +59,7 @@ export function ManagePayments() {
     fetchData();
   }, [dispatch]);
 
-  const getStudentName = (id: string | number) => state.students.find(s => String(s.id) === String(id))?.name ?? id;
+  const getStudentName = (id: string | number): string => state.students.find(s => String(s.id) === String(id))?.name ?? String(id);
   const getClassName = (classId: string | number | undefined) => {
     if (!classId) return '—';
     return state.classes.find(c => String(c.id) === String(classId))?.name ?? '—';
