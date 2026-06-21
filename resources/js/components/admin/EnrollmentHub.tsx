@@ -372,7 +372,7 @@ export function EnrollmentHub() {
           <button
             onClick={async () => {
               const res = await axios.get('/api/enrollment/schedules');
-              setAllSchedules(res.data);
+              setAllSchedules(Array.isArray(res.data) ? res.data : []);
               setShowAllSchedules(true);
             }}
             className="flex items-center gap-2 px-5 py-2.5 bg-[#6FC7CB] text-white rounded-xl font-bold text-xs hover:bg-[#5FB3B7] shadow-xl shadow-cyan-100 transition-all font-black tracking-widest"

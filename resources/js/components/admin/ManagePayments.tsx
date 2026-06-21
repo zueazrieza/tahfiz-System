@@ -50,8 +50,8 @@ export function ManagePayments() {
           axios.get('/api/payments'),
           axios.get('/api/students')
         ]);
-        dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
-        dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
+        if (Array.isArray(paymentsRes.data)) dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
+        if (Array.isArray(studentsRes.data)) dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
       } catch (err) {
         console.error('Error fetching payments:', err);
       }
@@ -129,7 +129,7 @@ export function ManagePayments() {
     try {
       await axios.put(`/api/payments/${p.id}`, { status: newStatus });
       const paymentsRes = await axios.get('/api/payments');
-      dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
+      if (Array.isArray(paymentsRes.data)) dispatch({ type: 'SET_PAYMENTS', payload: paymentsRes.data });
     } catch (err) {
       console.error('Error updating payment:', err);
       alert('Gagal mengemaskini status bayaran.');

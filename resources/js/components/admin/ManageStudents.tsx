@@ -81,11 +81,11 @@ export function ManageStudents() {
           axios.get('/api/classes'),
           axios.get('/api/teachers?all=true')
         ]);
-        dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
-        dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
+        if (Array.isArray(studentsRes.data)) dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
+        if (Array.isArray(classesRes.data)) dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
         dispatch({ type: 'SET_TEACHERS', payload: Array.isArray(teachersRes.data) ? teachersRes.data : teachersRes.data.data });
-        
-        if (classesRes.data.length > 0) setAddForm(prev => ({ ...prev, classId: classesRes.data[0].id }));
+
+        if (Array.isArray(classesRes.data) && classesRes.data.length > 0) setAddForm(prev => ({ ...prev, classId: classesRes.data[0].id }));
         if (teachersRes.data.data?.length > 0) setAddForm(prev => ({ ...prev, teacherId: teachersRes.data.data[0].id }));
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -240,7 +240,7 @@ export function ManageStudents() {
     setTrashedLoading(true);
     try {
       const res = await axios.get('/api/students/trashed');
-      setTrashedStudents(res.data);
+      setTrashedStudents(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -299,7 +299,7 @@ export function ManageStudents() {
       setImportResult(res.data);
       // Refresh student list
       const studentsRes = await axios.get('/api/students');
-      dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
+      if (Array.isArray(studentsRes.data)) dispatch({ type: 'SET_STUDENTS', payload: studentsRes.data });
     } catch (error: any) {
       const errData = error?.response?.data;
       setImportResult({

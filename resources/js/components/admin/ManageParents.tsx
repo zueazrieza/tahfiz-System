@@ -26,7 +26,7 @@ export function ManageParents() {
     setLoading(true);
     try {
       const response = await axios.get('/api/parents');
-      setParents(response.data);
+      setParents(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching parents:', error);
     } finally {

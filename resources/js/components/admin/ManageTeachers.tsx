@@ -41,7 +41,7 @@ export function ManageTeachers() {
     const fetchClasses = async () => {
       try {
         const response = await axios.get('/api/classes');
-        dispatch({ type: 'SET_CLASSES', payload: response.data });
+        if (Array.isArray(response.data)) dispatch({ type: 'SET_CLASSES', payload: response.data });
       } catch (error) {
         console.error('Error fetching classes:', error);
       }
@@ -125,7 +125,7 @@ export function ManageTeachers() {
     setTrashedLoading(true);
     try {
       const res = await axios.get('/api/teachers/trashed');
-      setTrashedTeachers(res.data);
+      setTrashedTeachers(Array.isArray(res.data) ? res.data : []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -229,7 +229,7 @@ export function ManageTeachers() {
         teacherId: editClassForm.teacherId
       });
       const classesRes = await axios.get('/api/classes');
-      dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
+      if (Array.isArray(classesRes.data)) dispatch({ type: 'SET_CLASSES', payload: classesRes.data });
       setShowEditClassModal(false);
       setEditClassForm(null);
     } catch (error) {

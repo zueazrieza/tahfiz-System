@@ -27,14 +27,14 @@ export function MudirEvaluation() {
   const authUser = JSON.parse(sessionStorage.getItem('authUser') || '{}');
 
   useEffect(() => {
-    setStudents(state.students);
+    setStudents(Array.isArray(state.students) ? state.students : []);
     fetchEvaluations();
   }, [state.students]);
 
   const fetchEvaluations = async () => {
     try {
       const resp = await axios.get('/api/mudir-evaluations');
-      setEvaluations(resp.data);
+      setEvaluations(Array.isArray(resp.data) ? resp.data : []);
     } catch (error) {
       console.error('Failed to fetch evaluations', error);
     }
