@@ -16,6 +16,7 @@ export function StudentList() {
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [studentRecords, setStudentRecords] = useState<Record<string, any>>({});
+  const [attendanceRates, setAttendanceRates] = useState<Record<string, number>>({});
   const [studentsPage, setStudentsPage] = useState(1);
   const STUDENTS_PER_PAGE = 10;
 
@@ -47,16 +48,28 @@ export function StudentList() {
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const resp = await axios.get(`/api/students`, { params: { classId: selectedClassId } });
-      const data = resp.data;
+      const [studResp, attResp] = await Promise.all([
+        axios.get(`/api/students`, { params: { classId: selectedClassId } }),
+        axios.get(`/api/attendance`, { params: { class_id: selectedClassId } }),
+      ]);
+      const data = Array.isArray(studResp.data) ? studResp.data : (studResp.data?.data ?? []);
       setStudents(data);
 
-      // Fetch last records for each student
+      // Calculate attendance rate per student from fetched records
+      const attData: any[] = Array.isArray(attResp.data) ? attResp.data : [];
+      const rateMap: Record<string, number> = {};
+      data.forEach((s: any) => {
+        const recs = attData.filter(a => String(a.studentId) === String(s.id));
+        if (!recs.length) { rateMap[s.id] = 0; return; }
+        const present = recs.filter(a => a.status === 'Hadir' || a.status === 'Lewat').length;
+        rateMap[s.id] = Math.round((present / recs.length) * 100);
+      });
+      setAttendanceRates(rateMap);
+
       data.forEach((student: any) => fetchLastRecord(student.id));
     } catch (err) {
       console.error('Failed to fetch students', err);
-      // Fallback to state if API fails
-      setStudents(state.students.filter(s => String(s.classId) === String(selectedClassId)));
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -74,7 +87,7 @@ export function StudentList() {
     }
   };
 
-  const attendanceRate = (sid: string) => getStudentAttendanceRate(state, sid);
+  const attendanceRate = (sid: string) => attendanceRates[sid] ?? 0;
 
   return (
     <div className="space-y-6">
