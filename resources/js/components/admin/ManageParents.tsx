@@ -76,14 +76,17 @@ export function ManageParents() {
     if (file) { setImportFile(file); setImportResult(null); }
   };
 
-  const filtered = parents.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.father?.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.mother?.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.father?.icNo?.includes(searchTerm) ||
-    p.mother?.icNo?.includes(searchTerm) ||
-    p.icNo?.includes(searchTerm)
-  );
+  const filtered = parents.filter(p => {
+    const q = searchTerm.toLowerCase();
+    return (
+      p.name?.toLowerCase().includes(q) ||
+      p.father?.name?.toLowerCase().includes(q) ||
+      p.mother?.name?.toLowerCase().includes(q) ||
+      p.father?.icNo?.includes(searchTerm) ||
+      p.mother?.icNo?.includes(searchTerm) ||
+      p.icNo?.includes(searchTerm)
+    );
+  });
 
   const totalParentPages = Math.ceil(filtered.length / PARENTS_PER_PAGE);
   const paginatedParents = filtered.slice((parentsPage - 1) * PARENTS_PER_PAGE, parentsPage * PARENTS_PER_PAGE);

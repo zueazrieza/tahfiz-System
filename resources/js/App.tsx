@@ -1,6 +1,41 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, Component, ErrorInfo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, clearAuthCache } from './hooks/useAuth';
+
+// ── Error Boundary — catches any render crash and shows a recovery screen ──
+class AppErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[AppErrorBoundary]', error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f8fafc', gap: '1rem', padding: '2rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem' }}>⚠️</div>
+          <h2 style={{ color: '#dc2626', fontWeight: 700, margin: 0 }}>Ralat Sistem</h2>
+          <p style={{ color: '#6b7280', maxWidth: 480 }}>{this.state.error.message}</p>
+          <button
+            onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+            style={{ padding: '0.6rem 1.5rem', background: '#6FC7CB', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
+          >
+            Muat Semula
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 type UserRole = 'admin' | 'teacher' | 'parent' | 'student';
 
@@ -116,6 +151,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename="/app">
+      <AppErrorBoundary>
       <Suspense fallback={<FullPageSpinner />}>
         <Routes>
           <Route path="/" element={<RootRedirect />} />
@@ -163,6 +199,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/role-selection" replace />} />
         </Routes>
       </Suspense>
+      </AppErrorBoundary>
     </BrowserRouter>
   );
 }
