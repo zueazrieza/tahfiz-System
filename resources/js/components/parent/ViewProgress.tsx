@@ -74,7 +74,7 @@ export function ViewProgress({ childId, childData }: ViewProgressProps) {
             </div>
             <div>
               <h3 className="text-2xl font-black">{child?.name}</h3>
-              <p className="text-teal-100/70 text-sm font-medium">Pelajar Pintar AKMAL · {child?.juzukCompleted} / 30 Juzuk</p>
+              <p className="text-teal-100/70 text-sm font-medium">Pelajar Pintar AKMAL | {child?.juzukCompleted} / 30 Juzuk</p>
             </div>
           </div>
           <div className="flex items-center justify-between text-sm text-teal-100 mb-2 font-bold uppercase tracking-widest">

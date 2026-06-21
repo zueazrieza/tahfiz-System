@@ -1389,7 +1389,7 @@
                 <div style="padding: 2rem; border-radius: 24px; background: #E8F6F7; text-align: left; transition: transform 0.3s; border: 1px solid #D1EEF0;">
                     <div style="font-size: 2rem; margin-bottom: 1rem;">🕋</div>
                     <h3 style="font-size: 1.25rem; font-weight: 800; color: #5FB3B7; margin-bottom: 1rem;">PEMANTAPAN HAFALAN</h3>
-                    <p style="color: #64748b; line-height: 1.6; font-size: 0.95rem;">Melaksanakan “6 rukun hafiz” bagi menjaga kualiti bacaan dan hafalan dari hari pertama lagi.</p>
+                    <p style="color: #64748b; line-height: 1.6; font-size: 0.95rem;">Melaksanakan &ldquo;6 rukun hafiz&rdquo; bagi menjaga kualiti bacaan dan hafalan dari hari pertama lagi.</p>
                 </div>
 
                 <!-- 4. PENGURUSAN PSIKOLOGI -->

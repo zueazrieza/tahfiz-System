@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Mic, BookOpen, Eye, EyeOff, Search, Trophy, X
@@ -328,7 +328,7 @@ export function HafazanAI() {
                       <div>
                         <h4 className="font-black text-sm uppercase">{c.name_simple}</h4>
                         <p className="text-[10px] opacity-60 uppercase">
-                          {c.revelation_place === 'meccan' ? 'MAKKIYAH' : 'MADANIYAH'} · {c.verses_count} AYAT
+                          {c.revelation_place === 'meccan' ? 'MAKKIYAH' : 'MADANIYAH'} | {c.verses_count} AYAT
                         </p>
                       </div>
                     </div>

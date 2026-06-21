@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
   BookOpen, Play, Pause, SkipBack, SkipForward, Volume2, VolumeX,
@@ -283,7 +283,7 @@ export function QuranExplorer({ onNavigate }: Props) {
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-1">
               <BookOpen className="w-5 h-5 text-emerald-300" />
-              <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Powered by QUL · Tarteel AI</span>
+              <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest">Powered by QUL | Tarteel AI</span>
             </div>
             <h2 className="text-2xl font-black mb-1">Penjelajah Al-Quran</h2>
             <p className="text-emerald-200 text-sm">Baca, dengar, dan fahami Al-Quran dengan teks & terjemahan Melayu</p>
@@ -379,7 +379,7 @@ export function QuranExplorer({ onNavigate }: Props) {
                       <p className="font-bold text-gray-900 text-sm truncate">{surah.en}</p>
                       <span className="text-xl font-arabic text-gray-700 ml-2 shrink-0">{surah.ar}</span>
                     </div>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{surah.ayahs} ayah · Juzuk {surah.juz}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{surah.ayahs} ayah | Juzuk {surah.juz}</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-emerald-500 shrink-0" />
                 </button>
@@ -414,7 +414,7 @@ export function QuranExplorer({ onNavigate }: Props) {
             <span className="font-black text-gray-900">{selectedSurah?.en}</span>
             <span className="ml-2 text-2xl font-arabic text-gray-700">{selectedSurah?.ar}</span>
           </div>
-          <span className="text-xs text-gray-400">{selectedSurah?.ayahs} ayah · Juzuk {selectedSurah?.juz}</span>
+          <span className="text-xs text-gray-400">{selectedSurah?.ayahs} ayah | Juzuk {selectedSurah?.juz}</span>
         </div>
 
         {/* Controls */}
@@ -525,10 +525,10 @@ export function QuranExplorer({ onNavigate }: Props) {
 
       {/* Footer attribution */}
       <p className="text-center text-xs text-gray-400 pb-4">
-        Teks Quran: <span className="font-semibold">api.alquran.cloud</span> ·
-        Terjemahan: <span className="font-semibold">Basmeih (JAKIM)</span> ·
-        Audio: <span className="font-semibold">Mishary Al-Afasy</span> ·
-        Data: <span className="font-semibold">QUL · Tarteel AI</span>
+        Teks Quran: <span className="font-semibold">api.alquran.cloud</span> |
+        Terjemahan: <span className="font-semibold">Basmeih (JAKIM)</span> |
+        Audio: <span className="font-semibold">Mishary Al-Afasy</span> |
+        Data: <span className="font-semibold">QUL | Tarteel AI</span>
       </p>
     </div>
   );

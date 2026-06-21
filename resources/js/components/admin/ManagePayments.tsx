@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Pagination } from '../shared/Pagination';
 import { DollarSign, FileText, CheckCircle, Clock, AlertCircle, Printer, X } from 'lucide-react';
 import { useAppStore, getMonthlyRevenue, getTotalRevenue, getPendingRevenue } from '../../store/AppContext';
@@ -424,7 +424,7 @@ function InvoiceViewModal({ payment, onClose, getClassName }: { payment: any; on
             {/* AKMAL Letterhead */}
             <AKMALLetterhead
               docType={`Invois ${invoiceNo}`}
-              meta={`Status: ${payment.status} · Tarikh: ${invoiceDate}`}
+              meta={`Status: ${payment.status} | Tarikh: ${invoiceDate}`}
             />
             <div className="p-6">
 
@@ -495,7 +495,7 @@ function InvoiceViewModal({ payment, onClose, getClassName }: { payment: any; on
           {/* AKMAL Letterhead */}
           <AKMALLetterhead
             docType={`Invois ${invoiceNo}`}
-            meta={`Status: ${payment.status} · Tarikh: ${invoiceDate}`}
+            meta={`Status: ${payment.status} | Tarikh: ${invoiceDate}`}
           />
           <div style={{ padding: '0 24px 24px' }}>
 

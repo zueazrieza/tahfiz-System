@@ -1,4 +1,4 @@
-import { useAppStore, getStudentAttendanceRate, getStudentLastRecords } from '../../store/AppContext';
+﻿import { useAppStore, getStudentAttendanceRate, getStudentLastRecords } from '../../store/AppContext';
 import { Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -124,7 +124,7 @@ export function StudentList() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{student.name}</h3>
-                      <p className="text-sm text-gray-500">Umur {student.age} · Sejak {student.enrolledDate}</p>
+                      <p className="text-sm text-gray-500">Umur {student.age} | Sejak {student.enrolledDate}</p>
                     </div>
                   </div>
                   <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${student.status === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
@@ -143,7 +143,7 @@ export function StudentList() {
                   {lastRec && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Sabak Terakhir:</span>
-                      <span className="text-gray-900">{lastRec.sabaq.surah} · {lastRec.sabaq.grade}</span>
+                      <span className="text-gray-900">{lastRec.sabaq.surah} | {lastRec.sabaq.grade}</span>
                     </div>
                   )}
                 </div>

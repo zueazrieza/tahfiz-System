@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useMemo } from 'react';
 import { Pagination } from '../shared/Pagination';
 import { Plus, Search, Edit, Trash2, Eye, User, Shield, BookOpen, HeartPulse, ChevronRight, ChevronLeft, Check, CreditCard, Upload, FileSpreadsheet, X, AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
@@ -1042,7 +1042,7 @@ export function ManageStudents() {
                     <Upload className="w-10 h-10 text-slate-300" />
                     <p className="font-bold text-slate-500 text-sm">Seret &amp; lepas fail di sini</p>
                     <p className="text-slate-400 text-xs">atau klik untuk pilih fail</p>
-                    <p className="text-[10px] text-slate-300 mt-1 uppercase tracking-widest font-bold">XLSX · XLS · CSV (maks 10MB)</p>
+                    <p className="text-[10px] text-slate-300 mt-1 uppercase tracking-widest font-bold">XLSX | XLS | CSV (maks 10MB)</p>
                   </div>
                 )}
               </div>
