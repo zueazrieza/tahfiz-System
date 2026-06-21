@@ -111,26 +111,38 @@ export function ViewProgress({ childId, childData }: ViewProgressProps) {
             {earnedAchievements.map((a) => {
               const RANK_IMAGES: Record<string, string> = {
                 'Tahsin':                    '/images/logo/level_1.jpeg',
+                'Level 1':                   '/images/logo/level_1.jpeg',
                 'Warrior':                   '/images/logo/warrior.jpeg',
                 'Elite':                     '/images/logo/elite.jpeg',
                 'Master':                    '/images/logo/master.jpeg',
                 'Grandmaster':               '/images/logo/Level_G.jpeg',
                 'Titan':                     '/images/logo/level_T.jpeg',
                 'Gladiator':                 '/images/logo/level2.jpeg',
+                'Level 2':                   '/images/logo/level2.jpeg',
                 'Legend Al-Hafiz':           '/images/logo/level_1_hafiz.jpeg',
                 'Legend Al-Hafiz Amethyst':  '/images/logo/level3.jpeg',
+                'Level 3':                   '/images/logo/level3.jpeg',
                 'Legend Al-Hafiz Ruby':      '/images/logo/level4.jpeg',
+                'Level 4':                   '/images/logo/level4.jpeg',
                 'Legend Al-Hafiz Sapphire':  '/images/logo/level_S.jpeg',
                 'Syahadah Emperor':          '/images/logo/level_SE.jpeg',
               };
+              const BADGE_ICONS: Record<string, string> = {
+                'Juzuk Opener':    '📖',
+                'Istiqamah Hafiz': '🔥',
+                'Mumtaz Award':    '⭐',
+                'Raja Sabaq':      '👑',
+              };
               const img = RANK_IMAGES[a.name];
+              const icon = BADGE_ICONS[a.name];
               return (
                 <div key={a.id} className="bg-slate-50 rounded-2xl text-center border border-slate-100 hover:border-teal-200 transition-all group overflow-hidden">
                   {img ? (
                     <img src={img} alt={a.name} className="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
-                    <div className="size-full aspect-square bg-white flex items-center justify-center">
-                      <Trophy className="text-amber-500" size={32} />
+                    <div className="w-full aspect-square bg-gradient-to-br from-amber-50 to-orange-100 flex flex-col items-center justify-center gap-2 border-b border-slate-100">
+                      <span style={{ fontSize: '2.5rem' }}>{icon || '🏆'}</span>
+                      <span className="text-[10px] font-black text-amber-700 uppercase tracking-tight px-2 text-center leading-tight">{a.name}</span>
                     </div>
                   )}
                   <div className="p-3">
