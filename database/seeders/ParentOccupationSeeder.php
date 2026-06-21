@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\DB;
 
 class ParentOccupationSeeder extends Seeder
 {
+    private function randomPhone(): string
+    {
+        $prefixes = ['012', '013', '014', '016', '017', '018', '019'];
+        $prefix   = $prefixes[array_rand($prefixes)];
+        return $prefix . '-' . rand(1000000, 9999999);
+    }
+
     public function run(): void
     {
         $fatherOcc = [
@@ -30,6 +37,7 @@ class ParentOccupationSeeder extends Seeder
         $states    = ['SELANGOR', 'KUALA LUMPUR', 'JOHOR', 'PERAK', 'KEDAH', 'KELANTAN',
                       'PAHANG', 'TERENGGANU', 'PULAU PINANG', 'SABAH', 'SARAWAK', 'NEGERI SEMBILAN'];
 
+        // Fill new fathers/mothers with no occupation yet
         $fathers = DB::table('parents')->where('relationship_type', 'father')->whereNull('occupation')->get();
         foreach ($fathers as $f) {
             DB::table('parents')->where('id', $f->id)->update([
@@ -39,6 +47,7 @@ class ParentOccupationSeeder extends Seeder
                 'city'       => $cities[array_rand($cities)],
                 'state_name' => $states[array_rand($states)],
                 'country'    => 'MAL',
+                'phone'      => $this->randomPhone(),
             ]);
         }
 
@@ -51,14 +60,20 @@ class ParentOccupationSeeder extends Seeder
                 'city'       => $cities[array_rand($cities)],
                 'state_name' => $states[array_rand($states)],
                 'country'    => 'MAL',
+                'phone'      => $this->randomPhone(),
             ]);
         }
 
-        // Also add sector/city/state for already-seeded records that are missing them
-        $missing = DB::table('parents')
-            ->whereNotNull('occupation')
-            ->whereNull('city')
-            ->get();
+        // Fix empty phone strings (seeded records had phone = "")
+        $emptyPhone = DB::table('parents')->where('phone', '')->get();
+        foreach ($emptyPhone as $p) {
+            DB::table('parents')->where('id', $p->id)->update([
+                'phone' => $this->randomPhone(),
+            ]);
+        }
+
+        // Fill sector/city/state gaps for already-seeded records
+        $missing = DB::table('parents')->whereNotNull('occupation')->whereNull('city')->get();
         foreach ($missing as $p) {
             DB::table('parents')->where('id', $p->id)->update([
                 'sector'     => $sectors[array_rand($sectors)],
@@ -68,6 +83,9 @@ class ParentOccupationSeeder extends Seeder
             ]);
         }
 
-        $this->command->info('Updated ' . count($fathers) . ' fathers and ' . count($mothers) . ' mothers. Filled gaps for ' . count($missing) . ' records.');
+        $this->command->info(
+            'Fathers: ' . count($fathers) . ', Mothers: ' . count($mothers) .
+            ', Phone fixed: ' . count($emptyPhone) . ', City gaps filled: ' . count($missing)
+        );
     }
 }
