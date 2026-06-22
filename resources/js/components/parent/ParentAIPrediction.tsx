@@ -28,16 +28,6 @@ interface ParentAIPredictionProps {
   childId: string;
 }
 
-const JOURNEY_STEPS = [
-  { num: 1, title: 'User Interaction (Interaksi)', desc: 'Pelajar berinteraksi dengan kuiz, talaqqi, dan hafazan AI secara aktif.', status: 'Aktif' },
-  { num: 2, title: 'Data Collection (Kutipan Data)', desc: 'Sistem merakam audio bacaan, masa tasmik, dan skor kelancaran.', status: 'Aktif' },
-  { num: 3, title: 'Preprocessing (Pra-pemprosesan)', desc: 'Enjin NLP & Pembersihan Arab memproses teks serta audio bacaan.', status: 'Selesai' },
-  { num: 4, title: 'Weak Point Detection (Ralat Bayesian)', desc: 'Model Bayesian menjejaki perkataan dan hukum tajwid yang sering salah.', status: 'Selesai' },
-  { num: 5, title: 'Forgetting Curve Modeling (LSTM)', desc: 'Rangkaian saraf LSTM meramal keluk lupa dan tahap kelancaran ayat.', status: 'Selesai' },
-  { num: 6, title: 'RL Scheduling (Penjadualan)', desc: 'Ejen Q-learning mengira selang masa ulangan terbaik bagi setiap surah.', status: 'Selesai' },
-  { num: 7, title: 'Personalized Delivery (Hantaran)', desc: 'AI melaras cadangan gaya belajar VARK pada dashboard murid.', status: 'Aktif' },
-  { num: 8, title: 'Continuous Tracking (Analitis)', desc: 'Modul analitis merekod dan mengelas trend prestasi tasmik.', status: 'Aktif' },
-];
 
 export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
   const { state } = useAppStore();
@@ -224,57 +214,6 @@ export function ParentAIPrediction({ childId }: ParentAIPredictionProps) {
             </div>
           </div>
 
-          {/* AI Journey Visualizer (Figure 3 Integration) */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-6">
-            <div>
-              <h3 className="text-base font-bold text-slate-800 uppercase tracking-tight flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-teal-600" />
-                Visualisasi Alur Pembelajaran Pintar AI (8-Step Journey)
-              </h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Pemetaan pemprosesan data dan analisis ingatan pelajar secara masa nyata berdasarkan Model Kognitif Sistem Tahfiz AI.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {JOURNEY_STEPS.map((step) => {
-                const isActive = step.status === 'Aktif';
-                return (
-                  <div 
-                    key={step.num} 
-                    className={`p-4 rounded-xl border transition-all flex items-start gap-4 ${
-                      isActive 
-                        ? 'bg-teal-50/40 border-teal-200 shadow-xs' 
-                        : 'bg-slate-50/50 border-slate-100'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
-                      isActive 
-                        ? 'bg-teal-500 text-white shadow-sm' 
-                        : 'bg-slate-200 text-slate-500'
-                    }`}>
-                      0{step.num}
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className={`text-xs font-bold ${isActive ? 'text-teal-900' : 'text-slate-700'}`}>
-                          {step.title}
-                        </h4>
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md tracking-wider uppercase ${
-                          isActive 
-                            ? 'bg-teal-100 text-teal-700 border border-teal-200' 
-                            : 'bg-slate-200 text-slate-500'
-                        }`}>
-                          {step.status}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 leading-normal">{step.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </>
       )}
     </div>
