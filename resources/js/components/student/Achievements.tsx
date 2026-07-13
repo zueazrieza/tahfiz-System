@@ -58,8 +58,8 @@ export function Achievements() {
 
   const specialtyAchievements = [
     { title: 'Raja Sabak', description: 'Hafal 15+ ayat dalam sehari', icon: Award, color: 'green', earnedName: 'Raja Sabaq' },
-    { title: 'Istiqamah Hafiz', description: 'Hantar rekod 7 hari berturut-turut', icon: Trophy, color: 'purple', earnedName: 'Istiqamah Hafiz' },
-    { title: 'Mumtaz Award', description: '5 gred Mumtaz berturutan', icon: Star, color: 'blue', earnedName: 'Mumtaz Award' },
+    { title: 'Istiqamah Hafiz', description: 'Hantar rekod 7 hari istiqamah', icon: Trophy, color: 'purple', earnedName: 'Istiqamah Hafiz' },
+    { title: 'Mumtaz Award', description: '5 gred Mumtaz istiqamah', icon: Star, color: 'blue', earnedName: 'Mumtaz Award' },
   ];
 
   const isEarned = (name: string) => earnedAchievements.some(a => a.name === name);
