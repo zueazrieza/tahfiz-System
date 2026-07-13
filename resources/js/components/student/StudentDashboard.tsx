@@ -106,7 +106,7 @@ export function StudentDashboard({ userName, onLogout }: StudentDashboardProps) 
     { label: 'Kemajuan Semasa', value: `${dashboardData?.juzukCompleted ?? 0} Juzuk`, icon: <BookOpen size={28} />, color: '#10b981', bg: '#f0fdf4' },
     { label: 'Pangkat Semasa',  value: dashboardData?.rankName ?? 'Pemula',            icon: <Trophy size={28} />,   color: '#8b5cf6', bg: '#faf5ff' },
     {
-      label: streakMilestone ? `${streakMilestone}` : 'Hari Berturutan',
+      label: streakMilestone ? `${streakMilestone}` : 'Istiqamah',
       value: `${streak} hari`,
       icon: <Target size={28} />,
       color: streak >= 30 ? '#ef4444' : streak >= 7 ? '#f59e0b' : '#f59e0b',

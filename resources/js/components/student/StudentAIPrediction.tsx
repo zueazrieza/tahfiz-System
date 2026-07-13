@@ -217,7 +217,7 @@ export function StudentAIPrediction({ onNavigate }: Props) {
                 <p className="text-white font-bold text-lg">{prediction.estimated_completion}</p>
               </div>
               <div className="bg-white/20 rounded-xl p-4">
-                <p className="text-white/80 text-xs mb-1">🔥 Hari Berturutan</p>
+                <p className="text-white/80 text-xs mb-1">🔥 Istiqamah Fighter</p>
                 <p className="text-white font-bold text-lg">{streak} hari</p>
               </div>
             </div>

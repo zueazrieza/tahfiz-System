@@ -79,7 +79,7 @@ export function HafazanTarget() {
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Hari Berturutan', value: `🔥 ${data?.stats?.streak ?? 0} hari`, color: 'text-orange-600' },
+          { label: 'Istiqamah Fighter', value: `🔥 ${data?.stats?.streak ?? 0} hari`, color: 'text-orange-600' },
           { label: 'Jumlah Rekod', value: data?.stats?.totalRecords ?? 0, color: 'text-blue-600' },
           { label: 'Juzuk Selesai', value: `${data?.stats?.juzukCompleted ?? 0} / 30`, color: 'text-green-600' },
         ].map(s => (

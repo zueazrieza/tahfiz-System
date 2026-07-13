@@ -106,7 +106,7 @@ export function Achievements() {
           <div className="flex-1 text-center md:text-left">
             <p className="text-teal-600 font-black text-xs uppercase tracking-[0.3em] mb-2">PANGKAT SEMASA ANDA</p>
             <h3 className="text-4xl font-black text-slate-800 uppercase tracking-tight">{rank.name}</h3>
-            <p className="text-gray-700 mt-1">{dashboardData?.juzukCompleted ?? 0} Juzuk Diselesaikan | 🔥 {streak} hari berturutan</p>
+            <p className="text-gray-700 mt-1">{dashboardData?.juzukCompleted ?? 0} Juzuk Diselesaikan | 🔥 {streak} hari — Istiqamah Fighter</p>
             <div className="mt-4">
               <div className="flex items-center justify-between text-sm text-gray-700 mb-2">
                 <span>Kemajuan ke {rank.nextRank}</span><span>{rank.progressToNext}%</span>

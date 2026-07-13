@@ -154,6 +154,7 @@ Route::prefix('api')->middleware(['web'])->group(function () {
         // ── Admin-only ────────────────────────────────────────────────────────
         Route::middleware('can:admin-only')->group(function () {
             Route::get('/users/pending',              [UserController::class, 'pendingUsers']);
+            Route::post('/users/{id}/interview',      [UserController::class, 'recordInterview']);
             Route::post('/users/{id}/approve',        [UserController::class, 'approveUser']);
             Route::post('/users/{id}/reject',         [UserController::class, 'rejectUser']);
             Route::get('/users/students-no-account',  [UserController::class, 'studentsWithoutAccounts']);

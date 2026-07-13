@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { UserCheck, UserPlus, Shield, User, Key, Check, X, Search, Loader2 } from 'lucide-react';
+import { UserCheck, UserPlus, Shield, User, Key, Check, X, Loader2, AlertTriangle } from 'lucide-react';
 
 interface UserData {
   id: number;
@@ -9,6 +9,7 @@ interface UserData {
   role: string;
   status: string;
   created_at: string;
+  interview_at: string | null;
 }
 
 interface StudentData {
@@ -19,12 +20,21 @@ interface StudentData {
   account_email?: string;
 }
 
+interface ConfirmModal {
+  open: boolean;
+  type: 'approve' | 'reject' | null;
+  userId: number | null;
+  userName: string;
+  confirmed: boolean;
+}
+
 export function UserApproval() {
   const [pendingUsers, setPendingUsers] = useState<UserData[]>([]);
   const [studentsWithoutAccounts, setStudentsWithoutAccounts] = useState<StudentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'approve' | 'create'>('approve');
-  
+  const [modal, setModal] = useState<ConfirmModal>({ open: false, type: null, userId: null, userName: '', confirmed: false });
+
   // Student account form
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const [username, setUsername] = useState('');
@@ -53,27 +63,40 @@ export function UserApproval() {
     setLoading(false);
   };
 
-  const handleApprove = async (id: number) => {
-    if (!confirm('Adakah anda pasti ingin meluluskan akaun pengguna ini?')) {
-      return;
-    }
+  const handleRecordInterview = async (user: UserData) => {
+    if (!confirm(`Rekod sesi temuduga untuk ${user.name}?\n\nIni mengesahkan bahawa sesi temuduga dan pengesahan telah dijalankan secara rasmi.`)) return;
     try {
-      await axios.post(`/api/users/${id}/approve`);
-      setPendingUsers(prev => prev.filter(u => u.id !== id));
-      alert('Akaun telah diluluskan!');
-    } catch (err) {
-      alert('Gagal meluluskan akaun.');
+      const res = await axios.post(`/api/users/${user.id}/interview`);
+      setPendingUsers(prev => prev.map(u => u.id === user.id ? { ...u, interview_at: res.data.interview_at } : u));
+    } catch {
+      alert('Gagal merekod sesi temuduga.');
     }
   };
 
-  const handleReject = async (id: number) => {
-    if (!confirm('Adakah anda pasti untuk menolak dan memadam akaun ini?')) return;
+  const openModal = (type: 'approve' | 'reject', user: UserData) => {
+    setModal({ open: true, type, userId: user.id, userName: user.name, confirmed: false });
+  };
+
+  const closeModal = () => {
+    setModal({ open: false, type: null, userId: null, userName: '', confirmed: false });
+  };
+
+  const handleConfirm = async () => {
+    if (!modal.confirmed || !modal.userId || !modal.type) return;
+    const { type, userId } = modal;
+    closeModal();
     try {
-      await axios.post(`/api/users/${id}/reject`);
-      setPendingUsers(prev => prev.filter(u => u.id !== id));
-      alert('Akaun telah ditolak dan dipadam.');
+      if (type === 'approve') {
+        await axios.post(`/api/users/${userId}/approve`);
+        setPendingUsers(prev => prev.filter(u => u.id !== userId));
+        alert('Akaun telah diluluskan!');
+      } else {
+        await axios.post(`/api/users/${userId}/reject`);
+        setPendingUsers(prev => prev.filter(u => u.id !== userId));
+        alert('Akaun telah ditolak dan dipadam.');
+      }
     } catch (err) {
-      alert('Gagal menolak akaun.');
+      alert(type === 'approve' ? 'Gagal meluluskan akaun.' : 'Gagal menolak akaun.');
     }
   };
 
@@ -107,6 +130,76 @@ export function UserApproval() {
 
   return (
     <div className="space-y-6">
+
+      {/* Confirmation Modal */}
+      {modal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Header */}
+            <div className={`px-6 py-4 flex items-center gap-3 ${modal.type === 'approve' ? 'bg-amber-50 border-b border-amber-100' : 'bg-red-50 border-b border-red-100'}`}>
+              <AlertTriangle className={`shrink-0 ${modal.type === 'approve' ? 'text-amber-500' : 'text-red-500'}`} size={22} />
+              <div>
+                <p className="font-bold text-gray-900">
+                  {modal.type === 'approve' ? 'Pengesahan Kelulusan Akaun' : 'Pengesahan Penolakan Akaun'}
+                </p>
+                <p className="text-sm text-gray-500">{modal.userName}</p>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-sm font-semibold text-amber-800 mb-1">⚠️ Amaran Penting</p>
+                <p className="text-sm text-amber-700">
+                  Butang ini <strong>hanya boleh digunakan</strong> setelah sesi temuduga dan pengesahan pelajar telah selesai dijalankan secara rasmi oleh admin.
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                Sila pastikan perkara berikut telah dilakukan sebelum meneruskan:
+              </p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>Sesi temuduga dengan pelajar/ibu bapa telah dijalankan</li>
+                <li>Dokumen pengesahan telah disemak</li>
+                <li>Keputusan penerimaan/penolakan telah dibuat secara rasmi</li>
+              </ul>
+
+              <label className="flex items-start gap-3 cursor-pointer group mt-2">
+                <input
+                  type="checkbox"
+                  checked={modal.confirmed}
+                  onChange={e => setModal(m => ({ ...m, confirmed: e.target.checked }))}
+                  className="mt-0.5 w-4 h-4 accent-indigo-600 cursor-pointer"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                  Saya mengesahkan bahawa <strong>sesi temuduga dan pengesahan telah selesai</strong> dijalankan untuk pengguna ini.
+                </span>
+              </label>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={!modal.confirmed}
+                className={`px-5 py-2 text-sm font-bold text-white rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                  modal.type === 'approve'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {modal.type === 'approve' ? 'Ya, Luluskan' : 'Ya, Tolak'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Pengurusan Akses</h2>
@@ -181,21 +274,47 @@ export function UserApproval() {
                           {new Date(user.created_at).toLocaleDateString('ms-MY')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button 
-                              onClick={() => handleApprove(user.id)}
-                              className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
-                              title="Luluskan"
-                            >
-                              <Check size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleReject(user.id)}
-                              className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" 
-                              title="Tolak"
-                            >
-                              <X size={18} />
-                            </button>
+                          <div className="flex justify-end items-center gap-2">
+                            {!user.interview_at ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
+                                  ⚠️ Sesi belum direkod
+                                </span>
+                                <button
+                                  onClick={() => handleRecordInterview(user)}
+                                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                                  title="Rekod Sesi Temuduga"
+                                >
+                                  Rekod Sesi
+                                </button>
+                                <button disabled className="p-2 bg-gray-100 text-gray-300 rounded-lg cursor-not-allowed" title="Sila rekod sesi temuduga dahulu">
+                                  <Check size={18} />
+                                </button>
+                                <button disabled className="p-2 bg-gray-100 text-gray-300 rounded-lg cursor-not-allowed" title="Sila rekod sesi temuduga dahulu">
+                                  <X size={18} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-green-600 bg-green-50 border border-green-200 px-2 py-1 rounded-lg">
+                                  ✓ Sesi direkod
+                                </span>
+                                <button
+                                  onClick={() => openModal('approve', user)}
+                                  className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                                  title="Luluskan"
+                                >
+                                  <Check size={18} />
+                                </button>
+                                <button
+                                  onClick={() => openModal('reject', user)}
+                                  className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                  title="Tolak"
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>

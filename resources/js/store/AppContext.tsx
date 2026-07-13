@@ -434,14 +434,14 @@ export function computeAIPrediction(state: AppState, studentId: string) {
   // --- 2. Attendance Patterns ---
   const attendanceRate = getStudentAttendanceRate(state, studentId) / 100;
 
-  // --- 3. Payment Consistency ---
+  // --- 3. Payment Istiqamah ---
   const payments = state.payments.filter(p => p.studentId === studentId);
   const paymentScore = payments.length
     ? payments.filter(p => p.status === 'Dibayar').length / payments.length
     : 0.8;
 
   // --- AI Engine Processing ---
-  // Core speed adjusted by memorization quality, attendance consistency, and financial stability trends
+  // Core speed adjusted by memorization quality, attendance istiqamah, and financial stability trends
   const effectiveRate = avgSabaqPerDay * qualityMultiplier * (0.6 + (attendanceRate * 0.3) + (paymentScore * 0.1));
   
   // Remaining work: 30 juzuk ≈ 6236 ayat; each juzuk ≈ 208 ayat
@@ -454,7 +454,7 @@ export function computeAIPrediction(state: AppState, studentId: string) {
   const completionDate = new Date();
   completionDate.setDate(completionDate.getDate() + daysLeft);
 
-  // Output 2: Confidence Level (based on data volume, attendance stability, and grade consistency)
+  // Output 2: Confidence Level (based on data volume, attendance stability, and grade istiqamah)
   const dataVolumeScore = Math.min(1, records.length / 30); // Maxes out after 30 records
   const confidence = Math.min(99, Math.round(
     60 + (dataVolumeScore * 15) + (attendanceRate * 15) + (paymentScore * 5) + ((qualityMultiplier - 1) * 10)

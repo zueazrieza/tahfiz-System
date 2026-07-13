@@ -13,14 +13,26 @@ class UserController extends Controller
 {
     public function pendingUsers()
     {
-        $users = User::where('status', 'pending')->get();
+        $users = User::where('status', 'pending')
+            ->get(['id', 'name', 'email', 'role', 'status', 'created_at', 'interview_at']);
         Log::info('Pending users count: ' . $users->count());
         return $users;
+    }
+
+    public function recordInterview(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $user->update(['interview_at' => now()]);
+        return response()->json(['message' => 'Sesi temuduga telah direkodkan.', 'interview_at' => $user->interview_at]);
     }
 
     public function approveUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
+
+        if (!$user->interview_at) {
+            return response()->json(['message' => 'Sesi temuduga belum direkodkan. Sila rekod sesi temuduga terlebih dahulu.'], 403);
+        }
         $user->update(['status' => 'active']);
 
         // Notify the approved user so they know they can now log in
